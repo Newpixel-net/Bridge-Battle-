@@ -1,172 +1,105 @@
-// Player squad with TIGHT blob formation - Professional quality
+// OPTIMIZED Squad with Instanced Rendering - NO FREEZE
 
 class Squad {
     constructor(scene, initialSize = 5) {
         this.scene = scene;
-        this.members = [];
-        this.targetPosition = new THREE.Vector3(0, 0, 0);
-        this.moveSpeed = 20;
-        this.separationForce = 3.0;
-        this.cohesionForce = 2.5;
-        this.targetDistance = 0.8; // MUCH TIGHTER - characters very close together
-        this.forwardSpeed = 12;
+        this.maxMembers = 50; // Maximum squad size
+        this.currentSize = 0;
+        this.members = []; // Just position/velocity data, not mesh objects
 
-        // Initialize squad
+        this.targetPosition = new THREE.Vector3(0, 0, 0);
+        this.moveSpeed = 15;
+        this.separationForce = 2.5;
+        this.cohesionForce = 2.0;
+        this.targetDistance = 0.9;
+        this.forwardSpeed = 10;
+
+        // Create instanced meshes (one mesh for all characters)
+        this.createInstancedMeshes();
+
+        // Add initial members
         for (let i = 0; i < initialSize; i++) {
             this.addMember();
         }
     }
 
-    // Create professional-looking cartoon character
-    createMember() {
-        const member = new THREE.Group();
-
-        // Material with cartoon shading (Toon material for cel-shaded look)
-        const bodyMaterial = new THREE.MeshToonMaterial({
-            color: 0x4A90E2, // Nice blue color
-            gradientMap: this.createToonGradient()
-        });
-
-        const skinMaterial = new THREE.MeshToonMaterial({
-            color: 0xFFDDAA,
-            gradientMap: this.createToonGradient()
-        });
-
-        // Body with better proportions
-        const torsoGeometry = new THREE.CylinderGeometry(0.35, 0.4, 0.9, 12);
-        const torso = new THREE.Mesh(torsoGeometry, bodyMaterial);
-        torso.position.y = 1.0;
-        torso.castShadow = true;
-        torso.receiveShadow = true;
-        member.add(torso);
-
-        // Head - larger and rounder for cartoon look
-        const headGeometry = new THREE.SphereGeometry(0.4, 16, 16);
-        const head = new THREE.Mesh(headGeometry, skinMaterial);
-        head.position.y = 1.7;
-        head.scale.set(1, 1.1, 1); // Slightly taller
-        head.castShadow = true;
-        head.receiveShadow = true;
-        member.add(head);
-
-        // Cap/helmet on top of head
-        const capGeometry = new THREE.SphereGeometry(0.42, 16, 8, 0, Math.PI * 2, 0, Math.PI / 2);
-        const capMaterial = new THREE.MeshToonMaterial({
-            color: 0xFF4444, // Red cap like in reference
-            gradientMap: this.createToonGradient()
-        });
-        const cap = new THREE.Mesh(capGeometry, capMaterial);
-        cap.position.y = 1.9;
-        cap.castShadow = true;
-        member.add(cap);
-
-        // Arms
-        const armGeometry = new THREE.CylinderGeometry(0.12, 0.12, 0.6, 8);
-        const armMaterial = bodyMaterial;
-
-        const leftArm = new THREE.Mesh(armGeometry, armMaterial);
-        leftArm.position.set(-0.45, 0.9, 0);
-        leftArm.rotation.z = Math.PI / 6;
-        leftArm.castShadow = true;
-        member.add(leftArm);
-
-        const rightArm = new THREE.Mesh(armGeometry, armMaterial);
-        rightArm.position.set(0.45, 0.9, -0.1);
-        rightArm.rotation.z = -Math.PI / 6;
-        rightArm.castShadow = true;
-        member.add(rightArm);
-
-        // Legs
-        const legGeometry = new THREE.CylinderGeometry(0.15, 0.12, 0.6, 8);
-        const legMaterial = new THREE.MeshToonMaterial({
-            color: 0x2C3E50, // Dark pants
-            gradientMap: this.createToonGradient()
-        });
-
-        const leftLeg = new THREE.Mesh(legGeometry, legMaterial);
-        leftLeg.position.set(-0.15, 0.3, 0);
-        leftLeg.castShadow = true;
-        member.add(leftLeg);
-
-        const rightLeg = new THREE.Mesh(legGeometry, legMaterial);
-        rightLeg.position.set(0.15, 0.3, 0);
-        rightLeg.castShadow = true;
-        member.add(rightLeg);
-
-        // Simple weapon
-        const weaponGeometry = new THREE.BoxGeometry(0.1, 0.1, 0.5);
-        const weaponMaterial = new THREE.MeshStandardMaterial({
-            color: 0x333333,
-            metalness: 0.8,
-            roughness: 0.3
-        });
-        const weapon = new THREE.Mesh(weaponGeometry, weaponMaterial);
-        weapon.position.set(0.4, 1.1, -0.2);
-        weapon.rotation.set(-Math.PI / 8, 0, 0);
-        weapon.castShadow = true;
-        member.add(weapon);
-
-        // Add glow outline effect
-        const outlineGeometry = new THREE.SphereGeometry(0.42, 16, 16);
-        const outlineMaterial = new THREE.MeshBasicMaterial({
+    createInstancedMeshes() {
+        // Simple body geometry - LOW POLY
+        const bodyGeometry = new THREE.BoxGeometry(0.6, 1.2, 0.5);
+        const bodyMaterial = new THREE.MeshLambertMaterial({
             color: 0x4A90E2,
-            transparent: true,
-            opacity: 0.3,
-            side: THREE.BackSide
+            flatShading: true // Cartoon look, faster
         });
-        const outline = new THREE.Mesh(outlineGeometry, outlineMaterial);
-        outline.position.y = 1.7;
-        outline.scale.set(1.05, 1.15, 1.05);
-        member.add(outline);
 
-        member.velocity = new THREE.Vector3();
-        member.isRunning = true;
-        member.animationOffset = Math.random() * Math.PI * 2; // Random animation offset
+        this.bodyInstances = new THREE.InstancedMesh(bodyGeometry, bodyMaterial, this.maxMembers);
+        this.bodyInstances.castShadow = true;
+        this.bodyInstances.count = 0; // Start with 0 visible
+        this.scene.add(this.bodyInstances);
 
-        this.scene.add(member);
-        this.members.push(member);
+        // Simple head - sphere
+        const headGeometry = new THREE.SphereGeometry(0.4, 8, 8); // LOW POLY
+        const headMaterial = new THREE.MeshLambertMaterial({
+            color: 0xFFDDAA,
+            flatShading: true
+        });
 
-        // Spawn near center if not first member
-        if (this.members.length > 1) {
-            const center = this.getCenter();
-            const angle = Math.random() * Math.PI * 2;
-            const radius = Math.random() * 0.5;
-            member.position.set(
-                center.x + Math.cos(angle) * radius,
-                0,
-                center.z + Math.sin(angle) * radius
-            );
-        }
+        this.headInstances = new THREE.InstancedMesh(headGeometry, headMaterial, this.maxMembers);
+        this.headInstances.castShadow = true;
+        this.headInstances.count = 0;
+        this.scene.add(this.headInstances);
 
-        return member;
-    }
+        // Red cap
+        const capGeometry = new THREE.ConeGeometry(0.45, 0.3, 8);
+        const capMaterial = new THREE.MeshLambertMaterial({
+            color: 0xFF4444,
+            flatShading: true
+        });
 
-    // Create toon gradient for cel-shaded look
-    createToonGradient() {
-        const colors = new Uint8Array(3);
-        colors[0] = 0;
-        colors[1] = 128;
-        colors[2] = 255;
+        this.capInstances = new THREE.InstancedMesh(capGeometry, capMaterial, this.maxMembers);
+        this.capInstances.castShadow = true;
+        this.capInstances.count = 0;
+        this.scene.add(this.capInstances);
 
-        const gradientMap = new THREE.DataTexture(colors, colors.length, 1, THREE.LuminanceFormat);
-        gradientMap.needsUpdate = true;
-
-        return gradientMap;
+        // Temporary matrices for transformations
+        this.tempMatrix = new THREE.Matrix4();
+        this.tempPosition = new THREE.Vector3();
+        this.tempQuaternion = new THREE.Quaternion();
+        this.tempScale = new THREE.Vector3(1, 1, 1);
     }
 
     addMember() {
-        return this.createMember();
+        if (this.currentSize >= this.maxMembers) return;
+
+        // Just store data, not create new meshes
+        const center = this.getCenter();
+        const angle = Math.random() * Math.PI * 2;
+        const radius = Math.random() * 0.5;
+
+        this.members.push({
+            position: new THREE.Vector3(
+                center.x + Math.cos(angle) * radius,
+                0,
+                center.z + Math.sin(angle) * radius
+            ),
+            velocity: new THREE.Vector3(),
+            rotation: 0,
+            animOffset: Math.random() * Math.PI * 2
+        });
+
+        this.currentSize++;
+        this.bodyInstances.count = this.currentSize;
+        this.headInstances.count = this.currentSize;
+        this.capInstances.count = this.currentSize;
     }
 
     removeMember() {
-        if (this.members.length === 0) return;
+        if (this.currentSize === 0) return;
 
-        const member = this.members.pop();
-        this.scene.remove(member);
-        member.traverse(child => {
-            if (child.geometry) child.geometry.dispose();
-            if (child.material) child.material.dispose();
-        });
+        this.members.pop();
+        this.currentSize--;
+        this.bodyInstances.count = this.currentSize;
+        this.headInstances.count = this.currentSize;
+        this.capInstances.count = this.currentSize;
     }
 
     addMembers(count) {
@@ -182,8 +115,8 @@ class Squad {
     }
 
     setSize(size) {
-        const currentSize = this.members.length;
-        const diff = size - currentSize;
+        size = Math.min(size, this.maxMembers);
+        const diff = size - this.currentSize;
 
         if (diff > 0) {
             this.addMembers(diff);
@@ -198,92 +131,94 @@ class Squad {
         }
 
         const center = new THREE.Vector3();
-        this.members.forEach(member => {
-            center.add(member.position);
-        });
+        this.members.forEach(m => center.add(m.position));
         center.divideScalar(this.members.length);
-
         return center;
     }
 
-    // TIGHT blob formation with strong forces
     updateFormation(deltaTime) {
         if (this.members.length === 0) return;
 
         const center = this.getCenter();
 
-        this.members.forEach((member, index) => {
-            // Very strong separation force to prevent overlap
-            const separationForce = new THREE.Vector3();
-            this.members.forEach((other, otherIndex) => {
-                if (index === otherIndex) return;
+        // Update all member positions
+        for (let i = 0; i < this.members.length; i++) {
+            const member = this.members[i];
 
-                const distance = member.position.distanceTo(other.position);
-                if (distance < this.targetDistance * 1.5 && distance > 0.01) {
-                    const repulsion = new THREE.Vector3()
+            // Separation
+            const separation = new THREE.Vector3();
+            for (let j = 0; j < this.members.length; j++) {
+                if (i === j) continue;
+                const other = this.members[j];
+                const dist = member.position.distanceTo(other.position);
+
+                if (dist < this.targetDistance * 1.5 && dist > 0.01) {
+                    const repel = new THREE.Vector3()
                         .subVectors(member.position, other.position)
                         .normalize()
-                        .multiplyScalar(this.separationForce / Math.max(distance, 0.1));
-                    separationForce.add(repulsion);
+                        .multiplyScalar(this.separationForce / Math.max(dist, 0.1));
+                    separation.add(repel);
                 }
-            });
+            }
 
-            // Strong cohesion to stay in tight blob
-            const cohesionForce = new THREE.Vector3()
+            // Cohesion
+            const cohesion = new THREE.Vector3()
                 .subVectors(center, member.position)
                 .multiplyScalar(this.cohesionForce);
 
-            // Follow target position (player input)
+            // Target following
             const targetForce = new THREE.Vector3()
                 .subVectors(this.targetPosition, member.position)
-                .multiplyScalar(3.0);
+                .multiplyScalar(2.5);
 
-            // Combine all forces
-            member.velocity.add(separationForce.multiplyScalar(deltaTime));
-            member.velocity.add(cohesionForce.multiplyScalar(deltaTime));
+            // Apply forces
+            member.velocity.add(separation.multiplyScalar(deltaTime));
+            member.velocity.add(cohesion.multiplyScalar(deltaTime));
             member.velocity.add(targetForce.multiplyScalar(deltaTime));
 
-            // Strong damping for tight control
-            member.velocity.multiplyScalar(0.92);
+            // Damping
+            member.velocity.multiplyScalar(0.9);
 
-            // Limit velocity
-            const maxSpeed = this.moveSpeed;
-            if (member.velocity.length() > maxSpeed) {
-                member.velocity.normalize().multiplyScalar(maxSpeed);
+            // Limit speed
+            if (member.velocity.length() > this.moveSpeed) {
+                member.velocity.normalize().multiplyScalar(this.moveSpeed);
             }
 
             // Update position
             member.position.add(member.velocity.clone().multiplyScalar(deltaTime));
-
-            // Keep on ground
             member.position.y = 0;
 
-            // Face movement direction smoothly
+            // Update rotation
             if (member.velocity.length() > 0.5) {
-                const targetAngle = Math.atan2(member.velocity.x, member.velocity.z);
-                member.rotation.y += (targetAngle - member.rotation.y) * deltaTime * 10;
+                const targetRot = Math.atan2(member.velocity.x, member.velocity.z);
+                member.rotation += (targetRot - member.rotation) * deltaTime * 8;
             }
 
-            // Enhanced running animation
-            if (member.isRunning) {
-                const time = Date.now() * 0.001;
-                const bobSpeed = 12;
-                const bobAmount = 0.1;
+            // Update instanced meshes
+            const time = Date.now() * 0.001;
+            const bobAmount = Math.abs(Math.sin((time + member.animOffset) * 10)) * 0.08;
 
-                // Bob up and down
-                member.position.y = Math.abs(Math.sin((time + member.animationOffset) * bobSpeed)) * bobAmount;
+            // Body
+            this.tempPosition.set(member.position.x, 0.6 + bobAmount, member.position.z);
+            this.tempQuaternion.setFromEuler(new THREE.Euler(0, member.rotation, 0));
+            this.tempMatrix.compose(this.tempPosition, this.tempQuaternion, this.tempScale);
+            this.bodyInstances.setMatrixAt(i, this.tempMatrix);
 
-                // Arm swing
-                if (member.children.length >= 5) {
-                    const leftArm = member.children[3];
-                    const rightArm = member.children[4];
+            // Head
+            this.tempPosition.set(member.position.x, 1.4 + bobAmount, member.position.z);
+            this.tempMatrix.compose(this.tempPosition, this.tempQuaternion, this.tempScale);
+            this.headInstances.setMatrixAt(i, this.tempMatrix);
 
-                    const swingAmount = 0.3;
-                    leftArm.rotation.x = Math.sin((time + member.animationOffset) * bobSpeed) * swingAmount;
-                    rightArm.rotation.x = -Math.sin((time + member.animationOffset) * bobSpeed) * swingAmount;
-                }
-            }
-        });
+            // Cap
+            this.tempPosition.set(member.position.x, 1.75 + bobAmount, member.position.z);
+            this.tempMatrix.compose(this.tempPosition, this.tempQuaternion, this.tempScale);
+            this.capInstances.setMatrixAt(i, this.tempMatrix);
+        }
+
+        // Mark for update
+        this.bodyInstances.instanceMatrix.needsUpdate = true;
+        this.headInstances.instanceMatrix.needsUpdate = true;
+        this.capInstances.instanceMatrix.needsUpdate = true;
     }
 
     moveForward(deltaTime) {
@@ -304,17 +239,21 @@ class Squad {
     }
 
     getSize() {
-        return this.members.length;
+        return this.currentSize;
     }
 
     dispose() {
-        this.members.forEach(member => {
-            this.scene.remove(member);
-            member.traverse(child => {
-                if (child.geometry) child.geometry.dispose();
-                if (child.material) child.material.dispose();
-            });
-        });
+        this.scene.remove(this.bodyInstances);
+        this.scene.remove(this.headInstances);
+        this.scene.remove(this.capInstances);
+
+        this.bodyInstances.geometry.dispose();
+        this.bodyInstances.material.dispose();
+        this.headInstances.geometry.dispose();
+        this.headInstances.material.dispose();
+        this.capInstances.geometry.dispose();
+        this.capInstances.material.dispose();
+
         this.members = [];
     }
 }

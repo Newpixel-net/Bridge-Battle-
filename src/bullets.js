@@ -4,10 +4,10 @@ class BulletManager {
     constructor(scene) {
         this.scene = scene;
         this.bullets = [];
-        this.poolSize = 300;
+        this.poolSize = 100; // REDUCED for performance
         this.bulletPool = [];
         this.bulletSpeed = 40;
-        this.bulletLifetime = 3.0;
+        this.bulletLifetime = 2.0; // Shorter lifetime
 
         // Initialize bullet pool
         this.initializePool();

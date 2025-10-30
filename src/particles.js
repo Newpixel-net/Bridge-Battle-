@@ -4,7 +4,7 @@ class ParticleSystem {
     constructor(scene) {
         this.scene = scene;
         this.particles = [];
-        this.poolSize = 500;
+        this.poolSize = 150; // REDUCED for performance
         this.particlePool = [];
 
         // Initialize particle pool
