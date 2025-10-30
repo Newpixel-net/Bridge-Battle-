@@ -22,17 +22,42 @@ class Squad {
     createMember() {
         const member = new THREE.Group();
 
-        // Body (capsule-like shape)
-        const bodyGeometry = new THREE.CapsuleGeometry(0.4, 1.0, 8, 16);
         const bodyMaterial = new THREE.MeshStandardMaterial({
             color: 0x00FF88,
             roughness: 0.7,
             metalness: 0.3
         });
-        const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
-        body.position.y = 1.0;
-        body.castShadow = true;
-        member.add(body);
+
+        // Body (capsule-like shape using cylinder + spheres for compatibility)
+        if (typeof THREE.CapsuleGeometry !== 'undefined') {
+            // Use CapsuleGeometry if available (Three.js r130+)
+            const bodyGeometry = new THREE.CapsuleGeometry(0.4, 1.0, 8, 16);
+            const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
+            body.position.y = 1.0;
+            body.castShadow = true;
+            member.add(body);
+        } else {
+            // Fallback: cylinder with sphere caps
+            const cylinderGeometry = new THREE.CylinderGeometry(0.4, 0.4, 1.0, 8);
+            const body = new THREE.Mesh(cylinderGeometry, bodyMaterial);
+            body.position.y = 1.0;
+            body.castShadow = true;
+            member.add(body);
+
+            // Top sphere
+            const topSphereGeometry = new THREE.SphereGeometry(0.4, 8, 8);
+            const topSphere = new THREE.Mesh(topSphereGeometry, bodyMaterial);
+            topSphere.position.y = 1.5;
+            topSphere.castShadow = true;
+            member.add(topSphere);
+
+            // Bottom sphere
+            const bottomSphereGeometry = new THREE.SphereGeometry(0.4, 8, 8);
+            const bottomSphere = new THREE.Mesh(bottomSphereGeometry, bodyMaterial);
+            bottomSphere.position.y = 0.5;
+            bottomSphere.castShadow = true;
+            member.add(bottomSphere);
+        }
 
         // Head
         const headGeometry = new THREE.SphereGeometry(0.35, 16, 16);

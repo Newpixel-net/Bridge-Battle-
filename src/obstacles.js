@@ -103,15 +103,38 @@ class Obstacle {
 
     createEnemy(group) {
         // Simple enemy character (similar to squad member but red)
-        const bodyGeometry = new THREE.CapsuleGeometry(0.4, 1.0, 8, 16);
         const bodyMaterial = new THREE.MeshStandardMaterial({
             color: 0xFF0000,
             roughness: 0.7
         });
-        const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
-        body.position.y = 1.0;
-        body.castShadow = true;
-        group.add(body);
+
+        // Use CapsuleGeometry if available, otherwise fallback to cylinder + spheres
+        if (typeof THREE.CapsuleGeometry !== 'undefined') {
+            const bodyGeometry = new THREE.CapsuleGeometry(0.4, 1.0, 8, 16);
+            const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
+            body.position.y = 1.0;
+            body.castShadow = true;
+            group.add(body);
+        } else {
+            // Fallback: cylinder with sphere caps
+            const cylinderGeometry = new THREE.CylinderGeometry(0.4, 0.4, 1.0, 8);
+            const body = new THREE.Mesh(cylinderGeometry, bodyMaterial);
+            body.position.y = 1.0;
+            body.castShadow = true;
+            group.add(body);
+
+            const topSphereGeometry = new THREE.SphereGeometry(0.4, 8, 8);
+            const topSphere = new THREE.Mesh(topSphereGeometry, bodyMaterial);
+            topSphere.position.y = 1.5;
+            topSphere.castShadow = true;
+            group.add(topSphere);
+
+            const bottomSphereGeometry = new THREE.SphereGeometry(0.4, 8, 8);
+            const bottomSphere = new THREE.Mesh(bottomSphereGeometry, bodyMaterial);
+            bottomSphere.position.y = 0.5;
+            bottomSphere.castShadow = true;
+            group.add(bottomSphere);
+        }
 
         const headGeometry = new THREE.SphereGeometry(0.35, 16, 16);
         const headMaterial = new THREE.MeshStandardMaterial({

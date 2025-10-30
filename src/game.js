@@ -32,18 +32,37 @@ class BridgeBattle {
     }
 
     init() {
-        this.setupScene();
-        this.setupCamera();
-        this.setupRenderer();
-        this.setupLighting();
-        this.setupManagers();
-        this.setupUI();
+        try {
+            console.log('Initializing Bridge Battle...');
 
-        // Hide loading screen
-        this.uiManager.hideLoading();
+            this.setupScene();
+            console.log('Scene setup complete');
 
-        // Start render loop
-        this.animate();
+            this.setupCamera();
+            console.log('Camera setup complete');
+
+            this.setupRenderer();
+            console.log('Renderer setup complete');
+
+            this.setupLighting();
+            console.log('Lighting setup complete');
+
+            this.setupManagers();
+            console.log('Managers setup complete');
+
+            this.setupUI();
+            console.log('UI setup complete');
+
+            // Hide loading screen
+            this.uiManager.hideLoading();
+
+            // Start render loop
+            this.animate();
+            console.log('Bridge Battle initialized successfully!');
+        } catch (error) {
+            console.error('Error initializing game:', error);
+            alert('Error loading game. Please check console for details.');
+        }
     }
 
     setupScene() {
@@ -387,5 +406,19 @@ class BridgeBattle {
 
 // Initialize game when page loads
 window.addEventListener('load', () => {
-    new BridgeBattle();
+    // Check if Three.js is loaded
+    if (typeof THREE === 'undefined') {
+        console.error('Three.js failed to load!');
+        alert('Failed to load Three.js library. Please check your internet connection and try again.');
+        return;
+    }
+
+    console.log('Three.js loaded successfully, version:', THREE.REVISION);
+
+    try {
+        new BridgeBattle();
+    } catch (error) {
+        console.error('Fatal error creating game:', error);
+        alert('Failed to start game. Error: ' + error.message);
+    }
 });
