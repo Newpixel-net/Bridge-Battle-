@@ -1,0 +1,118 @@
+Bridge Battle Game Development Brief
+Create a mobile-style runner game called "Bridge Battle" that matches the professional implementation shown in the reference video. This is a satisfying destruction game where players control a squad that continuously shoots obstacles while navigating gates that modify squad size.
+CORE GAMEPLAY MECHANICS
+1. CONTINUOUS AUTO-SHOOTING SYSTEM
+
+Squad shoots automatically at ~3 bullets per second per character
+Each bullet is a glowing projectile with light trails
+Bullets should have bullet pooling optimization (single script manages all bullets for performance)
+Damage numbers pop up and float away when hitting obstacles (large visible text)
+Bullet colors change based on squad size (yellow→green→cyan→magenta)
+
+2. SQUAD FORMATION & MOVEMENT
+
+Squad forms a tight blob formation using separation forces
+Characters stay very close but don't overlap
+Player controls horizontal movement (can also allow rectangular area movement)
+Formation dynamically adjusts as squad size changes
+Running animation for all characters
+
+3. GATE SYSTEM (CRITICAL)
+
+Gates span the FULL WIDTH of the bridge - cannot be avoided
+Display large visible numbers (+5, -3, etc.)
+Correct arithmetic: If you have 5 members and hit -3, you have 2 (not game over)
+Game over ONLY when negative value exceeds current squad size
+Gates can be shot to increase positive values (important strategy element)
+Holographic appearance with gradient colors (blue for positive, red for negative)
+
+4. OBSTACLES & ENEMIES
+
+Tire stacks with large HP displays (100-300 HP)
+HP text updates in real-time as damaged
+Satisfying destruction with particle explosions
+Weapon pickups on top of obstacles (glowing cyan weapons)
+Enemy characters that can be destroyed
+
+TECHNICAL SPECIFICATIONS
+VISUAL DESIGN
+
+WIDE BRIDGE: Must fill 80% of screen width
+Camera position close (8-10 units back, 8 units up)
+Clean, cartoon aesthetic with bright colors
+Gray road surface with white lane markings
+Red bridge pillars (Golden Gate style)
+Beautiful water simulation underneath using sine wave combinations
+
+WATER SHADER IMPLEMENTATION
+// Stack multiple sine waves for realistic water
+y = Σ amplitude[i] * sin(frequency[i] * (dot(direction[i], position) + time * speed[i]))
+
+Use 4+ wave layers with different parameters
+Project wave direction for varied movement
+Vertex shader manipulation for performance
+
+OPTIMIZATION REQUIREMENTS
+
+Animation pooling: Precalculate animation frames and instantiate rather than animate
+Target 30+ FPS on 2015-era devices
+Single bullet manager script (not individual scripts per bullet)
+LOD system for distant objects
+
+GAME FEEL ELEMENTS
+
+Screen shake on explosions
+Enlargement effects when collecting items
+Vibration feedback
+Particle effects for all impacts
+Floating damage numbers
+Smooth camera follow
+Sound effects for shooting, explosions, collecting
+
+UI/UX REQUIREMENTS
+HUD Elements
+
+Score display (top left, large text)
+Level indicator (top right)
+Squad counter (bottom center, VERY large, with icon)
+All UI elements must be oversized for mobile visibility
+
+Visual Feedback
+
+Damage numbers: Large, golden, float upward
+Squad counter pulses when changing
+Gates have glowing holographic appearance
+Weapons have rotating glow effect
+Explosion particles in multiple colors
+
+LEVEL DESIGN
+
+Long levels (1000+ units)
+Progressive difficulty
+Mix of gates, obstacles, and enemies
+Strategic gate placement requiring arithmetic decisions
+Weapon pickups placed on obstacles
+
+CRITICAL SUCCESS FACTORS
+
+Bridge must be WIDE (40 units minimum)
+Characters must be BIG and visible (1.5 units tall)
+Continuous shooting - no click-to-shoot
+Tight squad formation - blob-like, not spread out
+Gate arithmetic must be correct (subtraction, not instant death)
+Satisfying destruction with particles and numbers
+Camera close enough to see action clearly
+
+REFERENCE IMPLEMENTATION NOTES
+The original developer used:
+
+Unity engine with vertex shader water
+Mixamo for character animations
+Optimization through animation pooling
+Bullet pooling for performance
+Multiple sine waves for water simulation
+Holographic gates with gradient shaders
+Particle systems for all effects
+
+The game should feel like a power fantasy where holding down creates streams of bullets that destroy everything, with the strategic element being gate navigation to maintain squad size.
+Remember: This is NOT a precision shooter - it's a satisfying destruction game where the fun comes from watching things explode while managing squad arithmetic through unavoidable gates.
