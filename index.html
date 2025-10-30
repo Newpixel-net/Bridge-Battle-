@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
+    <title>Bridge Battle</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            font-family: 'Arial Black', Arial, sans-serif;
+            overflow: hidden;
+            background: #1a1a2e;
+            touch-action: none;
+        }
+
+        #gameCanvas {
+            display: block;
+            width: 100vw;
+            height: 100vh;
+            touch-action: none;
+        }
+
+        /* HUD Overlay */
+        #hud {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 100;
+        }
+
+        /* Score Display (Top Left) */
+        #score {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            font-size: 48px;
+            color: #FFD700;
+            text-shadow: 4px 4px 8px rgba(0,0,0,0.8);
+            font-weight: bold;
+            pointer-events: none;
+        }
+
+        /* Level Display (Top Right) */
+        #level {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            font-size: 36px;
+            color: #00FF88;
+            text-shadow: 4px 4px 8px rgba(0,0,0,0.8);
+            font-weight: bold;
+            pointer-events: none;
+        }
+
+        /* Squad Counter (Bottom Center) */
+        #squadCounter {
+            position: absolute;
+            bottom: 40px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 72px;
+            color: #FFFFFF;
+            text-shadow: 4px 4px 12px rgba(0,0,0,0.9);
+            font-weight: bold;
+            pointer-events: none;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            transition: transform 0.2s;
+        }
+
+        #squadCounter.pulse {
+            animation: pulse 0.3s ease-out;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: translateX(-50%) scale(1); }
+            50% { transform: translateX(-50%) scale(1.2); }
+        }
+
+        #squadIcon {
+            width: 60px;
+            height: 60px;
+            background: radial-gradient(circle, #00FF88, #00AA55);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 40px;
+        }
+
+        /* Start Screen */
+        #startScreen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(26, 26, 46, 0.95);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 200;
+            pointer-events: all;
+        }
+
+        #startScreen.hidden {
+            display: none;
+        }
+
+        #startScreen h1 {
+            font-size: 72px;
+            color: #FFD700;
+            text-shadow: 4px 4px 16px rgba(255, 215, 0, 0.5);
+            margin-bottom: 30px;
+            animation: titleFloat 2s ease-in-out infinite;
+        }
+
+        @keyframes titleFloat {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+
+        #startButton {
+            padding: 20px 60px;
+            font-size: 36px;
+            font-weight: bold;
+            color: #1a1a2e;
+            background: linear-gradient(135deg, #00FF88, #00AA55);
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            box-shadow: 0 8px 24px rgba(0, 255, 136, 0.4);
+            transition: transform 0.2s, box-shadow 0.2s;
+            pointer-events: all;
+        }
+
+        #startButton:hover {
+            transform: scale(1.05);
+            box-shadow: 0 12px 32px rgba(0, 255, 136, 0.6);
+        }
+
+        #startButton:active {
+            transform: scale(0.95);
+        }
+
+        /* Game Over Screen */
+        #gameOverScreen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(26, 26, 46, 0.95);
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 200;
+            pointer-events: all;
+        }
+
+        #gameOverScreen.visible {
+            display: flex;
+        }
+
+        #gameOverScreen h1 {
+            font-size: 64px;
+            color: #FF4444;
+            text-shadow: 4px 4px 16px rgba(255, 68, 68, 0.5);
+            margin-bottom: 20px;
+        }
+
+        #finalScore {
+            font-size: 48px;
+            color: #FFD700;
+            margin-bottom: 40px;
+        }
+
+        #restartButton {
+            padding: 20px 60px;
+            font-size: 36px;
+            font-weight: bold;
+            color: #1a1a2e;
+            background: linear-gradient(135deg, #FFD700, #FFA500);
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            box-shadow: 0 8px 24px rgba(255, 215, 0, 0.4);
+            transition: transform 0.2s;
+            pointer-events: all;
+        }
+
+        #restartButton:hover {
+            transform: scale(1.05);
+        }
+
+        /* Damage Numbers */
+        .damage-number {
+            position: absolute;
+            font-size: 48px;
+            font-weight: bold;
+            color: #FFD700;
+            text-shadow: 3px 3px 6px rgba(0,0,0,0.8);
+            pointer-events: none;
+            animation: floatUp 1s ease-out forwards;
+        }
+
+        @keyframes floatUp {
+            0% {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+            100% {
+                opacity: 0;
+                transform: translateY(-100px) scale(1.5);
+            }
+        }
+
+        /* Loading Text */
+        #loading {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 36px;
+            color: #00FF88;
+            z-index: 300;
+        }
+
+        /* Mobile Optimizations */
+        @media (max-width: 768px) {
+            #score { font-size: 36px; top: 10px; left: 10px; }
+            #level { font-size: 28px; top: 10px; right: 10px; }
+            #squadCounter { font-size: 56px; bottom: 30px; }
+            #squadIcon { width: 48px; height: 48px; font-size: 32px; }
+            #startScreen h1 { font-size: 48px; }
+            #startButton { font-size: 28px; padding: 15px 40px; }
+        }
+    </style>
+</head>
+<body>
+    <div id="loading">Loading Bridge Battle...</div>
+
+    <!-- Start Screen -->
+    <div id="startScreen">
+        <h1>BRIDGE BATTLE</h1>
+        <button id="startButton">START GAME</button>
+    </div>
+
+    <!-- Game Over Screen -->
+    <div id="gameOverScreen">
+        <h1>GAME OVER</h1>
+        <div id="finalScore">Score: 0</div>
+        <button id="restartButton">PLAY AGAIN</button>
+    </div>
+
+    <!-- HUD Overlay -->
+    <div id="hud">
+        <div id="score">0</div>
+        <div id="level">LEVEL 1</div>
+        <div id="squadCounter">
+            <div id="squadIcon">👥</div>
+            <span id="squadCount">5</span>
+        </div>
+    </div>
+
+    <!-- Three.js CDN -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+
+    <!-- Game Scripts -->
+    <script src="src/utils.js"></script>
+    <script src="src/shaders.js"></script>
+    <script src="src/particles.js"></script>
+    <script src="src/bullets.js"></script>
+    <script src="src/squad.js"></script>
+    <script src="src/gates.js"></script>
+    <script src="src/obstacles.js"></script>
+    <script src="src/level.js"></script>
+    <script src="src/input.js"></script>
+    <script src="src/ui.js"></script>
+    <script src="src/game.js"></script>
+</body>
+</html>
