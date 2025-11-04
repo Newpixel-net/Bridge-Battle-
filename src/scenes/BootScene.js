@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import { SCENES } from '../utils/Constants.js';
+import { SCENES } from '../utils/GameConstants.js';
 
 export default class BootScene extends Phaser.Scene {
     constructor() {
