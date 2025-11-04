@@ -1,30 +1,37 @@
 {
-  "name": "bridge-battle-sprite-automation",
+  "name": "bridge-battle",
   "version": "1.0.0",
-  "description": "Automated sprite processing pipeline for Bridge Battle game",
-  "main": "scripts/process-sprites.js",
+  "description": "Bridge Battle - Mobile runner game with squad shooting mechanics",
+  "type": "module",
   "scripts": {
-    "start": "node scripts/process-sprites.js",
-    "process": "node scripts/process-sprites.js",
-    "watch": "node scripts/watch-sprites.js",
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "process-sprites": "node scripts/process-sprites.js",
+    "slice-sprites": "node scripts/slice-sprite-sheet.js",
+    "watch-sprites": "node scripts/watch-sprites.js",
     "pack-sheets": "node scripts/pack-sprite-sheets.js",
     "optimize": "node scripts/optimize-sprites.js",
     "validate": "node scripts/validate-assets.js"
   },
   "keywords": [
-    "sprites",
-    "game-assets",
-    "automation",
+    "game",
+    "html5",
+    "phaser",
+    "runner",
+    "mobile",
     "bridge-battle"
   ],
   "author": "",
   "license": "MIT",
   "dependencies": {
-    "sharp": "^0.33.0",
-    "glob": "^10.3.10",
-    "chokidar": "^3.5.3"
+    "phaser": "^3.70.0"
   },
   "devDependencies": {
+    "vite": "^5.0.0",
+    "sharp": "^0.33.0",
+    "glob": "^10.3.10",
+    "chokidar": "^3.5.3",
     "eslint": "^8.56.0"
   },
   "engines": {

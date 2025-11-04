@@ -5,11 +5,11 @@ yarn-error.log
 package-lock.json
 yarn.lock
 
-# Processed assets (generated files)
-processed-assets/individual/
-processed-assets/sprite-sheets/
-processed-assets/optimized/
-processed-assets/metadata.json
+# Processed assets are now included in git for HTML5 game deployment
+# processed-assets/individual/
+# processed-assets/sprite-sheets/
+# processed-assets/optimized/
+# processed-assets/metadata.json
 
 # OS files
 .DS_Store

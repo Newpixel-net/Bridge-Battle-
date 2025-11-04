@@ -95,13 +95,12 @@ async function extractFrames(imagePath, cols, rows, outputDir) {
 }
 
 /**
- * Creates multi-resolution versions
+ * Creates multi-resolution versions (only 4x for individual frames)
  */
 async function createMultiResolution(sourceDir, frames) {
-  log('\n🔍 Creating multi-resolution versions...', 'cyan');
+  log('\n🔍 Creating high-resolution versions (4x)...', 'cyan');
 
   const resolutions = [
-    { suffix: '@2x', scale: 2 },
     { suffix: '@4x', scale: 4 }
   ];
 
@@ -130,24 +129,22 @@ async function createMultiResolution(sourceDir, frames) {
       processed++;
     }
 
-    if (processed % 12 === 0) {
-      log(`   ✓ Processed ${processed / 2} frames...`, 'green');
+    if (processed % 6 === 0) {
+      log(`   ✓ Processed ${processed} frames...`, 'green');
     }
   }
 
-  log(`   ✓ Created ${processed} additional resolution files`, 'green');
+  log(`   ✓ Created ${processed} high-resolution files`, 'green');
 }
 
 /**
- * Creates optimized sprite sheet versions
+ * Creates optimized sprite sheet versions (only 2x)
  */
 async function createSpriteSheetVersions(sourcePath, outputDir, baseName) {
-  log('\n📦 Creating optimized sprite sheet versions...', 'cyan');
+  log('\n📦 Creating optimized sprite sheet (2x resolution)...', 'cyan');
 
   const resolutions = [
-    { suffix: '', scale: 1, name: '1x' },
-    { suffix: '@2x', scale: 2, name: '2x' },
-    { suffix: '@4x', scale: 4, name: '4x' }
+    { suffix: '@2x', scale: 2, name: '2x' }
   ];
 
   const metadata = await sharp(sourcePath).metadata();
@@ -265,12 +262,13 @@ async function main() {
 
     log('📁 INDIVIDUAL FRAMES:', 'cyan');
     log(`   Location: processed-assets/individual/characters/squad-member/`, 'cyan');
-    log(`   Files: ${frames.length} frames × 3 resolutions = ${frames.length * 3} files`, 'green');
-    log(`   Sizes: 1x (418×440), 2x (836×880), 4x (1672×1760)`, 'blue');
+    log(`   Files: ${frames.length} base + ${frames.length} @4x = ${frames.length * 2} files`, 'green');
+    log(`   Sizes: Base (418×440), 4x (1672×1760)`, 'blue');
 
     log('\n📦 SPRITE SHEET:', 'cyan');
     log(`   Location: processed-assets/sprite-sheets/squad-member/`, 'cyan');
-    log(`   Files: 3 sprite sheets + 1 atlas JSON`, 'green');
+    log(`   Files: 1 sprite sheet @2x + 1 atlas JSON`, 'green');
+    log(`   Sheet: ${baseName}@2x.png (5016×5280px)`, 'blue');
     log(`   Atlas: ${baseName}.json (with frame coordinates)`, 'blue');
 
     log('\n🎮 USAGE:', 'yellow');
