@@ -36,8 +36,160 @@ const game = {
     paused: false,
     gameOver: false,
     autoForward: true,
-    forwardSpeed: 50  // Units per second
+    forwardSpeed: 50,  // Units per second
+
+    // Polish & effects (Iteration 10)
+    score: 0,
+    cameraShake: { x: 0, y: 0, z: 0, intensity: 0 },
+    ui: {
+        scoreElement: null,
+        squadCounterElement: null
+    }
 };
+
+// ============================================================================
+// ITERATION 10: UI & POLISH
+// ============================================================================
+
+function createUI() {
+    console.log('🎨 Creating UI elements...');
+
+    // Create score display
+    const scoreDiv = document.createElement('div');
+    scoreDiv.id = 'score';
+    scoreDiv.style.cssText = `
+        position: absolute;
+        top: 20px;
+        left: 20px;
+        font-size: 36px;
+        font-weight: bold;
+        color: white;
+        text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
+        z-index: 100;
+        font-family: Arial, sans-serif;
+    `;
+    scoreDiv.textContent = 'Score: 0';
+    document.body.appendChild(scoreDiv);
+    game.ui.scoreElement = scoreDiv;
+
+    // Create squad counter
+    const squadDiv = document.createElement('div');
+    squadDiv.id = 'squad-counter';
+    squadDiv.style.cssText = `
+        position: absolute;
+        bottom: 40px;
+        left: 50%;
+        transform: translateX(-50%);
+        font-size: 48px;
+        font-weight: bold;
+        color: #00BFFF;
+        text-shadow: 3px 3px 6px rgba(0,0,0,0.9);
+        z-index: 100;
+        font-family: Arial, sans-serif;
+        transition: transform 0.2s;
+    `;
+    squadDiv.textContent = '👥 14';
+    document.body.appendChild(squadDiv);
+    game.ui.squadCounterElement = squadDiv;
+
+    console.log('✓ UI created');
+}
+
+function updateUI() {
+    if (game.ui.scoreElement) {
+        game.ui.scoreElement.textContent = `Score: ${Math.floor(game.score)}`;
+    }
+
+    if (game.ui.squadCounterElement) {
+        game.ui.squadCounterElement.textContent = `👥 ${game.squad.length}`;
+    }
+}
+
+function pulseSquadCounter() {
+    if (game.ui.squadCounterElement) {
+        game.ui.squadCounterElement.style.transform = 'translateX(-50%) scale(1.3)';
+        setTimeout(() => {
+            if (game.ui.squadCounterElement) {
+                game.ui.squadCounterElement.style.transform = 'translateX(-50%) scale(1.0)';
+            }
+        }, 200);
+    }
+}
+
+function addCameraShake(intensity = 0.5) {
+    game.cameraShake.intensity = Math.max(game.cameraShake.intensity, intensity);
+}
+
+function updateCameraShake(deltaTime) {
+    if (game.cameraShake.intensity > 0) {
+        // Random shake
+        game.cameraShake.x = (Math.random() - 0.5) * game.cameraShake.intensity;
+        game.cameraShake.y = (Math.random() - 0.5) * game.cameraShake.intensity;
+        game.cameraShake.z = (Math.random() - 0.5) * game.cameraShake.intensity;
+
+        // Decay intensity
+        game.cameraShake.intensity *= 0.9;
+
+        if (game.cameraShake.intensity < 0.01) {
+            game.cameraShake.intensity = 0;
+            game.cameraShake.x = 0;
+            game.cameraShake.y = 0;
+            game.cameraShake.z = 0;
+        }
+    }
+}
+
+function spawnFloatingText(text, x, y, z, color = '#FFD700') {
+    // Create canvas for text
+    const canvas = document.createElement('canvas');
+    canvas.width = 256;
+    canvas.height = 128;
+    const ctx = canvas.getContext('2d');
+
+    // Draw text
+    ctx.font = 'bold 60px Arial';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillStyle = color;
+    ctx.strokeStyle = '#000000';
+    ctx.lineWidth = 4;
+    ctx.strokeText(text, canvas.width / 2, canvas.height / 2);
+    ctx.fillText(text, canvas.width / 2, canvas.height / 2);
+
+    // Create texture and sprite
+    const texture = new THREE.CanvasTexture(canvas);
+    const material = new THREE.SpriteMaterial({
+        map: texture,
+        transparent: true
+    });
+    const sprite = new THREE.Sprite(material);
+    sprite.position.set(x, y + 1, z);
+    sprite.scale.set(3, 1.5, 1);
+    game.scene.add(sprite);
+
+    // Animate upward and fade
+    const startTime = Date.now();
+    const duration = 1000;
+    const startY = y + 1;
+
+    const animate = () => {
+        const elapsed = Date.now() - startTime;
+        const progress = Math.min(elapsed / duration, 1);
+
+        sprite.position.y = startY + progress * 3;
+        sprite.material.opacity = 1 - progress;
+
+        if (progress < 1) {
+            requestAnimationFrame(animate);
+        } else {
+            game.scene.remove(sprite);
+            sprite.material.map.dispose();
+            sprite.material.dispose();
+        }
+    };
+
+    animate();
+}
 
 // ============================================================================
 // ITERATION 1: SCENE SETUP
@@ -292,10 +444,37 @@ function getBullet() {
 function updateBullets(deltaTime) {
     const BULLET_DAMAGE = 10;
     const HIT_RADIUS = 2.0;  // Collision radius
+    const GATE_HIT_RADIUS = 3.0;  // Larger radius for gates
 
     for (let bullet of bulletPool) {
         if (bullet.active) {
             bullet.update(deltaTime);
+
+            let bulletHit = false;
+
+            // Check collision with gates (Iteration 7)
+            for (let gate of gates) {
+                if (!gate.active || gate.passed) continue;
+
+                const dx = bullet.mesh.position.x - gate.group.position.x;
+                const dy = bullet.mesh.position.y - gate.group.position.y;
+                const dz = bullet.mesh.position.z - gate.group.position.z;
+                const dist = Math.sqrt(dx * dx + dy * dy + dz * dz);
+
+                if (dist < GATE_HIT_RADIUS) {
+                    // Hit gate! Increase value by 1
+                    gate.increaseValue(1);
+                    bullet.deactivate();
+
+                    // Spawn hit particle effect
+                    spawnHitEffect(bullet.mesh.position.x, bullet.mesh.position.y, bullet.mesh.position.z);
+
+                    bulletHit = true;
+                    break;
+                }
+            }
+
+            if (bulletHit) continue;
 
             // Check collision with obstacles
             for (let obstacle of obstacles) {
@@ -313,6 +492,21 @@ function updateBullets(deltaTime) {
 
                     // Spawn hit particle effect (simple flash)
                     spawnHitEffect(bullet.mesh.position.x, bullet.mesh.position.y, bullet.mesh.position.z);
+
+                    // Floating damage number (Iteration 10)
+                    spawnFloatingText(`-${BULLET_DAMAGE}`,
+                        obstacle.group.position.x,
+                        obstacle.group.position.y,
+                        obstacle.group.position.z);
+
+                    // Screen shake on hit
+                    if (destroyed) {
+                        addCameraShake(0.3);
+                        game.score += 50;  // Points for destroying obstacle
+                    } else {
+                        addCameraShake(0.1);
+                        game.score += 1;  // Points for hitting
+                    }
 
                     break;  // Bullet can only hit one obstacle
                 }
@@ -818,16 +1012,351 @@ function updateSquad(deltaTime) {
         char.update(deltaTime, squadCenter, game.squad);
     });
 
-    // Camera follows behind squad
+    // Camera follows behind squad with shake (Iteration 10)
     const targetCamX = avgX;
     const targetCamY = avgZ + 8;  // Above
     const targetCamZ = avgZ - 10;  // Behind
 
-    game.camera.position.x += (targetCamX - game.camera.position.x) * 0.1;
-    game.camera.position.y += (targetCamY - game.camera.position.y) * 0.1;
-    game.camera.position.z += (targetCamZ - game.camera.position.z) * 0.1;
+    game.camera.position.x += (targetCamX - game.camera.position.x) * 0.1 + game.cameraShake.x;
+    game.camera.position.y += (targetCamY - game.camera.position.y) * 0.1 + game.cameraShake.y;
+    game.camera.position.z += (targetCamZ - game.camera.position.z) * 0.1 + game.cameraShake.z;
 
-    game.camera.lookAt(avgX, 0, avgZ + 20);  // Look ahead
+    game.camera.lookAt(avgX + game.cameraShake.x, 0, avgZ + 20);  // Look ahead with shake
+}
+
+// ============================================================================
+// ITERATION 6: GATE SYSTEM
+// ============================================================================
+
+class Gate {
+    constructor(x, y, z, value) {
+        this.group = new THREE.Group();
+        this.value = value;
+        this.active = true;
+        this.passed = false;
+
+        // Create gate frame (spans full width of bridge: 40 units)
+        const GATE_WIDTH = 40;
+        const GATE_HEIGHT = 5;
+        const GATE_DEPTH = 0.3;
+
+        // Gate color based on value (blue for positive, red for negative)
+        const gateColor = value >= 0 ? 0x00BFFF : 0xFF4444;
+
+        // Create holographic gate material
+        const gateMaterial = new THREE.MeshPhongMaterial({
+            color: gateColor,
+            transparent: true,
+            opacity: 0.6,
+            emissive: gateColor,
+            emissiveIntensity: 0.3,
+            shininess: 100,
+            side: THREE.DoubleSide
+        });
+
+        // Main gate panel
+        const gateGeometry = new THREE.BoxGeometry(GATE_WIDTH, GATE_HEIGHT, GATE_DEPTH);
+        this.gateMesh = new THREE.Mesh(gateGeometry, gateMaterial);
+        this.gateMesh.position.y = GATE_HEIGHT / 2;
+        this.group.add(this.gateMesh);
+
+        // Side pillars
+        const pillarGeometry = new THREE.BoxGeometry(1, GATE_HEIGHT + 2, 1);
+        const pillarMaterial = new THREE.MeshPhongMaterial({
+            color: 0xCCCCCC,
+            shininess: 30
+        });
+
+        const leftPillar = new THREE.Mesh(pillarGeometry, pillarMaterial);
+        leftPillar.position.set(-GATE_WIDTH / 2 - 0.5, (GATE_HEIGHT + 2) / 2 - 1, 0);
+        leftPillar.castShadow = true;
+        this.group.add(leftPillar);
+
+        const rightPillar = new THREE.Mesh(pillarGeometry, pillarMaterial);
+        rightPillar.position.set(GATE_WIDTH / 2 + 0.5, (GATE_HEIGHT + 2) / 2 - 1, 0);
+        rightPillar.castShadow = true;
+        this.group.add(rightPillar);
+
+        // Create value text (using a simple plane for now)
+        this.createValueDisplay();
+
+        // Position gate
+        this.group.position.set(x, y, z);
+        game.scene.add(this.group);
+
+        // Animation properties
+        this.pulseTime = 0;
+    }
+
+    createValueDisplay() {
+        // Create a canvas texture for the text
+        const canvas = document.createElement('canvas');
+        canvas.width = 512;
+        canvas.height = 256;
+        const ctx = canvas.getContext('2d');
+
+        // Clear canvas
+        ctx.fillStyle = 'transparent';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        // Draw text
+        ctx.font = 'bold 180px Arial';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillStyle = '#FFFFFF';
+        ctx.strokeStyle = '#000000';
+        ctx.lineWidth = 8;
+
+        const text = (this.value >= 0 ? '+' : '') + this.value;
+        ctx.strokeText(text, canvas.width / 2, canvas.height / 2);
+        ctx.fillText(text, canvas.width / 2, canvas.height / 2);
+
+        // Create texture from canvas
+        const texture = new THREE.CanvasTexture(canvas);
+        texture.needsUpdate = true;
+
+        // Create plane to display text
+        const textGeometry = new THREE.PlaneGeometry(8, 4);
+        const textMaterial = new THREE.MeshBasicMaterial({
+            map: texture,
+            transparent: true,
+            side: THREE.DoubleSide
+        });
+
+        this.textMesh = new THREE.Mesh(textGeometry, textMaterial);
+        this.textMesh.position.set(0, 2.5, 0.2);
+        this.group.add(this.textMesh);
+
+        this.canvas = canvas;
+        this.ctx = ctx;
+    }
+
+    updateValueDisplay() {
+        // Redraw canvas with new value
+        this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+
+        this.ctx.font = 'bold 180px Arial';
+        this.ctx.textAlign = 'center';
+        this.ctx.textBaseline = 'middle';
+        this.ctx.fillStyle = '#FFFFFF';
+        this.ctx.strokeStyle = '#000000';
+        this.ctx.lineWidth = 8;
+
+        const text = (this.value >= 0 ? '+' : '') + this.value;
+        this.ctx.strokeText(text, this.canvas.width / 2, this.canvas.height / 2);
+        this.ctx.fillText(text, this.canvas.width / 2, this.canvas.height / 2);
+
+        this.textMesh.material.map.needsUpdate = true;
+
+        // Update gate color based on new value
+        const gateColor = this.value >= 0 ? 0x00BFFF : 0xFF4444;
+        this.gateMesh.material.color.setHex(gateColor);
+        this.gateMesh.material.emissive.setHex(gateColor);
+    }
+
+    update(deltaTime) {
+        if (!this.active) return;
+
+        // Pulse animation
+        this.pulseTime += deltaTime;
+        const pulse = Math.sin(this.pulseTime * 3) * 0.1 + 0.9;
+        this.gateMesh.material.opacity = 0.4 + pulse * 0.2;
+
+        // Make text always face camera
+        if (this.textMesh) {
+            this.textMesh.lookAt(game.camera.position);
+        }
+
+        // Check if squad has passed through gate
+        if (!this.passed && game.squad.length > 0) {
+            const avgZ = game.squad.reduce((sum, char) => sum + char.group.position.z, 0) / game.squad.length;
+
+            // Check if squad has passed the gate
+            if (avgZ > this.group.position.z + 2) {
+                this.onSquadPass();
+            }
+        }
+    }
+
+    onSquadPass() {
+        this.passed = true;
+
+        // Apply gate effect to squad
+        const newSquadSize = game.squad.length + this.value;
+
+        console.log(`Gate passed! ${game.squad.length} ${this.value >= 0 ? '+' : ''} ${this.value} = ${newSquadSize}`);
+
+        // Floating text showing gate value (Iteration 10)
+        const color = this.value >= 0 ? '#00FF00' : '#FF0000';
+        spawnFloatingText((this.value >= 0 ? '+' : '') + this.value,
+            this.group.position.x,
+            this.group.position.y + 2,
+            this.group.position.z,
+            color);
+
+        // Pulse squad counter
+        pulseSquadCounter();
+
+        // Camera shake
+        addCameraShake(0.4);
+
+        if (newSquadSize > game.squad.length) {
+            // Add characters
+            const toAdd = newSquadSize - game.squad.length;
+            for (let i = 0; i < toAdd; i++) {
+                addCharacterToSquad();
+            }
+            game.score += this.value * 10;  // Points for gaining squad members
+        } else if (newSquadSize < game.squad.length) {
+            // Remove characters
+            const toRemove = game.squad.length - newSquadSize;
+
+            if (newSquadSize <= 0) {
+                // Game over
+                console.log('💀 GAME OVER - All squad members lost!');
+                game.gameOver = true;
+                game.autoForward = false;
+                return;
+            }
+
+            for (let i = 0; i < toRemove; i++) {
+                if (game.squad.length > 0) {
+                    const char = game.squad.pop();
+                    char.destroy();
+                }
+            }
+        }
+
+        // Flash effect
+        this.gateMesh.material.emissiveIntensity = 1.0;
+        setTimeout(() => {
+            if (this.gateMesh && this.gateMesh.material) {
+                this.gateMesh.material.emissiveIntensity = 0.3;
+            }
+        }, 200);
+    }
+
+    increaseValue(amount) {
+        this.value += amount;
+        this.updateValueDisplay();
+        console.log(`Gate value increased by ${amount} to ${this.value}`);
+
+        // Flash effect
+        this.gateMesh.material.emissiveIntensity = 1.0;
+        setTimeout(() => {
+            if (this.gateMesh && this.gateMesh.material) {
+                this.gateMesh.material.emissiveIntensity = 0.3;
+            }
+        }, 100);
+    }
+
+    cleanup() {
+        game.scene.remove(this.group);
+        this.active = false;
+
+        // Dispose geometries and materials
+        this.group.children.forEach(child => {
+            if (child.geometry) child.geometry.dispose();
+            if (child.material) {
+                if (child.material.map) child.material.map.dispose();
+                child.material.dispose();
+            }
+        });
+    }
+}
+
+// Gate management
+const gates = [];
+let lastGateSpawn = 0;
+const GATE_SPAWN_INTERVAL = 8000;  // Spawn every 8 seconds
+
+function spawnGate() {
+    // Random value between -5 and +10
+    const value = Math.floor(Math.random() * 16) - 5;
+
+    // Spawn ahead of squad
+    let spawnZ = 80;
+    if (game.squad.length > 0) {
+        const avgZ = game.squad.reduce((sum, char) => sum + char.group.position.z, 0) / game.squad.length;
+        spawnZ = avgZ + 120;  // Spawn 120 units ahead
+    }
+
+    const gate = new Gate(0, 0, spawnZ, value);
+    gates.push(gate);
+
+    return gate;
+}
+
+function updateGates(deltaTime) {
+    // Update existing gates
+    for (let i = gates.length - 1; i >= 0; i--) {
+        const gate = gates[i];
+
+        if (!gate.active) {
+            gates.splice(i, 1);
+            continue;
+        }
+
+        gate.update(deltaTime);
+
+        // Remove gates far behind camera
+        if (game.squad.length > 0) {
+            const avgZ = game.squad.reduce((sum, char) => sum + char.group.position.z, 0) / game.squad.length;
+            if (gate.group.position.z < avgZ - 30) {
+                gate.cleanup();
+                gates.splice(i, 1);
+            }
+        }
+    }
+
+    // Spawn new gates
+    const now = Date.now();
+    if (now - lastGateSpawn > GATE_SPAWN_INTERVAL) {
+        spawnGate();
+        lastGateSpawn = now;
+    }
+}
+
+function addCharacterToSquad() {
+    // Add a new character to the squad at a random position near the squad
+    if (game.squad.length === 0) return;
+
+    // Calculate squad center
+    let avgX = 0, avgZ = 0;
+    game.squad.forEach(char => {
+        avgX += char.group.position.x;
+        avgZ += char.group.position.z;
+    });
+    avgX /= game.squad.length;
+    avgZ /= game.squad.length;
+
+    // Create new character at squad position
+    const index = game.squad.length;
+    const character = new Character(avgX, 0, avgZ - 2, index);
+
+    // Set formation offset
+    const cols = Math.ceil(Math.sqrt(game.squad.length + 1));
+    const row = Math.floor(index / cols);
+    const col = index % cols;
+    character.formationOffsetX = (col - (cols - 1) / 2) * 1.5;
+    character.formationOffsetZ = row * 1.5;
+
+    game.squad.push(character);
+
+    // Update formation for all characters
+    updateSquadFormation();
+}
+
+function updateSquadFormation() {
+    const count = game.squad.length;
+    const cols = Math.ceil(Math.sqrt(count));
+
+    game.squad.forEach((char, i) => {
+        const row = Math.floor(i / cols);
+        const col = i % cols;
+        char.formationOffsetX = (col - (cols - 1) / 2) * 1.5;
+        char.formationOffsetZ = row * 1.5;
+    });
 }
 
 // ============================================================================
@@ -848,20 +1377,41 @@ function animate() {
         autoShoot();
         updateBullets(deltaTime);
         updateObstacles();  // Iteration 5
+        updateGates(deltaTime);  // Iteration 6
+
+        // Continuous score increase (distance traveled)
+        game.score += deltaTime * 2;
     }
 
-    // Animate water (basic wave for now, full shader in Iteration 9)
+    // Update polish effects (Iteration 10)
+    updateCameraShake(deltaTime);
+    updateUI();
+
+    // Animate water (Iteration 9: Enhanced multi-wave shader)
     if (game.water) {
         const positions = game.water.geometry.attributes.position;
         const baseVertices = game.water.userData.baseVertices;
+
+        // Multi-layer wave parameters (amplitude, frequency, speed, direction)
+        const waves = [
+            { amp: 0.5, freq: 0.08, speed: 1.2, dirX: 1.0, dirZ: 0.3 },
+            { amp: 0.3, freq: 0.12, speed: 1.5, dirX: -0.5, dirZ: 1.0 },
+            { amp: 0.25, freq: 0.15, speed: 0.8, dirX: 0.7, dirZ: -0.7 },
+            { amp: 0.2, freq: 0.20, speed: 2.0, dirX: -0.3, dirZ: 0.5 },
+            { amp: 0.15, freq: 0.25, speed: 1.0, dirX: 0.4, dirZ: 0.9 }
+        ];
 
         for (let i = 0; i < positions.count; i++) {
             const x = baseVertices[i * 3];
             const z = baseVertices[i * 3 + 2];
 
-            // Simple wave animation
-            const y = Math.sin(x * 0.1 + elapsedTime * 2) * 0.5 +
-                     Math.sin(z * 0.15 + elapsedTime * 1.5) * 0.3;
+            // Stack multiple sine waves with different directions
+            let y = 0;
+            for (const wave of waves) {
+                // Project position onto wave direction
+                const projection = x * wave.dirX + z * wave.dirZ;
+                y += wave.amp * Math.sin(wave.freq * projection + elapsedTime * wave.speed);
+            }
 
             positions.setY(i, y);
         }
@@ -939,6 +1489,10 @@ function init() {
     console.log('🔧 Iteration 3: Squad Formation & Controls ✓');
     console.log('🔧 Iteration 4: Auto-Shooting System ✓');
     console.log('🔧 Iteration 5: Obstacles with HP & Collision ✓');
+    console.log('🔧 Iteration 6: Full-Width Gates ✓');
+    console.log('🔧 Iteration 7: Gate-Bullet Collision ✓');
+    console.log('🔧 Iteration 9: Enhanced Water Shader ✓');
+    console.log('🔧 Iteration 10: Polish & Effects ✓');
     console.log('');
 
     initScene();
@@ -946,8 +1500,9 @@ function init() {
     createWater();
     initBulletPool();
     createSquad(14);
+    createUI();
 
-    console.log('✅ Iterations 1-5 Complete!');
+    console.log('✅ All Iterations Complete (1-7, 9-10)!');
     console.log('');
     console.log('📋 Iteration 1 Checklist:');
     console.log('   ✓ Scene created with sky blue background');
@@ -989,9 +1544,45 @@ function init() {
     console.log('   ✓ Hit effects (orange flash)');
     console.log('   ✓ Auto-spawning every 2 seconds');
     console.log('');
+    console.log('📋 Iteration 6 Checklist:');
+    console.log('   ✓ Full-width gates (40 units wide)');
+    console.log('   ✓ Holographic appearance (blue/red)');
+    console.log('   ✓ Large number display (+/-values)');
+    console.log('   ✓ Correct arithmetic (add/remove squad members)');
+    console.log('   ✓ Game over when squad size <= 0');
+    console.log('   ✓ Dynamic squad formation adjustment');
+    console.log('   ✓ Pulse animation on gates');
+    console.log('');
+    console.log('📋 Iteration 7 Checklist:');
+    console.log('   ✓ Bullets can hit gates');
+    console.log('   ✓ Gate values increase when hit (+1 per bullet)');
+    console.log('   ✓ Strategic element: shoot gates before passing');
+    console.log('   ✓ Visual feedback on gate hits');
+    console.log('');
+    console.log('📋 Iteration 9 Checklist:');
+    console.log('   ✓ Multi-layer water waves (5 layers)');
+    console.log('   ✓ Directional wave projection');
+    console.log('   ✓ Varied amplitudes, frequencies, speeds');
+    console.log('   ✓ Realistic water simulation');
+    console.log('');
+    console.log('📋 Iteration 10 Checklist:');
+    console.log('   ✓ UI elements (score, squad counter)');
+    console.log('   ✓ Screen shake on impacts');
+    console.log('   ✓ Floating damage numbers');
+    console.log('   ✓ Squad counter pulse effect');
+    console.log('   ✓ Score system (distance + actions)');
+    console.log('   ✓ Visual feedback for all actions');
+    console.log('');
     console.log('🎬 Starting animation loop...');
     console.log('🎮 Controls: Click/drag or touch to steer squad left/right');
     console.log('🎯 Watch your squad auto-shoot and destroy obstacles!');
+
+    // Hide loading screen now that game is initialized
+    const loadingScreen = document.getElementById('loading');
+    if (loadingScreen) {
+        loadingScreen.classList.add('hidden');
+        console.log('✓ Loading screen hidden - game ready!');
+    }
 
     animate();
 }
