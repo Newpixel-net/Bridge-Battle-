@@ -1,0 +1,35 @@
+{
+  "name": "bridge-battle-sprite-automation",
+  "version": "1.0.0",
+  "description": "Automated sprite processing pipeline for Bridge Battle game",
+  "main": "scripts/process-sprites.js",
+  "scripts": {
+    "start": "node scripts/process-sprites.js",
+    "process": "node scripts/process-sprites.js",
+    "watch": "node scripts/watch-sprites.js",
+    "pack-sheets": "node scripts/pack-sprite-sheets.js",
+    "optimize": "node scripts/optimize-sprites.js",
+    "validate": "node scripts/validate-assets.js"
+  },
+  "keywords": [
+    "sprites",
+    "game-assets",
+    "automation",
+    "bridge-battle"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "sharp": "^0.33.0",
+    "glob": "^10.3.10",
+    "chokidar": "^3.5.3",
+    "jimp": "^0.22.10",
+    "canvas": "^2.11.2"
+  },
+  "devDependencies": {
+    "eslint": "^8.56.0"
+  },
+  "engines": {
+    "node": ">=16.0.0"
+  }
+}

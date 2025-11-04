@@ -1,0 +1,33 @@
+# Node modules
+node_modules/
+npm-debug.log
+yarn-error.log
+package-lock.json
+yarn.lock
+
+# Processed assets (generated files)
+processed-assets/individual/
+processed-assets/sprite-sheets/
+processed-assets/optimized/
+processed-assets/metadata.json
+
+# OS files
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~
+
+# IDE files
+.vscode/
+.idea/
+*.sublime-*
+
+# Temporary files
+*.tmp
+*.temp
+.cache/
+
+# Keep directory structure but ignore contents
+!processed-assets/.gitkeep
+!raw-assets/.gitkeep

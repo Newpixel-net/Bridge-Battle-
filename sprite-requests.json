@@ -1,0 +1,220 @@
+{
+  "gameTitle": "Bridge Battle",
+  "gameStyle": "mobile runner, cartoon aesthetic, bright colors",
+  "spriteRequests": [
+    {
+      "category": "characters",
+      "name": "squad-member-male",
+      "description": "Cartoon military character with gun, running animation, 8 directions",
+      "specifications": {
+        "size": "1.5 units tall (approximately 128x192px)",
+        "animations": ["idle", "run", "shoot", "death"],
+        "directions": 8,
+        "frameRate": "30 FPS",
+        "style": "bright cartoon, visible features, mobile-friendly"
+      },
+      "aiPrompt": "Create a cartoon-style military character with a gun, bright colors, clean outlines. Running animation in 8 directions. Character should be large and visible on mobile. Simple but expressive design.",
+      "recommendedTool": "God Mode AI",
+      "notes": "Characters must be BIG and visible. Each squad member should look identical for formation consistency.",
+      "outputFolder": "raw-assets/ai-generated/characters/squad-member-male{tps}"
+    },
+    {
+      "category": "characters",
+      "name": "squad-member-female",
+      "description": "Cartoon military character (female variant), running animation, 8 directions",
+      "specifications": {
+        "size": "1.5 units tall (approximately 128x192px)",
+        "animations": ["idle", "run", "shoot", "death"],
+        "directions": 8,
+        "frameRate": "30 FPS",
+        "style": "bright cartoon, visible features, mobile-friendly"
+      },
+      "aiPrompt": "Create a female cartoon-style military character with a gun, bright colors, clean outlines. Running animation in 8 directions. Character should be large and visible on mobile. Simple but expressive design.",
+      "recommendedTool": "God Mode AI",
+      "notes": "For squad variety. Should match male character's size and style.",
+      "outputFolder": "raw-assets/ai-generated/characters/squad-member-female{tps}"
+    },
+    {
+      "category": "enemies",
+      "name": "basic-enemy",
+      "description": "Enemy character that can be destroyed, contrasting color scheme",
+      "specifications": {
+        "size": "1.5 units tall (approximately 128x192px)",
+        "animations": ["idle", "damaged", "death"],
+        "style": "red/orange color scheme to distinguish from player squad",
+        "frameRate": "24 FPS"
+      },
+      "aiPrompt": "Create cartoon enemy character, red/orange color scheme, menacing but not scary. Idle and death animations. Should be clearly distinguishable from blue-colored player squad.",
+      "recommendedTool": "God Mode AI",
+      "outputFolder": "raw-assets/ai-generated/enemies/basic-enemy{tps}"
+    },
+    {
+      "category": "obstacles",
+      "name": "tire-stack",
+      "description": "Stack of tires obstacle with HP display area",
+      "specifications": {
+        "size": "Variable (2-4 units tall)",
+        "variants": ["small-stack", "medium-stack", "large-stack"],
+        "hp": "100-300 HP",
+        "style": "realistic but cartoon-shaded tires, black rubber with highlights"
+      },
+      "aiPrompt": "Create stacks of tires (small, medium, large variants), cartoon style with clear outlines. Black rubber with highlights. Top should have flat area for weapon pickups. Clean, mobile-friendly design.",
+      "recommendedTool": "PixelVibe",
+      "notes": "Needs space on top for weapon pickups. Should look satisfying to destroy.",
+      "outputFolder": "raw-assets/ai-generated/obstacles/tire-stacks"
+    },
+    {
+      "category": "obstacles",
+      "name": "destructible-crates",
+      "description": "Wooden crates that can be shot and destroyed",
+      "specifications": {
+        "size": "1-2 units",
+        "variants": ["wooden-crate", "metal-crate", "explosive-barrel"],
+        "style": "cartoon, bright colors, clear textures"
+      },
+      "aiPrompt": "Create destructible obstacles: wooden crates, metal crates, explosive barrels. Cartoon style, bright colors, should look satisfying to shoot.",
+      "recommendedTool": "PixelVibe",
+      "outputFolder": "raw-assets/ai-generated/obstacles/crates"
+    },
+    {
+      "category": "gates",
+      "name": "holographic-gate",
+      "description": "Full-width holographic gate with number display",
+      "specifications": {
+        "size": "Full bridge width (40+ units wide)",
+        "variants": ["positive-gate", "negative-gate"],
+        "colors": {
+          "positive": "cyan/blue gradient",
+          "negative": "red/orange gradient"
+        },
+        "style": "holographic, translucent, glowing edges"
+      },
+      "aiPrompt": "Create holographic gate effects: blue glowing gate for positive numbers, red glowing gate for negative numbers. Translucent with bright edges. Futuristic hologram style. Should span full width.",
+      "recommendedTool": "PixelVibe",
+      "notes": "Gates span FULL WIDTH of bridge and cannot be avoided. Need space for large number display (+5, -3, etc.)",
+      "outputFolder": "raw-assets/ai-generated/gates"
+    },
+    {
+      "category": "weapons",
+      "name": "weapon-pickups",
+      "description": "Glowing weapon pickups that float on obstacles",
+      "specifications": {
+        "size": "0.5-1 unit",
+        "variants": ["assault-rifle", "shotgun", "sniper", "minigun"],
+        "style": "glowing cyan aura, rotating animation, floating effect"
+      },
+      "aiPrompt": "Create weapon pickup items: assault rifle, shotgun, sniper rifle, minigun. Each with glowing cyan aura. Top-down or isometric view. Should look like power-ups with particle effects.",
+      "recommendedTool": "PixelVibe",
+      "notes": "Should have rotating glow effect. Placed on top of obstacles.",
+      "outputFolder": "raw-assets/ai-generated/weapons"
+    },
+    {
+      "category": "effects",
+      "name": "bullet-projectiles",
+      "description": "Glowing bullet projectiles with light trails",
+      "specifications": {
+        "size": "Small (16-32px)",
+        "colors": ["yellow", "green", "cyan", "magenta"],
+        "style": "glowing orbs with trails"
+      },
+      "aiPrompt": "Create glowing bullet projectiles in yellow, green, cyan, and magenta. Small glowing spheres with light trails. Bright and visible. Particle effect style.",
+      "recommendedTool": "PixelVibe",
+      "notes": "Colors change based on squad size. ~3 bullets per second per character.",
+      "outputFolder": "raw-assets/ai-generated/effects/bullets"
+    },
+    {
+      "category": "effects",
+      "name": "explosion-particles",
+      "description": "Explosion effects for destroying obstacles",
+      "specifications": {
+        "size": "Variable",
+        "animations": "8-12 frames",
+        "colors": "multiple colors for variety",
+        "style": "cartoon explosion with particles"
+      },
+      "aiPrompt": "Create cartoon explosion effects: burst of particles, smoke, flash. Multiple color variants. Should feel satisfying and impactful. 8-12 frame animation.",
+      "recommendedTool": "Ludo.ai",
+      "notes": "Explosion particles should be in multiple colors for visual interest.",
+      "outputFolder": "raw-assets/ai-generated/effects/explosions{tps}"
+    },
+    {
+      "category": "effects",
+      "name": "damage-numbers",
+      "description": "Large floating damage number sprites",
+      "specifications": {
+        "size": "Large text (64-128px height)",
+        "style": "golden/yellow, bold font with outline",
+        "animation": "pop up and float upward"
+      },
+      "aiPrompt": "Create large golden damage number sprites (0-9 and +/-). Bold font with thick black outline. Should be very visible. Include pop-up animation frames.",
+      "recommendedTool": "PixelVibe",
+      "notes": "Must be VERY large and visible for mobile. Golden color, float upward.",
+      "outputFolder": "raw-assets/ai-generated/effects/damage-numbers"
+    },
+    {
+      "category": "ui",
+      "name": "hud-elements",
+      "description": "UI elements for score, level, squad counter",
+      "specifications": {
+        "elements": ["score-panel", "level-indicator", "squad-counter-bg"],
+        "style": "clean, modern, high contrast",
+        "size": "oversized for mobile visibility"
+      },
+      "aiPrompt": "Create mobile game UI elements: score display panel, level indicator, squad counter background. Modern clean design with high contrast. Should be oversized and very readable on small screens.",
+      "recommendedTool": "PixelVibe",
+      "notes": "All UI elements must be OVERSIZED for mobile visibility. Squad counter is VERY large at bottom center.",
+      "outputFolder": "raw-assets/ai-generated/ui"
+    },
+    {
+      "category": "backgrounds",
+      "name": "bridge-sections",
+      "description": "Bridge road surface with lane markings",
+      "specifications": {
+        "size": "40+ units wide (must fill 80% of screen)",
+        "style": "gray road surface with white lane markings",
+        "details": "red bridge pillars (Golden Gate style)"
+      },
+      "aiPrompt": "Create wide bridge road sections: gray asphalt with white lane markings. Red steel bridge pillars in Golden Gate Bridge style. Top-down view. Very wide bridge (40+ units). Clean, cartoon-style rendering.",
+      "recommendedTool": "PixelVibe",
+      "notes": "Bridge must be WIDE (40 units minimum). Should tile seamlessly.",
+      "outputFolder": "raw-assets/ai-generated/backgrounds/bridge"
+    },
+    {
+      "category": "backgrounds",
+      "name": "water-texture",
+      "description": "Water texture for beneath the bridge",
+      "specifications": {
+        "size": "Tileable texture",
+        "style": "ocean water, realistic but stylized",
+        "color": "deep blue-green"
+      },
+      "aiPrompt": "Create tileable ocean water texture: deep blue-green color, subtle wave patterns. Should look good with shader effects. Realistic but stylized for cartoon game.",
+      "recommendedTool": "PixelVibe",
+      "notes": "Will be combined with sine wave vertex shader for realistic water simulation.",
+      "outputFolder": "raw-assets/ai-generated/backgrounds"
+    }
+  ],
+  "processingNotes": {
+    "autoPackFolders": "Folders with {tps} tag will be automatically packed into sprite sheets",
+    "outputResolutions": ["1x (base)", "2x (retina)", "4x (ultra)"],
+    "optimizationTarget": "Mobile devices (2015-era and newer)",
+    "targetFrameRate": "30+ FPS"
+  },
+  "aiToolRecommendations": {
+    "GodModeAI": {
+      "url": "https://www.godmodeai.co/",
+      "bestFor": "Character animations, 8-directional sprites, animated characters",
+      "tips": "Excellent for squad members and enemies with multiple directions"
+    },
+    "LudoAI": {
+      "url": "https://ludo.ai/features/sprite-generator",
+      "bestFor": "Animated sprites with sound effects, particle effects",
+      "tips": "Great for explosion effects and animated sequences"
+    },
+    "PixelVibe": {
+      "url": "https://lab.rosebud.ai/ai-game-assets",
+      "bestFor": "UI elements, items, backgrounds, static objects",
+      "tips": "Perfect for obstacles, weapons, gates, and UI elements"
+    }
+  }
+}

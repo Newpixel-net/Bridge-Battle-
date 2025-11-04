@@ -1,0 +1,153 @@
+{
+  "project": {
+    "name": "Bridge Battle",
+    "version": "1.0.0",
+    "gameEngine": "Unity/Godot"
+  },
+  "spriteSettings": {
+    "targetPlatform": "mobile",
+    "targetDevices": "2015-era and newer",
+    "targetFrameRate": "30+ FPS"
+  },
+  "processing": {
+    "resolutions": [
+      {
+        "name": "base",
+        "suffix": "",
+        "scale": 1,
+        "description": "Base resolution for standard devices"
+      },
+      {
+        "name": "retina",
+        "suffix": "@2x",
+        "scale": 2,
+        "description": "2x resolution for retina displays"
+      },
+      {
+        "name": "ultra",
+        "suffix": "@4x",
+        "scale": 4,
+        "description": "4x resolution for ultra-high DPI screens"
+      }
+    ],
+    "formats": [
+      {
+        "extension": "png",
+        "quality": {
+          "compressionLevel": 9
+        },
+        "useFor": "sprites with transparency, UI elements"
+      },
+      {
+        "extension": "webp",
+        "quality": {
+          "quality": 85,
+          "effort": 6
+        },
+        "useFor": "backgrounds, large images"
+      }
+    ],
+    "optimization": {
+      "maxFileSizeKB": 1024,
+      "recommendedFileSizeKB": 500,
+      "targetFileSizeKB": 300,
+      "powerOfTwoSizes": true,
+      "stripMetadata": true
+    }
+  },
+  "spriteSheets": {
+    "maxSheetSize": 4096,
+    "padding": 2,
+    "powerOfTwo": true,
+    "format": "png",
+    "autoPackFolders": "folders with {tps} tag"
+  },
+  "categories": {
+    "characters": {
+      "required": true,
+      "description": "Player squad members",
+      "specs": {
+        "size": "1.5 units (128x192px)",
+        "animations": ["idle", "run", "shoot", "death"],
+        "directions": 8
+      }
+    },
+    "enemies": {
+      "required": true,
+      "description": "Enemy characters",
+      "specs": {
+        "size": "1.5 units (128x192px)",
+        "colorScheme": "red/orange to distinguish from player"
+      }
+    },
+    "obstacles": {
+      "required": true,
+      "description": "Destructible obstacles (tire stacks, crates)",
+      "specs": {
+        "variants": ["small", "medium", "large"],
+        "hp": "100-300 HP"
+      }
+    },
+    "gates": {
+      "required": true,
+      "description": "Holographic gates spanning full bridge width",
+      "specs": {
+        "width": "40+ units (full bridge width)",
+        "variants": ["positive", "negative"],
+        "colors": {
+          "positive": "cyan/blue gradient",
+          "negative": "red/orange gradient"
+        }
+      }
+    },
+    "ui": {
+      "required": false,
+      "description": "HUD elements (score, level, squad counter)",
+      "specs": {
+        "size": "oversized for mobile visibility",
+        "contrast": "high contrast for readability"
+      }
+    },
+    "effects": {
+      "required": false,
+      "description": "Particles, explosions, bullets",
+      "specs": {
+        "bullets": "small glowing orbs with trails",
+        "explosions": "8-12 frame animations"
+      }
+    },
+    "weapons": {
+      "required": false,
+      "description": "Weapon pickups",
+      "specs": {
+        "size": "0.5-1 unit",
+        "effect": "glowing cyan aura"
+      }
+    },
+    "backgrounds": {
+      "required": false,
+      "description": "Bridge sections, water textures",
+      "specs": {
+        "bridgeWidth": "40+ units (must fill 80% of screen)",
+        "tiling": "seamless"
+      }
+    }
+  },
+  "aiTools": {
+    "GodModeAI": {
+      "url": "https://www.godmodeai.co/",
+      "bestFor": "Character animations, 8-directional sprites",
+      "recommended": ["characters", "enemies"]
+    },
+    "LudoAI": {
+      "url": "https://ludo.ai/features/sprite-generator",
+      "bestFor": "Animated sprites with sound effects",
+      "recommended": ["effects", "explosions"]
+    },
+    "PixelVibe": {
+      "url": "https://lab.rosebud.ai/ai-game-assets",
+      "bestFor": "UI elements, items, backgrounds",
+      "recommended": ["ui", "obstacles", "gates", "weapons", "backgrounds"]
+    }
+  }
+}
