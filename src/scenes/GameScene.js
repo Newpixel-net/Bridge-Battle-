@@ -98,6 +98,27 @@ export default class GameScene extends Phaser.Scene {
     }
 
     createBridge() {
+        // Create sky gradient background
+        const sky = this.add.rectangle(
+            GAME.WIDTH / 2,
+            GAME.HEIGHT / 2,
+            GAME.WIDTH * 2,
+            GAME.HEIGHT * 2,
+            COLORS.ENVIRONMENT.SKY_TOP
+        );
+        sky.setDepth(-100);
+        sky.setScrollFactor(0.3); // Parallax effect
+
+        // Water below bridge
+        const water = this.add.rectangle(
+            0,
+            WORLD.BRIDGE_LENGTH / 2,
+            GAME.WIDTH * 2,
+            WORLD.BRIDGE_LENGTH + 500,
+            COLORS.ENVIRONMENT.WATER
+        );
+        water.setDepth(-50);
+
         const graphics = this.add.graphics();
 
         // Draw bridge road
@@ -110,25 +131,23 @@ export default class GameScene extends Phaser.Scene {
         );
 
         // Draw lane markings
-        graphics.lineStyle(2, COLORS.BRIDGE.LINES, 0.5);
-        for (let y = 0; y < WORLD.BRIDGE_LENGTH; y += 40) {
-            graphics.lineBetween(0, y, 0, y + 20);
+        graphics.lineStyle(6, COLORS.BRIDGE.LINES, 0.5);
+        for (let y = 0; y < WORLD.BRIDGE_LENGTH; y += 100) {
+            graphics.lineBetween(0, y, 0, y + 50);
         }
 
         // Draw bridge edges
-        graphics.lineStyle(4, COLORS.BRIDGE.PILLAR);
+        graphics.lineStyle(12, COLORS.BRIDGE.PILLAR);
         graphics.lineBetween(-WORLD.BRIDGE_WIDTH / 2, 0, -WORLD.BRIDGE_WIDTH / 2, WORLD.BRIDGE_LENGTH);
         graphics.lineBetween(WORLD.BRIDGE_WIDTH / 2, 0, WORLD.BRIDGE_WIDTH / 2, WORLD.BRIDGE_LENGTH);
 
-        // Add some pillars
-        for (let y = 100; y < WORLD.BRIDGE_LENGTH; y += 150) {
-            const pillarLeft = this.add.rectangle(-WORLD.BRIDGE_WIDTH / 2, y, 8, 50, COLORS.BRIDGE.PILLAR);
-            const pillarRight = this.add.rectangle(WORLD.BRIDGE_WIDTH / 2, y, 8, 50, COLORS.BRIDGE.PILLAR);
+        // Add some pillars (decorative)
+        for (let y = 100; y < WORLD.BRIDGE_LENGTH; y += 200) {
+            const pillarLeft = this.add.rectangle(-WORLD.BRIDGE_WIDTH / 2, y, 20, 80, COLORS.BRIDGE.PILLAR);
+            const pillarRight = this.add.rectangle(WORLD.BRIDGE_WIDTH / 2, y, 20, 80, COLORS.BRIDGE.PILLAR);
+            pillarLeft.setDepth(-5);
+            pillarRight.setDepth(-5);
         }
-
-        // Water (simple background)
-        const water = this.add.rectangle(0, WORLD.BRIDGE_LENGTH / 2, WORLD.BRIDGE_WIDTH * 2, WORLD.BRIDGE_LENGTH, COLORS.WATER);
-        water.setDepth(-10);
     }
 
     createSquad() {
@@ -137,18 +156,19 @@ export default class GameScene extends Phaser.Scene {
             this.addSquadMember();
         }
 
-        // Set initial position
+        // Set initial position (further down the bridge)
         this.squadCenter.x = 0;
-        this.squadCenter.y = 50;
+        this.squadCenter.y = 200;
     }
 
     addSquadMember() {
         // Use real character sprite with run animation
         const member = this.physics.add.sprite(0, 0, 'char-run', 0);
 
-        // Scale down to match game size (real sprites are 550×588 @2x)
-        // Target size similar to old placeholder (64px) would be: 64/550 ≈ 0.12
-        member.setScale(PLAYER.CHARACTER_SIZE * 0.12);
+        // Scale to match game size (real sprites are 550×588 @2x)
+        // With CHARACTER_SIZE 0.6 and bridge width 600: target ~100px character
+        // 100 / 550 ≈ 0.18
+        member.setScale(PLAYER.CHARACTER_SIZE);
         member.setDepth(10);
 
         // Play run animation
@@ -293,7 +313,7 @@ export default class GameScene extends Phaser.Scene {
             isPositive ? 'placeholder-gate-positive' : 'placeholder-gate-negative'
         );
 
-        gate.setDisplaySize(WORLD.BRIDGE_WIDTH, 150);
+        gate.setDisplaySize(GATES.WIDTH, GATES.HEIGHT);
         gate.setDepth(2);
         gate.setAlpha(0.7);
         gate.setData('value', value);
@@ -329,7 +349,7 @@ export default class GameScene extends Phaser.Scene {
         const hp = Phaser.Math.Between(OBSTACLES.HP_MIN, OBSTACLES.HP_MAX);
 
         const obstacle = this.physics.add.sprite(x, y, 'placeholder-obstacle-tire');
-        obstacle.setScale(1.5);
+        obstacle.setScale(1.2);  // Adjusted from 1.5 to 1.2 for better proportions
         obstacle.setDepth(4);
         obstacle.setData('hp', hp);
         obstacle.setData('maxHp', hp);
