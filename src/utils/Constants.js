@@ -11,24 +11,24 @@ export const GAME = {
 };
 
 export const WORLD = {
-    BRIDGE_WIDTH: 40,
+    BRIDGE_WIDTH: 600,      // Increased from 40 to 600 (31% of screen width)
     BRIDGE_LENGTH: 1000,
     SCROLL_SPEED: 3,
-    LANE_WIDTH: 8
+    LANE_WIDTH: 120         // Increased proportionally from 8 to 120
 };
 
 export const PLAYER = {
     SQUAD_START_SIZE: 3,
     MAX_SQUAD_SIZE: 50,
-    MOVE_SPEED: 5,
-    CHARACTER_SIZE: 1.5,
-    FORMATION_SPACING: 1.2,
+    MOVE_SPEED: 80,          // Increased from 5 to 80 (proportional to bridge width)
+    CHARACTER_SIZE: 0.6,     // Adjusted for larger bridge (was 1.5)
+    FORMATION_SPACING: 80,   // Increased from 1.2 to 80
     SEPARATION_FORCE: 0.3
 };
 
 export const SHOOTING = {
     FIRE_RATE: 333, // ms (3 bullets per second)
-    BULLET_SPEED: 15,
+    BULLET_SPEED: 300,       // Increased from 15 to 300 (proportional to world scale)
     BULLET_DAMAGE: 10,
     BULLET_LIFETIME: 2000, // ms
     POOL_SIZE: 200
@@ -37,7 +37,8 @@ export const SHOOTING = {
 export const GATES = {
     SPAWN_INTERVAL_MIN: 50,
     SPAWN_INTERVAL_MAX: 100,
-    WIDTH: 40, // Full bridge width
+    WIDTH: 600, // Full bridge width (matches BRIDGE_WIDTH)
+    HEIGHT: 80, // Visual height of gate
     VALUES: {
         MIN: -5,
         MAX: 10
@@ -64,10 +65,10 @@ export const ENEMIES = {
 };
 
 export const CAMERA = {
-    DISTANCE_BACK: 9,
-    HEIGHT: 8,
+    DISTANCE_BACK: 150,      // Increased from 9 to 150
+    HEIGHT: 120,             // Increased from 8 to 120
     FOLLOW_LERP: 0.1,
-    SHAKE_INTENSITY: 5
+    SHAKE_INTENSITY: 10      // Increased from 5 to 10
 };
 
 export const UI = {
@@ -103,7 +104,12 @@ export const COLORS = {
         LINES: 0xFFFFFF,        // White
         PILLAR: 0xCC3333        // Red
     },
-    WATER: 0x0066AA
+    ENVIRONMENT: {
+        SKY_TOP: 0x87CEEB,      // Sky Blue
+        SKY_BOTTOM: 0xE0F6FF,   // Light Blue
+        WATER: 0x0066AA,        // Ocean Blue
+        GROUND: 0x8B7355        // Brown
+    }
 };
 
 export const PARTICLES = {
