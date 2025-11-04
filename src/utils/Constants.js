@@ -126,7 +126,12 @@ export const PERFORMANCE = {
 };
 
 export const ASSET_KEYS = {
-    // Sprites (to be added when real assets arrive)
+    // Character Sprites (Real Assets)
+    CHAR_RUN: 'char-run',
+    CHAR_GUNFIRE: 'char-gunfire',
+    CHAR_POWER_ATTACK: 'char-power-attack',
+
+    // Placeholder Sprites
     SQUAD_MEMBER: 'squad-member',
     ENEMY: 'enemy',
     OBSTACLE_TIRE: 'obstacle-tire',

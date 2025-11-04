@@ -16,11 +16,27 @@ export default class PreloadScene extends Phaser.Scene {
         this.load.on('progress', this.onProgress, this);
         this.load.on('complete', this.onComplete, this);
 
-        // TODO: Load real sprites when available
-        // this.load.atlas('squad-member', 'assets/sprites/squad-member@2x.png', 'assets/sprites/squad-member.json');
+        // Load real character sprite sheets with atlases
+        console.log('Loading character sprite sheets...');
+        this.load.spritesheet('char-run', 'processed-assets/sprite-sheets/run/run@2x.png', {
+            frameWidth: 275 * 2, // @2x resolution
+            frameHeight: 294 * 2
+        });
 
-        // For now, we'll use placeholder graphics generated in create()
-        // No actual files to load yet
+        this.load.spritesheet('char-gunfire', 'processed-assets/sprite-sheets/gunfire/gunfire@2x.png', {
+            frameWidth: 408 * 2, // @2x resolution
+            frameHeight: 408 * 2
+        });
+
+        this.load.spritesheet('char-power-attack', 'processed-assets/sprite-sheets/power-attack/power-attack@2x.png', {
+            frameWidth: 418 * 2, // @2x resolution
+            frameHeight: 440 * 2
+        });
+
+        // Load the JSON metadata (for reference, though Phaser spritesheet handles frames)
+        this.load.json('run-atlas', 'processed-assets/sprite-sheets/run/run.json');
+        this.load.json('gunfire-atlas', 'processed-assets/sprite-sheets/gunfire/gunfire.json');
+        this.load.json('power-attack-atlas', 'processed-assets/sprite-sheets/power-attack/power-attack.json');
     }
 
     create() {
@@ -29,10 +45,43 @@ export default class PreloadScene extends Phaser.Scene {
         // Create placeholder textures
         this.createPlaceholderTextures();
 
+        // Create character animations
+        this.createCharacterAnimations();
+
         // Small delay before starting menu
         this.time.delayedCall(500, () => {
             this.scene.start(SCENES.MENU);
         });
+    }
+
+    createCharacterAnimations() {
+        console.log('🎬 Creating character animations...');
+
+        // Run animation - All 36 frames looping
+        this.anims.create({
+            key: 'char-run-anim',
+            frames: this.anims.generateFrameNumbers('char-run', { start: 0, end: 35 }),
+            frameRate: 30,
+            repeat: -1
+        });
+
+        // Gunfire animation - All 36 frames looping
+        this.anims.create({
+            key: 'char-gunfire-anim',
+            frames: this.anims.generateFrameNumbers('char-gunfire', { start: 0, end: 35 }),
+            frameRate: 30,
+            repeat: -1
+        });
+
+        // Power attack animation - All 36 frames looping
+        this.anims.create({
+            key: 'char-power-attack-anim',
+            frames: this.anims.generateFrameNumbers('char-power-attack', { start: 0, end: 35 }),
+            frameRate: 30,
+            repeat: -1
+        });
+
+        console.log('✅ Character animations created');
     }
 
     createLoadingUI() {
