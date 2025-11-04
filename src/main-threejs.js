@@ -993,6 +993,13 @@ function init() {
     console.log('🎮 Controls: Click/drag or touch to steer squad left/right');
     console.log('🎯 Watch your squad auto-shoot and destroy obstacles!');
 
+    // Hide loading screen now that game is initialized
+    const loadingScreen = document.getElementById('loading');
+    if (loadingScreen) {
+        loadingScreen.classList.add('hidden');
+        console.log('✓ Loading screen hidden - game ready!');
+    }
+
     animate();
 }
 

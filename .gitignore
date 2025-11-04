@@ -28,6 +28,9 @@ Thumbs.db
 *.temp
 .cache/
 
+# Build output
+dist/
+
 # Keep directory structure but ignore contents
 !processed-assets/.gitkeep
 !raw-assets/.gitkeep
