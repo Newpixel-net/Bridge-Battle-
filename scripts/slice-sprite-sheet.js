@@ -4,12 +4,16 @@
  * Bridge Battle - Sprite Sheet Slicer
  *
  * Slices a sprite sheet into individual frames AND keeps the full sheet with atlas
- * Specifically designed for the 6x6 squad member sprite sheet
+ * Supports command line arguments: node slice-sprite-sheet.js <input-path> <base-name>
  */
 
-const fs = require('fs').promises;
-const path = require('path');
-const sharp = require('sharp');
+import fs from 'fs/promises';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import sharp from 'sharp';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const colors = {
   reset: '\x1b[0m',
@@ -213,15 +217,30 @@ async function main() {
   log('='.repeat(70) + '\n', 'cyan');
 
   try {
-    // Configuration
-    const inputPath = path.join(__dirname, '../raw-assets/ai-generated/sprite-max-px-36.png');
+    // Get arguments from command line
+    const args = process.argv.slice(2);
+    if (args.length < 2) {
+      log('❌ Usage: node slice-sprite-sheet.js <input-path> <base-name>', 'red');
+      log('   Example: node slice-sprite-sheet.js raw-assets/ai-generated/main_character/run.png run', 'yellow');
+      process.exit(1);
+    }
+
+    const inputPath = args[0];
+    const baseName = args[1];
     const cols = 6;
     const rows = 6;
-    const baseName = 'squad-member';
+
+    // Validate input file exists
+    try {
+      await fs.access(inputPath);
+    } catch {
+      log(`❌ Error: Input file not found: ${inputPath}`, 'red');
+      process.exit(1);
+    }
 
     // Create output directories
-    const individualDir = path.join(__dirname, '../processed-assets/individual/characters/squad-member');
-    const sheetDir = path.join(__dirname, '../processed-assets/sprite-sheets/squad-member');
+    const individualDir = path.join(__dirname, `../processed-assets/individual/characters/${baseName}`);
+    const sheetDir = path.join(__dirname, `../processed-assets/sprite-sheets/${baseName}`);
 
     await fs.mkdir(individualDir, { recursive: true });
     await fs.mkdir(sheetDir, { recursive: true });
@@ -261,12 +280,12 @@ async function main() {
     log('='.repeat(70) + '\n', 'green');
 
     log('📁 INDIVIDUAL FRAMES:', 'cyan');
-    log(`   Location: processed-assets/individual/characters/squad-member/`, 'cyan');
+    log(`   Location: processed-assets/individual/characters/${baseName}/`, 'cyan');
     log(`   Files: ${frames.length} base + ${frames.length} @4x = ${frames.length * 2} files`, 'green');
-    log(`   Sizes: Base (418×440), 4x (1672×1760)`, 'blue');
+    log(`   Sizes: Base (${frameWidth}×${frameHeight}), 4x (${frameWidth * 4}×${frameHeight * 4})`, 'blue');
 
     log('\n📦 SPRITE SHEET:', 'cyan');
-    log(`   Location: processed-assets/sprite-sheets/squad-member/`, 'cyan');
+    log(`   Location: processed-assets/sprite-sheets/${baseName}/`, 'cyan');
     log(`   Files: 1 sprite sheet @2x + 1 atlas JSON`, 'green');
     log(`   Sheet: ${baseName}@2x.png (5016×5280px)`, 'blue');
     log(`   Atlas: ${baseName}.json (with frame coordinates)`, 'blue');
@@ -288,8 +307,9 @@ async function main() {
   }
 }
 
-if (require.main === module) {
+// Run main if this file is executed directly
+if (import.meta.url === `file://${process.argv[1]}`) {
   main();
 }
 
-module.exports = { extractFrames, createMultiResolution, generateAtlas };
+export { extractFrames, createMultiResolution, generateAtlas };

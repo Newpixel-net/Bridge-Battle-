@@ -143,9 +143,17 @@ export default class GameScene extends Phaser.Scene {
     }
 
     addSquadMember() {
-        const member = this.physics.add.sprite(0, 0, 'placeholder-squad');
-        member.setScale(PLAYER.CHARACTER_SIZE);
+        // Use real character sprite with run animation
+        const member = this.physics.add.sprite(0, 0, 'char-run', 0);
+
+        // Scale down to match game size (real sprites are 550×588 @2x)
+        // Target size similar to old placeholder (64px) would be: 64/550 ≈ 0.12
+        member.setScale(PLAYER.CHARACTER_SIZE * 0.12);
         member.setDepth(10);
+
+        // Play run animation
+        member.play('char-run-anim');
+
         this.squadMembers.push(member);
     }
 
