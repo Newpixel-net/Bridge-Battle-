@@ -22,9 +22,7 @@
   "dependencies": {
     "sharp": "^0.33.0",
     "glob": "^10.3.10",
-    "chokidar": "^3.5.3",
-    "jimp": "^0.22.10",
-    "canvas": "^2.11.2"
+    "chokidar": "^3.5.3"
   },
   "devDependencies": {
     "eslint": "^8.56.0"
