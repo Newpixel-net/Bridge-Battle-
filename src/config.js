@@ -1,9 +1,8 @@
 import Phaser from 'phaser';
-import { GAME, SCENES } from './utils/Constants.js';
+import { GAME } from './utils/GameConstants.js';
 import BootScene from './scenes/BootScene.js';
 import PreloadScene from './scenes/PreloadScene.js';
-import MenuScene from './scenes/MenuScene.js';
-import GameScene from './scenes/GameScene.js';
+import GameSceneNew from './scenes/GameSceneNew.js';
 import UIScene from './scenes/UIScene.js';
 
 const config = {
@@ -33,8 +32,7 @@ const config = {
     scene: [
         BootScene,
         PreloadScene,
-        MenuScene,
-        GameScene,
+        GameSceneNew,
         UIScene
     ]
 };

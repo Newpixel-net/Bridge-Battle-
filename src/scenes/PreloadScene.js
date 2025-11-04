@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import { SCENES, UI } from '../utils/Constants.js';
+import { SCENES } from '../utils/GameConstants.js';
 
 export default class PreloadScene extends Phaser.Scene {
     constructor() {
@@ -48,9 +48,9 @@ export default class PreloadScene extends Phaser.Scene {
         // Create character animations
         this.createCharacterAnimations();
 
-        // Small delay before starting menu
+        // Small delay before starting game
         this.time.delayedCall(500, () => {
-            this.scene.start(SCENES.MENU);
+            this.scene.start('GameSceneNew');
         });
     }
 
@@ -59,25 +59,25 @@ export default class PreloadScene extends Phaser.Scene {
 
         // Run animation - All 36 frames looping
         this.anims.create({
-            key: 'char-run-anim',
+            key: 'anim-run',
             frames: this.anims.generateFrameNumbers('char-run', { start: 0, end: 35 }),
-            frameRate: 30,
+            frameRate: 24,
             repeat: -1
         });
 
         // Gunfire animation - All 36 frames looping
         this.anims.create({
-            key: 'char-gunfire-anim',
+            key: 'anim-gunfire',
             frames: this.anims.generateFrameNumbers('char-gunfire', { start: 0, end: 35 }),
-            frameRate: 30,
+            frameRate: 24,
             repeat: -1
         });
 
         // Power attack animation - All 36 frames looping
         this.anims.create({
-            key: 'char-power-attack-anim',
+            key: 'anim-power-attack',
             frames: this.anims.generateFrameNumbers('char-power-attack', { start: 0, end: 35 }),
-            frameRate: 30,
+            frameRate: 24,
             repeat: -1
         });
 
