@@ -1,9 +1,11 @@
 /**
  * Bridge Battle - Three.js 3D Implementation
  * Iteration 1: Scene Foundation ✓
- * Iteration 2: Add Characters on Bridge
+ * Iteration 2: Add Characters on Bridge ✓
  * UPGRADE Phase 1: Sprite-based character system ✓
- * UPGRADE Phase 2: Visual Effects System (Particles, Damage Numbers, Enhanced Bullets)
+ * UPGRADE Phase 2: Visual Effects System (Particles, Damage Numbers, Enhanced Bullets) ✓
+ * UPGRADE Phase 3: Enhanced Obstacles & Holographic Gates ✓
+ * UPGRADE Phase 4: Post-Processing (Bloom, FXAA, Color Grading, Vignette) ✓
  */
 
 import * as THREE from 'three';
@@ -12,6 +14,7 @@ import { ParticleManager } from './systems/ParticleSystem.js';
 import { DamageNumberManager } from './systems/DamageNumbers.js';
 import { EnhancedBulletPool } from './systems/BulletEffects.js';
 import { HPDisplay, WeaponPickup } from './systems/HPDisplay.js';
+import { PostProcessingManager } from './systems/PostProcessing.js';
 
 // ============================================================================
 // GAME STATE
@@ -38,6 +41,9 @@ const game = {
     particleManager: null,
     damageNumbers: null,
     enhancedBullets: null,
+
+    // Post-processing (Phase 4)
+    postProcessing: null,
 
     // Input
     pointer: {
@@ -515,6 +521,12 @@ function updateBullets(deltaTime) {
                 // Strong screen shake
                 addCameraShake(0.5);
 
+                // Post-processing effects: bloom pulse + flash
+                if (game.postProcessing) {
+                    game.postProcessing.pulseBloom(2.5, 0.4);
+                    game.postProcessing.flash(0.3, 0.15);
+                }
+
                 // Big score boost
                 game.score += 50;
             } else {
@@ -528,6 +540,11 @@ function updateBullets(deltaTime) {
 
                 // Small screen shake
                 addCameraShake(0.1);
+
+                // Subtle bloom pulse
+                if (game.postProcessing) {
+                    game.postProcessing.pulseBloom(1.5, 0.1);
+                }
 
                 // Small score
                 game.score += 1;
@@ -1548,8 +1565,12 @@ function animate() {
         positions.needsUpdate = true;
     }
 
-    // Render scene
-    game.renderer.render(game.scene, game.camera);
+    // Render scene with post-processing
+    if (game.postProcessing) {
+        game.postProcessing.render();
+    } else {
+        game.renderer.render(game.scene, game.camera);
+    }
 }
 
 // ============================================================================
@@ -1603,6 +1624,11 @@ function onWindowResize() {
     game.camera.aspect = window.innerWidth / window.innerHeight;
     game.camera.updateProjectionMatrix();
     game.renderer.setSize(window.innerWidth, window.innerHeight);
+
+    // Resize post-processing composer
+    if (game.postProcessing) {
+        game.postProcessing.resize(window.innerWidth, window.innerHeight);
+    }
 }
 
 window.addEventListener('resize', onWindowResize);
@@ -1635,6 +1661,11 @@ async function init() {
     game.damageNumbers = new DamageNumberManager(game.scene, 100);
     game.enhancedBullets = new EnhancedBulletPool(game.scene, game.particleManager, 500);
     console.log('✓ VFX systems initialized');
+
+    // Initialize post-processing (Phase 4)
+    console.log('🎬 Initializing post-processing...');
+    game.postProcessing = new PostProcessingManager(game.renderer, game.scene, game.camera);
+    console.log('✓ Post-processing initialized');
 
     // Load sprite sheets before creating characters
     console.log('⏳ Loading sprite sheets...');
