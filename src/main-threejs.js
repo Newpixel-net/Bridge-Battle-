@@ -1649,7 +1649,7 @@ async function init() {
         return;
     }
 
-    createSquad(14);
+    createSquad(1);  // Start with only 1 character!
     createUI();
 
     console.log('✅ All Iterations Complete (1-7, 9-10)!');
