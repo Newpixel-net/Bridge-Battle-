@@ -253,6 +253,22 @@ export class SpriteCharacter {
         // Clamp to bridge bounds (±18 units, leaving margin for edges)
         this.group.position.x = Math.max(-18, Math.min(18, this.group.position.x));
 
+        // Animation state management (Phase 6: Dynamic animations)
+        const speed = Math.sqrt(this.velocityX * this.velocityX + this.velocityZ * this.velocityZ);
+        const movingThreshold = 0.5;
+
+        if (speed > movingThreshold) {
+            // Moving - play run animation
+            if (this.animController.currentAnimation !== 'run') {
+                this.animController.play('run', true);
+            }
+        } else {
+            // Stopped - play idle animation
+            if (this.animController.currentAnimation !== 'idle') {
+                this.animController.play('idle', true);
+            }
+        }
+
         // Billboard effect is automatic with THREE.Sprite
         // Sprites always face the camera
     }
