@@ -616,19 +616,22 @@ function updateBullets(deltaTime) {
     game.enhancedBullets.update(deltaTime);
 
     // Check collisions with gates
+    const currentTime = performance.now() / 1000;  // Convert to seconds
     for (let gate of gates) {
         if (!gate.active || gate.passed) continue;
 
         const gatePos = gate.group.position;
         const hits = game.enhancedBullets.checkCollisions(gatePos, GATE_HIT_RADIUS, () => {
-            // Hit gate! Increase value by 1
-            gate.increaseValue(1);
+            // Hit gate! Increase value by 1 (with cooldown)
+            const hitProcessed = gate.increaseValue(1, currentTime);
 
-            // Impact particles
-            game.particleManager.impact(gatePos.x, gatePos.y, gatePos.z, new THREE.Vector3(0, 0, 1));
+            if (hitProcessed) {
+                // Impact particles
+                game.particleManager.impact(gatePos.x, gatePos.y, gatePos.z, new THREE.Vector3(0, 0, 1));
 
-            // Small screen shake
-            addCameraShake(0.05);
+                // Small screen shake
+                addCameraShake(0.05);
+            }
         });
     }
 
@@ -1339,6 +1342,8 @@ class Gate {
         this.value = value;
         this.active = true;
         this.passed = false;
+        this.lastHitTime = 0;  // Track last hit time for cooldown
+        this.hitCooldown = 0.1;  // 100ms cooldown between hits
 
         // Create gate frame (spans full width of bridge: 40 units)
         const GATE_WIDTH = 40;
@@ -1618,10 +1623,20 @@ class Gate {
         }, 200);
     }
 
-    increaseValue(amount) {
+    increaseValue(amount, currentTime) {
+        // Check cooldown to prevent spam
+        if (currentTime - this.lastHitTime < this.hitCooldown) {
+            return false;  // Cooldown active, ignore hit
+        }
+
+        this.lastHitTime = currentTime;
         this.value += amount;
         this.updateValueDisplay();
-        console.log(`Gate value increased by ${amount} to ${this.value}`);
+
+        // Only log occasionally (every 5 hits) to reduce console spam
+        if (this.value % 5 === 0) {
+            console.log(`Gate value: ${this.value}`);
+        }
 
         // Flash effect
         this.gateMesh.material.emissiveIntensity = 1.0;
@@ -1630,6 +1645,8 @@ class Gate {
                 this.gateMesh.material.emissiveIntensity = 0.3;
             }
         }, 100);
+
+        return true;  // Hit was processed
     }
 
     cleanup() {

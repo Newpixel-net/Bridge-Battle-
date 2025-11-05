@@ -110,12 +110,14 @@ export class EnhancedBullet {
         // Color based on squad size (will be updated)
         this.baseColor = 0xFFFF00; // Yellow by default
 
-        const material = new THREE.MeshBasicMaterial({
+        const material = new THREE.MeshStandardMaterial({
             color: this.baseColor,
             emissive: this.baseColor,
             emissiveIntensity: 1.0,
             transparent: true,
-            opacity: 1.0
+            opacity: 1.0,
+            metalness: 0.0,
+            roughness: 0.5
         });
 
         this.mesh = new THREE.Mesh(geometry, material);
