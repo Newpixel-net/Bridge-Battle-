@@ -180,7 +180,7 @@ export class SpriteCharacter {
 
         // Shooting
         this.shootCooldown = 0;
-        this.maxShootCooldown = 0.33; // ~3 shots per second
+        this.maxShootCooldown = 0.2; // 5 shots per second
     }
 
     createShadow() {
@@ -295,6 +295,11 @@ export class SpriteCharacter {
             this.shadow.material.dispose();
         }
     }
+
+    // Alias for compatibility
+    destroy() {
+        this.cleanup();
+    }
 }
 
 /**
@@ -347,14 +352,15 @@ export class SpriteTextureManager {
     }
 
     /**
-     * Get a loaded texture
+     * Get a loaded texture (cloned for independent UV manipulation)
      */
     getTexture(name) {
         if (!this.textures[name]) {
             console.warn(`Texture "${name}" not loaded yet`);
             return null;
         }
-        return this.textures[name].clone(); // Clone so each sprite can have independent UV offsets
+        // Clone texture so each sprite can have independent UV offsets for animation
+        return this.textures[name].clone();
     }
 
     /**

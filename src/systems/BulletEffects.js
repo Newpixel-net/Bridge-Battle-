@@ -37,10 +37,12 @@ class BulletTrail {
      * Create the line mesh for the trail
      */
     createLine() {
+        // Properly dispose of existing line to prevent memory leak
         if (this.line) {
             this.scene.remove(this.line);
-            this.line.geometry.dispose();
-            this.line.material.dispose();
+            if (this.line.geometry) this.line.geometry.dispose();
+            if (this.line.material) this.line.material.dispose();
+            this.line = null;
         }
 
         const geometry = new THREE.BufferGeometry().setFromPoints(this.points);
