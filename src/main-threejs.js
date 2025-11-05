@@ -2,11 +2,15 @@
  * Bridge Battle - Three.js 3D Implementation
  * Iteration 1: Scene Foundation ✓
  * Iteration 2: Add Characters on Bridge
- * UPGRADE: Sprite-based character system for AAA quality
+ * UPGRADE Phase 1: Sprite-based character system ✓
+ * UPGRADE Phase 2: Visual Effects System (Particles, Damage Numbers, Enhanced Bullets)
  */
 
 import * as THREE from 'three';
 import { SpriteCharacter, SpriteTextureManager } from './systems/SpriteCharacter.js';
+import { ParticleManager } from './systems/ParticleSystem.js';
+import { DamageNumberManager } from './systems/DamageNumbers.js';
+import { EnhancedBulletPool } from './systems/BulletEffects.js';
 
 // ============================================================================
 // GAME STATE
@@ -28,6 +32,11 @@ const game = {
     // Sprite system
     textureManager: null,
     assetsLoaded: false,
+
+    // VFX systems (Phase 2)
+    particleManager: null,
+    damageNumbers: null,
+    enhancedBullets: null,
 
     // Input
     pointer: {
@@ -452,72 +461,77 @@ function updateBullets(deltaTime) {
     const HIT_RADIUS = 2.0;  // Collision radius
     const GATE_HIT_RADIUS = 3.0;  // Larger radius for gates
 
-    for (let bullet of bulletPool) {
-        if (bullet.active) {
-            bullet.update(deltaTime);
+    // Update enhanced bullets
+    game.enhancedBullets.update(deltaTime);
 
-            let bulletHit = false;
+    // Check collisions with gates
+    for (let gate of gates) {
+        if (!gate.active || gate.passed) continue;
 
-            // Check collision with gates (Iteration 7)
-            for (let gate of gates) {
-                if (!gate.active || gate.passed) continue;
+        const gatePos = gate.group.position;
+        const hits = game.enhancedBullets.checkCollisions(gatePos, GATE_HIT_RADIUS, () => {
+            // Hit gate! Increase value by 1
+            gate.increaseValue(1);
 
-                const dx = bullet.mesh.position.x - gate.group.position.x;
-                const dy = bullet.mesh.position.y - gate.group.position.y;
-                const dz = bullet.mesh.position.z - gate.group.position.z;
-                const dist = Math.sqrt(dx * dx + dy * dy + dz * dz);
+            // Impact particles
+            game.particleManager.impact(gatePos.x, gatePos.y, gatePos.z, new THREE.Vector3(0, 0, 1));
 
-                if (dist < GATE_HIT_RADIUS) {
-                    // Hit gate! Increase value by 1
-                    gate.increaseValue(1);
-                    bullet.deactivate();
+            // Small screen shake
+            addCameraShake(0.05);
+        });
+    }
 
-                    // Spawn hit particle effect
-                    spawnHitEffect(bullet.mesh.position.x, bullet.mesh.position.y, bullet.mesh.position.z);
+    // Check collisions with obstacles
+    for (let obstacle of obstacles) {
+        if (!obstacle.active || obstacle.destroyed) continue;
 
-                    bulletHit = true;
-                    break;
-                }
+        const obstaclePos = obstacle.group.position;
+        const hits = game.enhancedBullets.checkCollisions(obstaclePos, HIT_RADIUS, () => {
+            // Hit!
+            const destroyed = obstacle.takeDamage(BULLET_DAMAGE);
+
+            // Show damage number
+            game.damageNumbers.show(
+                BULLET_DAMAGE,
+                obstaclePos.x,
+                obstaclePos.y + 1,
+                obstaclePos.z
+            );
+
+            // Screen shake on hit
+            if (destroyed) {
+                // BIG EXPLOSION!
+                game.particleManager.explosion(
+                    obstaclePos.x,
+                    obstaclePos.y + 1,
+                    obstaclePos.z,
+                    2.0  // Size multiplier
+                );
+
+                // Add smoke
+                game.particleManager.smoke(obstaclePos.x, obstaclePos.y, obstaclePos.z);
+
+                // Strong screen shake
+                addCameraShake(0.5);
+
+                // Big score boost
+                game.score += 50;
+            } else {
+                // Small impact particles
+                game.particleManager.impact(
+                    obstaclePos.x,
+                    obstaclePos.y + 1,
+                    obstaclePos.z,
+                    new THREE.Vector3(0, 0, -1)
+                );
+
+                // Small screen shake
+                addCameraShake(0.1);
+
+                // Small score
+                game.score += 1;
             }
-
-            if (bulletHit) continue;
-
-            // Check collision with obstacles
-            for (let obstacle of obstacles) {
-                if (!obstacle.active || obstacle.destroyed) continue;
-
-                const dx = bullet.mesh.position.x - obstacle.group.position.x;
-                const dy = bullet.mesh.position.y - obstacle.group.position.y;
-                const dz = bullet.mesh.position.z - obstacle.group.position.z;
-                const dist = Math.sqrt(dx * dx + dy * dy + dz * dz);
-
-                if (dist < HIT_RADIUS) {
-                    // Hit!
-                    const destroyed = obstacle.takeDamage(BULLET_DAMAGE);
-                    bullet.deactivate();
-
-                    // Spawn hit particle effect (simple flash)
-                    spawnHitEffect(bullet.mesh.position.x, bullet.mesh.position.y, bullet.mesh.position.z);
-
-                    // Floating damage number (Iteration 10)
-                    spawnFloatingText(`-${BULLET_DAMAGE}`,
-                        obstacle.group.position.x,
-                        obstacle.group.position.y,
-                        obstacle.group.position.z);
-
-                    // Screen shake on hit
-                    if (destroyed) {
-                        addCameraShake(0.3);
-                        game.score += 50;  // Points for destroying obstacle
-                    } else {
-                        addCameraShake(0.1);
-                        game.score += 1;  // Points for hitting
-                    }
-
-                    break;  // Bullet can only hit one obstacle
-                }
-            }
-        }
+        });
     }
 }
 
@@ -587,12 +601,9 @@ function findClosestObstacle(character) {
 }
 
 function autoShoot() {
-    const now = Date.now();
-
     game.squad.forEach((character, index) => {
-        // Check cooldown
-        const lastFire = fireTimers.get(index) || 0;
-        if (now - lastFire < FIRE_RATE) return;
+        // Use character's own canShoot method
+        if (!character.canShoot()) return;
 
         // Find closest obstacle to target
         const target = findClosestObstacle(character);
@@ -611,19 +622,30 @@ function autoShoot() {
             targetZ = character.group.position.z + 50;
         }
 
-        // Fire bullet
-        const bullet = getBullet();
-        bullet.fire(
+        // Calculate velocity towards target
+        const dx = targetX - character.group.position.x;
+        const dy = targetY - (character.group.position.y + 0.5);
+        const dz = targetZ - character.group.position.z;
+        const dist = Math.sqrt(dx * dx + dy * dy + dz * dz);
+
+        const BULLET_SPEED = 80;
+        const vx = (dx / dist) * BULLET_SPEED;
+        const vy = (dy / dist) * BULLET_SPEED;
+        const vz = (dz / dist) * BULLET_SPEED;
+
+        // Fire enhanced bullet with squad-size-based color
+        game.enhancedBullets.fire(
             character.group.position.x,
-            character.group.position.y + 0.5,  // Shoot from character height
+            character.group.position.y + 0.5,
             character.group.position.z,
-            targetX,
-            targetY,
-            targetZ
+            vx,
+            vy,
+            vz,
+            game.squad.length  // Squad size for color
         );
 
-        // Update cooldown
-        fireTimers.set(index, now);
+        // Update character cooldown
+        character.shoot();
     });
 }
 
@@ -1416,6 +1438,14 @@ function animate() {
     updateCameraShake(deltaTime);
     updateUI();
 
+    // Update VFX systems (Phase 2)
+    if (game.particleManager) {
+        game.particleManager.update(deltaTime);
+    }
+    if (game.damageNumbers) {
+        game.damageNumbers.update(deltaTime);
+    }
+
     // Animate water (Iteration 9: Enhanced multi-wave shader)
     if (game.water) {
         const positions = game.water.geometry.attributes.position;
@@ -1528,7 +1558,13 @@ async function init() {
     initScene();
     createBridge();
     createWater();
-    initBulletPool();
+
+    // Initialize VFX systems (Phase 2)
+    console.log('🎨 Initializing VFX systems...');
+    game.particleManager = new ParticleManager(game.scene);
+    game.damageNumbers = new DamageNumberManager(game.scene, 100);
+    game.enhancedBullets = new EnhancedBulletPool(game.scene, game.particleManager, 500);
+    console.log('✓ VFX systems initialized');
 
     // Load sprite sheets before creating characters
     console.log('⏳ Loading sprite sheets...');
