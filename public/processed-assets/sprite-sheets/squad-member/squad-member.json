@@ -1,0 +1,328 @@
+{
+  "name": "squad-member",
+  "imageFile": "squad-member.png",
+  "description": "Bridge Battle squad member sprite sheet",
+  "frameWidth": 418,
+  "frameHeight": 440,
+  "columns": 6,
+  "rows": 6,
+  "totalFrames": 36,
+  "padding": 0,
+  "frames": [
+    {
+      "frame": 0,
+      "filename": "frame-01.png",
+      "x": 0,
+      "y": 0,
+      "width": 418,
+      "height": 440
+    },
+    {
+      "frame": 1,
+      "filename": "frame-02.png",
+      "x": 418,
+      "y": 0,
+      "width": 418,
+      "height": 440
+    },
+    {
+      "frame": 2,
+      "filename": "frame-03.png",
+      "x": 836,
+      "y": 0,
+      "width": 418,
+      "height": 440
+    },
+    {
+      "frame": 3,
+      "filename": "frame-04.png",
+      "x": 1254,
+      "y": 0,
+      "width": 418,
+      "height": 440
+    },
+    {
+      "frame": 4,
+      "filename": "frame-05.png",
+      "x": 1672,
+      "y": 0,
+      "width": 418,
+      "height": 440
+    },
+    {
+      "frame": 5,
+      "filename": "frame-06.png",
+      "x": 2090,
+      "y": 0,
+      "width": 418,
+      "height": 440
+    },
+    {
+      "frame": 6,
+      "filename": "frame-07.png",
+      "x": 0,
+      "y": 440,
+      "width": 418,
+      "height": 440
+    },
+    {
+      "frame": 7,
+      "filename": "frame-08.png",
+      "x": 418,
+      "y": 440,
+      "width": 418,
+      "height": 440
+    },
+    {
+      "frame": 8,
+      "filename": "frame-09.png",
+      "x": 836,
+      "y": 440,
+      "width": 418,
+      "height": 440
+    },
+    {
+      "frame": 9,
+      "filename": "frame-10.png",
+      "x": 1254,
+      "y": 440,
+      "width": 418,
+      "height": 440
+    },
+    {
+      "frame": 10,
+      "filename": "frame-11.png",
+      "x": 1672,
+      "y": 440,
+      "width": 418,
+      "height": 440
+    },
+    {
+      "frame": 11,
+      "filename": "frame-12.png",
+      "x": 2090,
+      "y": 440,
+      "width": 418,
+      "height": 440
+    },
+    {
+      "frame": 12,
+      "filename": "frame-13.png",
+      "x": 0,
+      "y": 880,
+      "width": 418,
+      "height": 440
+    },
+    {
+      "frame": 13,
+      "filename": "frame-14.png",
+      "x": 418,
+      "y": 880,
+      "width": 418,
+      "height": 440
+    },
+    {
+      "frame": 14,
+      "filename": "frame-15.png",
+      "x": 836,
+      "y": 880,
+      "width": 418,
+      "height": 440
+    },
+    {
+      "frame": 15,
+      "filename": "frame-16.png",
+      "x": 1254,
+      "y": 880,
+      "width": 418,
+      "height": 440
+    },
+    {
+      "frame": 16,
+      "filename": "frame-17.png",
+      "x": 1672,
+      "y": 880,
+      "width": 418,
+      "height": 440
+    },
+    {
+      "frame": 17,
+      "filename": "frame-18.png",
+      "x": 2090,
+      "y": 880,
+      "width": 418,
+      "height": 440
+    },
+    {
+      "frame": 18,
+      "filename": "frame-19.png",
+      "x": 0,
+      "y": 1320,
+      "width": 418,
+      "height": 440
+    },
+    {
+      "frame": 19,
+      "filename": "frame-20.png",
+      "x": 418,
+      "y": 1320,
+      "width": 418,
+      "height": 440
+    },
+    {
+      "frame": 20,
+      "filename": "frame-21.png",
+      "x": 836,
+      "y": 1320,
+      "width": 418,
+      "height": 440
+    },
+    {
+      "frame": 21,
+      "filename": "frame-22.png",
+      "x": 1254,
+      "y": 1320,
+      "width": 418,
+      "height": 440
+    },
+    {
+      "frame": 22,
+      "filename": "frame-23.png",
+      "x": 1672,
+      "y": 1320,
+      "width": 418,
+      "height": 440
+    },
+    {
+      "frame": 23,
+      "filename": "frame-24.png",
+      "x": 2090,
+      "y": 1320,
+      "width": 418,
+      "height": 440
+    },
+    {
+      "frame": 24,
+      "filename": "frame-25.png",
+      "x": 0,
+      "y": 1760,
+      "width": 418,
+      "height": 440
+    },
+    {
+      "frame": 25,
+      "filename": "frame-26.png",
+      "x": 418,
+      "y": 1760,
+      "width": 418,
+      "height": 440
+    },
+    {
+      "frame": 26,
+      "filename": "frame-27.png",
+      "x": 836,
+      "y": 1760,
+      "width": 418,
+      "height": 440
+    },
+    {
+      "frame": 27,
+      "filename": "frame-28.png",
+      "x": 1254,
+      "y": 1760,
+      "width": 418,
+      "height": 440
+    },
+    {
+      "frame": 28,
+      "filename": "frame-29.png",
+      "x": 1672,
+      "y": 1760,
+      "width": 418,
+      "height": 440
+    },
+    {
+      "frame": 29,
+      "filename": "frame-30.png",
+      "x": 2090,
+      "y": 1760,
+      "width": 418,
+      "height": 440
+    },
+    {
+      "frame": 30,
+      "filename": "frame-31.png",
+      "x": 0,
+      "y": 2200,
+      "width": 418,
+      "height": 440
+    },
+    {
+      "frame": 31,
+      "filename": "frame-32.png",
+      "x": 418,
+      "y": 2200,
+      "width": 418,
+      "height": 440
+    },
+    {
+      "frame": 32,
+      "filename": "frame-33.png",
+      "x": 836,
+      "y": 2200,
+      "width": 418,
+      "height": 440
+    },
+    {
+      "frame": 33,
+      "filename": "frame-34.png",
+      "x": 1254,
+      "y": 2200,
+      "width": 418,
+      "height": 440
+    },
+    {
+      "frame": 34,
+      "filename": "frame-35.png",
+      "x": 1672,
+      "y": 2200,
+      "width": 418,
+      "height": 440
+    },
+    {
+      "frame": 35,
+      "filename": "frame-36.png",
+      "x": 2090,
+      "y": 2200,
+      "width": 418,
+      "height": 440
+    }
+  ],
+  "animations": {
+    "idle": [
+      0,
+      5
+    ],
+    "run": [
+      6,
+      11
+    ],
+    "shoot": [
+      12,
+      17
+    ],
+    "death": [
+      18,
+      23
+    ],
+    "custom1": [
+      24,
+      29
+    ],
+    "custom2": [
+      30,
+      35
+    ]
+  },
+  "notes": "Animation mappings are estimates. Adjust based on actual sprite content."
+}
