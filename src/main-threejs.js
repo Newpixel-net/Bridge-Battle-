@@ -11,6 +11,7 @@ import { SpriteCharacter, SpriteTextureManager } from './systems/SpriteCharacter
 import { ParticleManager } from './systems/ParticleSystem.js';
 import { DamageNumberManager } from './systems/DamageNumbers.js';
 import { EnhancedBulletPool } from './systems/BulletEffects.js';
+import { HPDisplay, WeaponPickup } from './systems/HPDisplay.js';
 
 // ============================================================================
 // GAME STATE
@@ -682,40 +683,23 @@ class Obstacle {
         game.scene.add(this.group);
 
         // HP properties
-        this.maxHp = Math.floor(Math.random() * 50) + 50;  // 50-100 HP
+        this.maxHp = Math.floor(Math.random() * 150) + 100;  // 100-250 HP (larger range)
         this.hp = this.maxHp;
         this.active = true;
         this.destroyed = false;
 
-        // Create HP text (using DOM overlay would be better, but using 3D text for now)
-        // For simplicity, we'll create a plane with color indicating HP
-        this.createHPBar();
-    }
+        // Create professional HP display (Phase 3 upgrade)
+        this.hpDisplay = new HPDisplay(game.scene, this.hp, this.maxHp);
+        this.group.add(this.hpDisplay.sprite);
 
-    createHPBar() {
-        // HP bar background (red)
-        const bgGeometry = new THREE.PlaneGeometry(2, 0.3);
-        const bgMaterial = new THREE.MeshBasicMaterial({
-            color: 0xFF0000,
-            side: THREE.DoubleSide
-        });
-        this.hpBarBg = new THREE.Mesh(bgGeometry, bgMaterial);
-        this.hpBarBg.position.set(0, 2.5, 0);
-        this.group.add(this.hpBarBg);
-
-        // HP bar foreground (green)
-        const fgGeometry = new THREE.PlaneGeometry(2, 0.3);
-        const fgMaterial = new THREE.MeshBasicMaterial({
-            color: 0x00FF00,
-            side: THREE.DoubleSide
-        });
-        this.hpBarFg = new THREE.Mesh(fgGeometry, fgMaterial);
-        this.hpBarFg.position.set(0, 2.5, 0.01);
-        this.group.add(this.hpBarFg);
-
-        // Make HP bars face camera
-        this.hpBarBg.lookAt(game.camera.position);
-        this.hpBarFg.lookAt(game.camera.position);
+        // Randomly add weapon pickup (20% chance)
+        if (Math.random() < 0.2) {
+            this.weaponPickup = new WeaponPickup(game.scene, 'rifle');
+            this.weaponPickup.group.position.y = 2.0;  // On top of tires
+            this.group.add(this.weaponPickup.group);
+        } else {
+            this.weaponPickup = null;
+        }
     }
 
     takeDamage(amount) {
@@ -723,22 +707,22 @@ class Obstacle {
 
         this.hp -= amount;
 
-        // Update HP bar
-        const hpPercent = Math.max(0, this.hp / this.maxHp);
-        this.hpBarFg.scale.x = hpPercent;
-        this.hpBarFg.position.x = -(1 - hpPercent);
+        // Update HP display (Phase 3 upgrade)
+        if (this.hpDisplay) {
+            this.hpDisplay.updateHP(this.hp);
+        }
 
         // Flash effect
         const originalColor = this.group.children[0].material.color.getHex();
         this.group.children.forEach(child => {
-            if (child.material) {
+            if (child.material && !child.isSprite) {
                 child.material.color.setHex(0xFF0000);
             }
         });
 
         setTimeout(() => {
             this.group.children.forEach(child => {
-                if (child.material && child !== this.hpBarBg && child !== this.hpBarFg) {
+                if (child.material && !child.isSprite) {
                     child.material.color.setHex(originalColor);
                 }
             });
@@ -756,10 +740,9 @@ class Obstacle {
     update() {
         if (!this.active) return;
 
-        // Make HP bars always face camera
-        if (this.hpBarBg) {
-            this.hpBarBg.lookAt(game.camera.position);
-            this.hpBarFg.lookAt(game.camera.position);
+        // Update weapon pickup animation
+        if (this.weaponPickup) {
+            this.weaponPickup.update();
         }
     }
 
@@ -800,6 +783,16 @@ class Obstacle {
     }
 
     cleanup() {
+        // Clean up HP display (Phase 3)
+        if (this.hpDisplay) {
+            this.hpDisplay.dispose();
+        }
+
+        // Clean up weapon pickup (Phase 3)
+        if (this.weaponPickup) {
+            this.weaponPickup.dispose();
+        }
+
         game.scene.remove(this.group);
         this.active = false;
 
@@ -1085,17 +1078,66 @@ class Gate {
         const GATE_DEPTH = 0.3;
 
         // Gate color based on value (blue for positive, red for negative)
-        const gateColor = value >= 0 ? 0x00BFFF : 0xFF4444;
+        const baseColor = value >= 0 ? new THREE.Color(0x00FFFF) : new THREE.Color(0xFF0044);
+        const edgeColor = value >= 0 ? new THREE.Color(0x00BFFF) : new THREE.Color(0xFF4444);
 
-        // Create holographic gate material
-        const gateMaterial = new THREE.MeshPhongMaterial({
-            color: gateColor,
+        // Create holographic gate with custom shader (Phase 3 upgrade)
+        const gateMaterial = new THREE.ShaderMaterial({
+            uniforms: {
+                baseColor: { value: baseColor },
+                edgeColor: { value: edgeColor },
+                time: { value: 0 },
+                opacity: { value: 0.7 }
+            },
+            vertexShader: `
+                varying vec2 vUv;
+                varying vec3 vNormal;
+                varying vec3 vViewPosition;
+
+                void main() {
+                    vUv = uv;
+                    vNormal = normalize(normalMatrix * normal);
+                    vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
+                    vViewPosition = -mvPosition.xyz;
+                    gl_Position = projectionMatrix * mvPosition;
+                }
+            `,
+            fragmentShader: `
+                uniform vec3 baseColor;
+                uniform vec3 edgeColor;
+                uniform float time;
+                uniform float opacity;
+                varying vec2 vUv;
+                varying vec3 vNormal;
+                varying vec3 vViewPosition;
+
+                void main() {
+                    // Fresnel effect for glowing edges
+                    vec3 viewDir = normalize(vViewPosition);
+                    float fresnel = pow(1.0 - abs(dot(vNormal, viewDir)), 3.0);
+
+                    // Vertical gradient
+                    float gradient = vUv.y;
+
+                    // Animated scan lines
+                    float scanLine = sin(vUv.y * 20.0 + time * 2.0) * 0.5 + 0.5;
+                    scanLine = pow(scanLine, 3.0) * 0.3;
+
+                    // Mix colors
+                    vec3 color = mix(baseColor, edgeColor, gradient);
+                    color += fresnel * edgeColor * 2.0;  // Bright edges
+                    color += scanLine;  // Animated lines
+
+                    // Pulsing effect
+                    float pulse = sin(time * 3.0) * 0.2 + 0.8;
+
+                    gl_FragColor = vec4(color, opacity * pulse * (0.7 + fresnel * 0.3));
+                }
+            `,
             transparent: true,
-            opacity: 0.6,
-            emissive: gateColor,
-            emissiveIntensity: 0.3,
-            shininess: 100,
-            side: THREE.DoubleSide
+            side: THREE.DoubleSide,
+            blending: THREE.AdditiveBlending,
+            depthWrite: false
         });
 
         // Main gate panel
@@ -1103,6 +1145,19 @@ class Gate {
         this.gateMesh = new THREE.Mesh(gateGeometry, gateMaterial);
         this.gateMesh.position.y = GATE_HEIGHT / 2;
         this.group.add(this.gateMesh);
+
+        // Add glowing edges (additive blending)
+        const edgeGeometry = new THREE.BoxGeometry(GATE_WIDTH * 1.02, GATE_HEIGHT * 1.02, GATE_DEPTH * 0.5);
+        const edgeMaterial = new THREE.MeshBasicMaterial({
+            color: baseColor,
+            transparent: true,
+            opacity: 0.3,
+            blending: THREE.AdditiveBlending,
+            side: THREE.DoubleSide
+        });
+        this.edgeMesh = new THREE.Mesh(edgeGeometry, edgeMaterial);
+        this.edgeMesh.position.y = GATE_HEIGHT / 2;
+        this.group.add(this.edgeMesh);
 
         // Side pillars
         const pillarGeometry = new THREE.BoxGeometry(1, GATE_HEIGHT + 2, 1);
@@ -1192,19 +1247,34 @@ class Gate {
 
         this.textMesh.material.map.needsUpdate = true;
 
-        // Update gate color based on new value
-        const gateColor = this.value >= 0 ? 0x00BFFF : 0xFF4444;
-        this.gateMesh.material.color.setHex(gateColor);
-        this.gateMesh.material.emissive.setHex(gateColor);
+        // Update gate shader colors based on new value (Phase 3)
+        if (this.gateMesh.material.uniforms) {
+            const baseColor = this.value >= 0 ? new THREE.Color(0x00FFFF) : new THREE.Color(0xFF0044);
+            const edgeColor = this.value >= 0 ? new THREE.Color(0x00BFFF) : new THREE.Color(0xFF4444);
+            this.gateMesh.material.uniforms.baseColor.value = baseColor;
+            this.gateMesh.material.uniforms.edgeColor.value = edgeColor;
+
+            // Update edge glow color
+            if (this.edgeMesh) {
+                this.edgeMesh.material.color = baseColor;
+            }
+        }
     }
 
     update(deltaTime) {
         if (!this.active) return;
 
-        // Pulse animation
+        // Update shader time uniform (Phase 3 upgrade)
         this.pulseTime += deltaTime;
-        const pulse = Math.sin(this.pulseTime * 3) * 0.1 + 0.9;
-        this.gateMesh.material.opacity = 0.4 + pulse * 0.2;
+        if (this.gateMesh.material.uniforms) {
+            this.gateMesh.material.uniforms.time.value = this.pulseTime;
+        }
+
+        // Pulse edge glow
+        if (this.edgeMesh) {
+            const pulse = Math.sin(this.pulseTime * 3) * 0.15 + 0.85;
+            this.edgeMesh.material.opacity = 0.3 * pulse;
+        }
 
         // Make text always face camera
         if (this.textMesh) {
