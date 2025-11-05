@@ -19,6 +19,9 @@ import { DamageNumberManager } from './systems/DamageNumbers.js';
 import { EnhancedBulletPool } from './systems/BulletEffects.js';
 import { HPDisplay, WeaponPickup } from './systems/HPDisplay.js';
 import { PostProcessingManager } from './systems/PostProcessing.js';
+import { EnemyManager } from './systems/EnemySystem.js';
+import { LevelProgressionManager } from './systems/LevelProgression.js';
+import { AudioSystem } from './systems/AudioSystem.js';
 
 // ============================================================================
 // GAME STATE
@@ -36,6 +39,9 @@ const game = {
     bullets: [],
     obstacles: [],
     gates: [],
+    enemies: null,  // Enemy manager
+    levelProgression: null,  // Level progression manager
+    distance: 0,  // Player distance traveled
 
     // Sprite system
     textureManager: null,
@@ -48,6 +54,9 @@ const game = {
 
     // Post-processing (Phase 4)
     postProcessing: null,
+
+    // Audio system
+    audio: null,
 
     // Input
     pointer: {
@@ -629,10 +638,32 @@ function updateBullets(deltaTime) {
                 // Impact particles
                 game.particleManager.impact(gatePos.x, gatePos.y, gatePos.z, new THREE.Vector3(0, 0, 1));
 
+                // Play gate hit sound
+                if (game.audio) {
+                    game.audio.playGateHit();
+                }
+
                 // Small screen shake
                 addCameraShake(0.05);
             }
         });
+    }
+
+    // Check collisions with enemies (get active bullets for enemy manager)
+    const activeBullets = game.enhancedBullets.pool.filter(b => b.active);
+    if (game.enemies && activeBullets.length > 0) {
+        const playerCenter = game.squad.length > 0 ? {
+            x: game.squad.reduce((sum, char) => sum + char.group.position.x, 0) / game.squad.length,
+            z: game.squad.reduce((sum, char) => sum + char.group.position.z, 0) / game.squad.length
+        } : { x: 0, z: 0 };
+
+        game.enemies.update(deltaTime, playerCenter, activeBullets);
+
+        // Score for killing enemies
+        const enemiesKilled = game.enemies.formations.reduce((sum, f) =>
+            sum + f.enemies.filter(e => e.destroyed).length, 0
+        );
+        game.score += enemiesKilled * 100; // 100 points per enemy killed
     }
 
     // Check collisions with obstacles
@@ -665,6 +696,11 @@ function updateBullets(deltaTime) {
                 // Add smoke
                 game.particleManager.smoke(obstaclePos.x, obstaclePos.y, obstaclePos.z);
 
+                // Play explosion sound
+                if (game.audio) {
+                    game.audio.playExplosion();
+                }
+
                 // Strong screen shake
                 addCameraShake(0.5);
 
@@ -684,6 +720,11 @@ function updateBullets(deltaTime) {
                     obstaclePos.z,
                     new THREE.Vector3(0, 0, -1)
                 );
+
+                // Play impact sound
+                if (game.audio) {
+                    game.audio.playImpact();
+                }
 
                 // Small screen shake
                 addCameraShake(0.1);
@@ -737,9 +778,9 @@ function spawnHitEffect(x, y, z) {
 }
 
 // Auto-shooting system
-const fireTimers = new Map();  // Per-character cooldowns
-const FIRE_RATE = 333;  // Milliseconds between shots (3 per second)
+const FIRE_RATE = 200;  // Milliseconds between shots (5 per second)
 const TARGET_RANGE = 100;  // Range for finding targets
+const BULLET_SPREAD_DEGREES = 5;  // ±5° bullet spread
 
 function findClosestObstacle(character) {
     let closest = null;
@@ -794,9 +835,21 @@ function autoShoot() {
         const dist = Math.sqrt(dx * dx + dy * dy + dz * dz);
 
         const BULLET_SPEED = 80;
-        const vx = (dx / dist) * BULLET_SPEED;
-        const vy = (dy / dist) * BULLET_SPEED;
-        const vz = (dz / dist) * BULLET_SPEED;
+        let vx = (dx / dist) * BULLET_SPEED;
+        let vy = (dy / dist) * BULLET_SPEED;
+        let vz = (dz / dist) * BULLET_SPEED;
+
+        // Apply ±5° bullet spread for realistic shooting
+        const spreadAngle = (Math.random() - 0.5) * 2 * BULLET_SPREAD_DEGREES * (Math.PI / 180);
+        const cos = Math.cos(spreadAngle);
+        const sin = Math.sin(spreadAngle);
+
+        // Rotate velocity in XZ plane
+        const vxSpread = vx * cos - vz * sin;
+        const vzSpread = vx * sin + vz * cos;
+
+        vx = vxSpread;
+        vz = vzSpread;
 
         // Fire enhanced bullet with squad-size-based color
         game.enhancedBullets.fire(
@@ -808,6 +861,11 @@ function autoShoot() {
             vz,
             game.squad.length  // Squad size for color
         );
+
+        // Play shoot sound (throttled - only play for 10% of shots to avoid spam)
+        if (Math.random() < 0.1 && game.audio) {
+            game.audio.playShoot();
+        }
 
         // Update character cooldown
         character.shoot();
@@ -1078,7 +1136,7 @@ class Obstacle {
 // Obstacle management
 const obstacles = [];
 let lastObstacleSpawn = 0;
-const OBSTACLE_SPAWN_INTERVAL = 2000;  // Spawn every 2 seconds
+const OBSTACLE_SPAWN_INTERVAL = 3000;  // Spawn every 3 seconds for better balance
 
 function spawnObstacle() {
     // Random X position within bridge bounds (±15 units)
@@ -1120,9 +1178,11 @@ function updateObstacles() {
         }
     }
 
-    // Spawn new obstacles
+    // Spawn new obstacles (controlled by level progression)
     const now = Date.now();
-    if (now - lastObstacleSpawn > OBSTACLE_SPAWN_INTERVAL) {
+    const timeSinceLastObstacle = now - lastObstacleSpawn;
+
+    if (game.levelProgression && game.levelProgression.shouldSpawnObstacle(timeSinceLastObstacle)) {
         spawnObstacle();
         lastObstacleSpawn = now;
     }
@@ -1587,6 +1647,15 @@ class Gate {
         // Camera shake
         addCameraShake(0.4);
 
+        // Play gate sound based on value
+        if (game.audio) {
+            if (this.value > 0) {
+                game.audio.playGatePositive();
+            } else {
+                game.audio.playGateNegative();
+            }
+        }
+
         if (newSquadSize > game.squad.length) {
             // Add characters
             const toAdd = newSquadSize - game.squad.length;
@@ -1630,11 +1699,17 @@ class Gate {
         }
 
         this.lastHitTime = currentTime;
+
+        // Add limit to prevent infinite gate stacking
+        const MAX_GATE_VALUE = 50;
+        const MIN_GATE_VALUE = -20;
+
         this.value += amount;
+        this.value = Math.max(MIN_GATE_VALUE, Math.min(MAX_GATE_VALUE, this.value));
         this.updateValueDisplay();
 
-        // Only log occasionally (every 5 hits) to reduce console spam
-        if (this.value % 5 === 0) {
+        // Only log occasionally (every 10 hits) to reduce console spam
+        if (this.value % 10 === 0) {
             console.log(`Gate value: ${this.value}`);
         }
 
@@ -1667,11 +1742,26 @@ class Gate {
 // Gate management
 const gates = [];
 let lastGateSpawn = 0;
-const GATE_SPAWN_INTERVAL = 8000;  // Spawn every 8 seconds
 
 function spawnGate() {
-    // Random value between -5 and +10
-    const value = Math.floor(Math.random() * 16) - 5;
+    // Check if we should spawn multi-gate
+    const shouldSpawnMulti = game.levelProgression && game.levelProgression.shouldUseMultiGate();
+
+    if (shouldSpawnMulti) {
+        // Spawn double or triple gate
+        const isTriple = Math.random() < 0.3; // 30% chance of triple, 70% double
+        spawnMultiGate(isTriple ? 3 : 2);
+    } else {
+        // Spawn single gate
+        spawnSingleGate();
+    }
+}
+
+function spawnSingleGate() {
+    // Get gate value from level progression system
+    const value = game.levelProgression ?
+        game.levelProgression.getGateValue() :
+        Math.floor(Math.random() * 16) - 5;
 
     // Spawn ahead of squad
     let spawnZ = 80;
@@ -1684,6 +1774,43 @@ function spawnGate() {
     gates.push(gate);
 
     return gate;
+}
+
+function spawnMultiGate(count) {
+    // Spawn multiple gates side-by-side (player must choose!)
+    const spacing = 15; // Space between gates
+    const totalWidth = (count - 1) * spacing;
+    const startX = -totalWidth / 2;
+
+    let spawnZ = 80;
+    if (game.squad.length > 0) {
+        const avgZ = game.squad.reduce((sum, char) => sum + char.group.position.z, 0) / game.squad.length;
+        spawnZ = avgZ + 120;
+    }
+
+    // Create array of gates with varied values
+    const gatesCreated = [];
+    for (let i = 0; i < count; i++) {
+        const x = startX + i * spacing;
+
+        // Get value - ensure variety (at least one good, one bad for choice)
+        let value;
+        if (game.levelProgression) {
+            value = game.levelProgression.getGateValue();
+            // Force variety: first gate positive, last gate negative
+            if (i === 0 && value < 0) value = Math.abs(value);
+            if (i === count - 1 && value > 0) value = -value;
+        } else {
+            value = Math.floor(Math.random() * 16) - 5;
+        }
+
+        const gate = new Gate(x, 0, spawnZ, value);
+        gates.push(gate);
+        gatesCreated.push(gate);
+    }
+
+    console.log(`🎯 Spawned ${count}-gate choice at Z=${spawnZ.toFixed(0)}`);
+    return gatesCreated;
 }
 
 function updateGates(deltaTime) {
@@ -1708,9 +1835,11 @@ function updateGates(deltaTime) {
         }
     }
 
-    // Spawn new gates
+    // Spawn new gates (controlled by level progression)
     const now = Date.now();
-    if (now - lastGateSpawn > GATE_SPAWN_INTERVAL) {
+    const timeSinceLastGate = now - lastGateSpawn;
+
+    if (game.levelProgression && game.levelProgression.shouldSpawnGate(timeSinceLastGate)) {
         spawnGate();
         lastGateSpawn = now;
     }
@@ -1784,6 +1913,26 @@ function animate() {
         updateBullets(deltaTime);
         updateObstacles();  // Iteration 5
         updateGates(deltaTime);  // Iteration 6
+
+        // Update player distance
+        if (game.squad.length > 0) {
+            const avgZ = game.squad.reduce((sum, char) => sum + char.group.position.z, 0) / game.squad.length;
+            game.distance = avgZ;
+        }
+
+        // Update level progression
+        if (game.levelProgression) {
+            game.levelProgression.update(game.distance);
+        }
+
+        // Try to spawn enemies (controlled by level progression)
+        if (game.enemies && game.squad.length > 0 && game.levelProgression) {
+            const timeSinceLastEnemy = Date.now() - game.enemies.lastSpawn;
+            if (game.levelProgression.shouldSpawnEnemy(timeSinceLastEnemy)) {
+                const spawnZ = game.distance + 120;
+                game.enemies.spawnFormation(spawnZ);
+            }
+        }
 
         // Continuous score increase (distance traveled)
         game.score += deltaTime * 2;
@@ -1908,6 +2057,21 @@ async function init() {
     game.postProcessing = new PostProcessingManager(game.renderer, game.scene, game.camera);
     console.log('✓ Post-processing initialized');
 
+    // Initialize enemy system
+    console.log('🔴 Initializing enemy system...');
+    game.enemies = new EnemyManager(game.scene, null, game.particleManager, game.damageNumbers); // textureManager set after loading
+    console.log('✓ Enemy system initialized');
+
+    // Initialize level progression system
+    console.log('📊 Initializing level progression...');
+    game.levelProgression = new LevelProgressionManager(game);
+    console.log('✓ Level progression initialized');
+
+    // Initialize audio system
+    console.log('🔊 Initializing audio system...');
+    game.audio = new AudioSystem();
+    console.log('✓ Audio system initialized');
+
     // Load sprite sheets before creating characters
     console.log('⏳ Loading sprite sheets...');
     game.textureManager = new SpriteTextureManager();
@@ -1915,13 +2079,16 @@ async function init() {
         await game.textureManager.preloadAll();
         game.assetsLoaded = true;
         console.log('✓ Sprite sheets loaded successfully');
+
+        // Set texture manager for enemy system
+        game.enemies.textureManager = game.textureManager;
     } catch (error) {
         console.error('❌ Failed to load sprites:', error);
         alert('Failed to load game assets. Please refresh the page.');
         return;
     }
 
-    createSquad(1);  // Start with only 1 character!
+    createSquad(5);  // Start with 5 characters for better balance
     createUI();
 
     console.log('✅ All Iterations Complete (1-7, 9-10)!');
