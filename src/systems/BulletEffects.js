@@ -112,8 +112,6 @@ export class EnhancedBullet {
 
         const material = new THREE.MeshBasicMaterial({
             color: this.baseColor,
-            emissive: this.baseColor,
-            emissiveIntensity: 1.0,
             transparent: true,
             opacity: 1.0
         });
@@ -154,7 +152,6 @@ export class EnhancedBullet {
         if (color !== null) {
             this.baseColor = color;
             this.mesh.material.color.set(color);
-            this.mesh.material.emissive.set(color);
             this.light.color.set(color);
         }
 

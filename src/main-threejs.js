@@ -1339,6 +1339,7 @@ class Gate {
         this.value = value;
         this.active = true;
         this.passed = false;
+        this.lastHitTime = 0;  // For bullet hit cooldown
 
         // Create gate frame (spans full width of bridge: 40 units)
         const GATE_WIDTH = 40;
@@ -1619,9 +1620,15 @@ class Gate {
     }
 
     increaseValue(amount) {
+        // Cooldown check: only allow hits every 100ms to prevent spam
+        const now = performance.now();
+        if (now - this.lastHitTime < 100) {
+            return;  // Ignore hit if too soon
+        }
+        this.lastHitTime = now;
+
         this.value += amount;
         this.updateValueDisplay();
-        console.log(`Gate value increased by ${amount} to ${this.value}`);
 
         // Flash effect
         this.gateMesh.material.emissiveIntensity = 1.0;
