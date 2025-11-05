@@ -2,9 +2,11 @@
  * Bridge Battle - Three.js 3D Implementation
  * Iteration 1: Scene Foundation ✓
  * Iteration 2: Add Characters on Bridge
+ * UPGRADE: Sprite-based character system for AAA quality
  */
 
 import * as THREE from 'three';
+import { SpriteCharacter, SpriteTextureManager } from './systems/SpriteCharacter.js';
 
 // ============================================================================
 // GAME STATE
@@ -22,6 +24,10 @@ const game = {
     bullets: [],
     obstacles: [],
     gates: [],
+
+    // Sprite system
+    textureManager: null,
+    assetsLoaded: false,
 
     // Input
     pointer: {
@@ -959,11 +965,19 @@ class Character {
 }
 
 function createSquad(count = 14) {
-    console.log(`👥 Iteration 2 & 3: Creating squad of ${count} characters...`);
+    console.log(`👥 Creating squad of ${count} sprite characters...`);
 
     // Clear existing squad
-    game.squad.forEach(char => char.destroy());
+    game.squad.forEach(char => {
+        if (char.cleanup) char.cleanup();
+        if (char.destroy) char.destroy();
+    });
     game.squad = [];
+
+    if (!game.assetsLoaded || !game.textureManager) {
+        console.error('Cannot create squad - sprites not loaded yet!');
+        return;
+    }
 
     // Create characters in a simple grid formation
     const cols = Math.ceil(Math.sqrt(count));
@@ -977,19 +991,27 @@ function createSquad(count = 14) {
         const z = 10 + row * spacing;  // Start at Z=10 on bridge
         const y = 0;  // On bridge surface
 
-        const character = new Character(x, y, z, i);
+        // Create sprite-based character
+        const character = new SpriteCharacter(x, y, z, i, game.textureManager);
+
+        // Add to scene
+        game.scene.add(character.group);
 
         // Store formation offset from center
         character.formationOffsetX = (col - (cols - 1) / 2) * spacing;
         character.formationOffsetZ = row * spacing;
 
+        // Initialize velocity properties (used by updateSquad)
+        character.velocityX = 0;
+        character.velocityZ = 0;
+
         game.squad.push(character);
     }
 
-    console.log(`✓ Created ${count} characters on bridge`);
+    console.log(`✓ Created ${count} sprite characters on bridge`);
     console.log(`   Position: Z=10 (bridge start)`);
     console.log(`   Formation: ${cols}×${Math.ceil(count/cols)} grid`);
-    console.log(`   Scale: 1.5 (large and visible)`);
+    console.log(`   Scale: 1.5 units tall (animated sprites)`);
     console.log(`   Blob physics: Separation radius = 1.2 units`);
 }
 
@@ -1330,9 +1352,12 @@ function addCharacterToSquad() {
     avgX /= game.squad.length;
     avgZ /= game.squad.length;
 
-    // Create new character at squad position
+    // Create new sprite character at squad position
     const index = game.squad.length;
-    const character = new Character(avgX, 0, avgZ - 2, index);
+    const character = new SpriteCharacter(avgX, 0, avgZ - 2, index, game.textureManager);
+
+    // Add to scene
+    game.scene.add(character.group);
 
     // Set formation offset
     const cols = Math.ceil(Math.sqrt(game.squad.length + 1));
@@ -1340,6 +1365,10 @@ function addCharacterToSquad() {
     const col = index % cols;
     character.formationOffsetX = (col - (cols - 1) / 2) * 1.5;
     character.formationOffsetZ = row * 1.5;
+
+    // Initialize velocity
+    character.velocityX = 0;
+    character.velocityZ = 0;
 
     game.squad.push(character);
 
@@ -1482,7 +1511,7 @@ window.addEventListener('resize', onWindowResize);
 // INITIALIZATION
 // ============================================================================
 
-function init() {
+async function init() {
     console.log('🎮 Bridge Battle - Three.js 3D');
     console.log('🔧 Iteration 1: Scene Foundation ✓');
     console.log('🔧 Iteration 2: Characters ✓');
@@ -1493,12 +1522,27 @@ function init() {
     console.log('🔧 Iteration 7: Gate-Bullet Collision ✓');
     console.log('🔧 Iteration 9: Enhanced Water Shader ✓');
     console.log('🔧 Iteration 10: Polish & Effects ✓');
+    console.log('🔧 NEW: Sprite-Based Character System 🎨');
     console.log('');
 
     initScene();
     createBridge();
     createWater();
     initBulletPool();
+
+    // Load sprite sheets before creating characters
+    console.log('⏳ Loading sprite sheets...');
+    game.textureManager = new SpriteTextureManager();
+    try {
+        await game.textureManager.preloadAll();
+        game.assetsLoaded = true;
+        console.log('✓ Sprite sheets loaded successfully');
+    } catch (error) {
+        console.error('❌ Failed to load sprites:', error);
+        alert('Failed to load game assets. Please refresh the page.');
+        return;
+    }
+
     createSquad(14);
     createUI();
 
