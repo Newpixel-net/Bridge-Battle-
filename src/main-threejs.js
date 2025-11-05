@@ -2,9 +2,16 @@
  * Bridge Battle - Three.js 3D Implementation
  * Iteration 1: Scene Foundation ✓
  * Iteration 2: Add Characters on Bridge
+ * UPGRADE Phase 1: Sprite-based character system ✓
+ * UPGRADE Phase 2: Visual Effects System (Particles, Damage Numbers, Enhanced Bullets)
  */
 
 import * as THREE from 'three';
+import { SpriteCharacter, SpriteTextureManager } from './systems/SpriteCharacter.js';
+import { ParticleManager } from './systems/ParticleSystem.js';
+import { DamageNumberManager } from './systems/DamageNumbers.js';
+import { EnhancedBulletPool } from './systems/BulletEffects.js';
+import { HPDisplay, WeaponPickup } from './systems/HPDisplay.js';
 
 // ============================================================================
 // GAME STATE
@@ -22,6 +29,15 @@ const game = {
     bullets: [],
     obstacles: [],
     gates: [],
+
+    // Sprite system
+    textureManager: null,
+    assetsLoaded: false,
+
+    // VFX systems (Phase 2)
+    particleManager: null,
+    damageNumbers: null,
+    enhancedBullets: null,
 
     // Input
     pointer: {
@@ -446,72 +462,77 @@ function updateBullets(deltaTime) {
     const HIT_RADIUS = 2.0;  // Collision radius
     const GATE_HIT_RADIUS = 3.0;  // Larger radius for gates
 
-    for (let bullet of bulletPool) {
-        if (bullet.active) {
-            bullet.update(deltaTime);
+    // Update enhanced bullets
+    game.enhancedBullets.update(deltaTime);
 
-            let bulletHit = false;
+    // Check collisions with gates
+    for (let gate of gates) {
+        if (!gate.active || gate.passed) continue;
 
-            // Check collision with gates (Iteration 7)
-            for (let gate of gates) {
-                if (!gate.active || gate.passed) continue;
+        const gatePos = gate.group.position;
+        const hits = game.enhancedBullets.checkCollisions(gatePos, GATE_HIT_RADIUS, () => {
+            // Hit gate! Increase value by 1
+            gate.increaseValue(1);
 
-                const dx = bullet.mesh.position.x - gate.group.position.x;
-                const dy = bullet.mesh.position.y - gate.group.position.y;
-                const dz = bullet.mesh.position.z - gate.group.position.z;
-                const dist = Math.sqrt(dx * dx + dy * dy + dz * dz);
+            // Impact particles
+            game.particleManager.impact(gatePos.x, gatePos.y, gatePos.z, new THREE.Vector3(0, 0, 1));
 
-                if (dist < GATE_HIT_RADIUS) {
-                    // Hit gate! Increase value by 1
-                    gate.increaseValue(1);
-                    bullet.deactivate();
+            // Small screen shake
+            addCameraShake(0.05);
+        });
+    }
 
-                    // Spawn hit particle effect
-                    spawnHitEffect(bullet.mesh.position.x, bullet.mesh.position.y, bullet.mesh.position.z);
+    // Check collisions with obstacles
+    for (let obstacle of obstacles) {
+        if (!obstacle.active || obstacle.destroyed) continue;
 
-                    bulletHit = true;
-                    break;
-                }
+        const obstaclePos = obstacle.group.position;
+        const hits = game.enhancedBullets.checkCollisions(obstaclePos, HIT_RADIUS, () => {
+            // Hit!
+            const destroyed = obstacle.takeDamage(BULLET_DAMAGE);
+
+            // Show damage number
+            game.damageNumbers.show(
+                BULLET_DAMAGE,
+                obstaclePos.x,
+                obstaclePos.y + 1,
+                obstaclePos.z
+            );
+
+            // Screen shake on hit
+            if (destroyed) {
+                // BIG EXPLOSION!
+                game.particleManager.explosion(
+                    obstaclePos.x,
+                    obstaclePos.y + 1,
+                    obstaclePos.z,
+                    2.0  // Size multiplier
+                );
+
+                // Add smoke
+                game.particleManager.smoke(obstaclePos.x, obstaclePos.y, obstaclePos.z);
+
+                // Strong screen shake
+                addCameraShake(0.5);
+
+                // Big score boost
+                game.score += 50;
+            } else {
+                // Small impact particles
+                game.particleManager.impact(
+                    obstaclePos.x,
+                    obstaclePos.y + 1,
+                    obstaclePos.z,
+                    new THREE.Vector3(0, 0, -1)
+                );
+
+                // Small screen shake
+                addCameraShake(0.1);
+
+                // Small score
+                game.score += 1;
             }
-
-            if (bulletHit) continue;
-
-            // Check collision with obstacles
-            for (let obstacle of obstacles) {
-                if (!obstacle.active || obstacle.destroyed) continue;
-
-                const dx = bullet.mesh.position.x - obstacle.group.position.x;
-                const dy = bullet.mesh.position.y - obstacle.group.position.y;
-                const dz = bullet.mesh.position.z - obstacle.group.position.z;
-                const dist = Math.sqrt(dx * dx + dy * dy + dz * dz);
-
-                if (dist < HIT_RADIUS) {
-                    // Hit!
-                    const destroyed = obstacle.takeDamage(BULLET_DAMAGE);
-                    bullet.deactivate();
-
-                    // Spawn hit particle effect (simple flash)
-                    spawnHitEffect(bullet.mesh.position.x, bullet.mesh.position.y, bullet.mesh.position.z);
-
-                    // Floating damage number (Iteration 10)
-                    spawnFloatingText(`-${BULLET_DAMAGE}`,
-                        obstacle.group.position.x,
-                        obstacle.group.position.y,
-                        obstacle.group.position.z);
-
-                    // Screen shake on hit
-                    if (destroyed) {
-                        addCameraShake(0.3);
-                        game.score += 50;  // Points for destroying obstacle
-                    } else {
-                        addCameraShake(0.1);
-                        game.score += 1;  // Points for hitting
-                    }
-
-                    break;  // Bullet can only hit one obstacle
-                }
-            }
-        }
+        });
     }
 }
 
@@ -581,12 +602,9 @@ function findClosestObstacle(character) {
 }
 
 function autoShoot() {
-    const now = Date.now();
-
     game.squad.forEach((character, index) => {
-        // Check cooldown
-        const lastFire = fireTimers.get(index) || 0;
-        if (now - lastFire < FIRE_RATE) return;
+        // Use character's own canShoot method
+        if (!character.canShoot()) return;
 
         // Find closest obstacle to target
         const target = findClosestObstacle(character);
@@ -605,19 +623,30 @@ function autoShoot() {
             targetZ = character.group.position.z + 50;
         }
 
-        // Fire bullet
-        const bullet = getBullet();
-        bullet.fire(
+        // Calculate velocity towards target
+        const dx = targetX - character.group.position.x;
+        const dy = targetY - (character.group.position.y + 0.5);
+        const dz = targetZ - character.group.position.z;
+        const dist = Math.sqrt(dx * dx + dy * dy + dz * dz);
+
+        const BULLET_SPEED = 80;
+        const vx = (dx / dist) * BULLET_SPEED;
+        const vy = (dy / dist) * BULLET_SPEED;
+        const vz = (dz / dist) * BULLET_SPEED;
+
+        // Fire enhanced bullet with squad-size-based color
+        game.enhancedBullets.fire(
             character.group.position.x,
-            character.group.position.y + 0.5,  // Shoot from character height
+            character.group.position.y + 0.5,
             character.group.position.z,
-            targetX,
-            targetY,
-            targetZ
+            vx,
+            vy,
+            vz,
+            game.squad.length  // Squad size for color
         );
 
-        // Update cooldown
-        fireTimers.set(index, now);
+        // Update character cooldown
+        character.shoot();
     });
 }
 
@@ -654,40 +683,23 @@ class Obstacle {
         game.scene.add(this.group);
 
         // HP properties
-        this.maxHp = Math.floor(Math.random() * 50) + 50;  // 50-100 HP
+        this.maxHp = Math.floor(Math.random() * 150) + 100;  // 100-250 HP (larger range)
         this.hp = this.maxHp;
         this.active = true;
         this.destroyed = false;
 
-        // Create HP text (using DOM overlay would be better, but using 3D text for now)
-        // For simplicity, we'll create a plane with color indicating HP
-        this.createHPBar();
-    }
+        // Create professional HP display (Phase 3 upgrade)
+        this.hpDisplay = new HPDisplay(game.scene, this.hp, this.maxHp);
+        this.group.add(this.hpDisplay.sprite);
 
-    createHPBar() {
-        // HP bar background (red)
-        const bgGeometry = new THREE.PlaneGeometry(2, 0.3);
-        const bgMaterial = new THREE.MeshBasicMaterial({
-            color: 0xFF0000,
-            side: THREE.DoubleSide
-        });
-        this.hpBarBg = new THREE.Mesh(bgGeometry, bgMaterial);
-        this.hpBarBg.position.set(0, 2.5, 0);
-        this.group.add(this.hpBarBg);
-
-        // HP bar foreground (green)
-        const fgGeometry = new THREE.PlaneGeometry(2, 0.3);
-        const fgMaterial = new THREE.MeshBasicMaterial({
-            color: 0x00FF00,
-            side: THREE.DoubleSide
-        });
-        this.hpBarFg = new THREE.Mesh(fgGeometry, fgMaterial);
-        this.hpBarFg.position.set(0, 2.5, 0.01);
-        this.group.add(this.hpBarFg);
-
-        // Make HP bars face camera
-        this.hpBarBg.lookAt(game.camera.position);
-        this.hpBarFg.lookAt(game.camera.position);
+        // Randomly add weapon pickup (20% chance)
+        if (Math.random() < 0.2) {
+            this.weaponPickup = new WeaponPickup(game.scene, 'rifle');
+            this.weaponPickup.group.position.y = 2.0;  // On top of tires
+            this.group.add(this.weaponPickup.group);
+        } else {
+            this.weaponPickup = null;
+        }
     }
 
     takeDamage(amount) {
@@ -695,22 +707,22 @@ class Obstacle {
 
         this.hp -= amount;
 
-        // Update HP bar
-        const hpPercent = Math.max(0, this.hp / this.maxHp);
-        this.hpBarFg.scale.x = hpPercent;
-        this.hpBarFg.position.x = -(1 - hpPercent);
+        // Update HP display (Phase 3 upgrade)
+        if (this.hpDisplay) {
+            this.hpDisplay.updateHP(this.hp);
+        }
 
         // Flash effect
         const originalColor = this.group.children[0].material.color.getHex();
         this.group.children.forEach(child => {
-            if (child.material) {
+            if (child.material && !child.isSprite) {
                 child.material.color.setHex(0xFF0000);
             }
         });
 
         setTimeout(() => {
             this.group.children.forEach(child => {
-                if (child.material && child !== this.hpBarBg && child !== this.hpBarFg) {
+                if (child.material && !child.isSprite) {
                     child.material.color.setHex(originalColor);
                 }
             });
@@ -728,10 +740,9 @@ class Obstacle {
     update() {
         if (!this.active) return;
 
-        // Make HP bars always face camera
-        if (this.hpBarBg) {
-            this.hpBarBg.lookAt(game.camera.position);
-            this.hpBarFg.lookAt(game.camera.position);
+        // Update weapon pickup animation
+        if (this.weaponPickup) {
+            this.weaponPickup.update();
         }
     }
 
@@ -772,6 +783,16 @@ class Obstacle {
     }
 
     cleanup() {
+        // Clean up HP display (Phase 3)
+        if (this.hpDisplay) {
+            this.hpDisplay.dispose();
+        }
+
+        // Clean up weapon pickup (Phase 3)
+        if (this.weaponPickup) {
+            this.weaponPickup.dispose();
+        }
+
         game.scene.remove(this.group);
         this.active = false;
 
@@ -959,11 +980,19 @@ class Character {
 }
 
 function createSquad(count = 14) {
-    console.log(`👥 Iteration 2 & 3: Creating squad of ${count} characters...`);
+    console.log(`👥 Creating squad of ${count} sprite characters...`);
 
     // Clear existing squad
-    game.squad.forEach(char => char.destroy());
+    game.squad.forEach(char => {
+        if (char.cleanup) char.cleanup();
+        if (char.destroy) char.destroy();
+    });
     game.squad = [];
+
+    if (!game.assetsLoaded || !game.textureManager) {
+        console.error('Cannot create squad - sprites not loaded yet!');
+        return;
+    }
 
     // Create characters in a simple grid formation
     const cols = Math.ceil(Math.sqrt(count));
@@ -977,19 +1006,27 @@ function createSquad(count = 14) {
         const z = 10 + row * spacing;  // Start at Z=10 on bridge
         const y = 0;  // On bridge surface
 
-        const character = new Character(x, y, z, i);
+        // Create sprite-based character
+        const character = new SpriteCharacter(x, y, z, i, game.textureManager);
+
+        // Add to scene
+        game.scene.add(character.group);
 
         // Store formation offset from center
         character.formationOffsetX = (col - (cols - 1) / 2) * spacing;
         character.formationOffsetZ = row * spacing;
 
+        // Initialize velocity properties (used by updateSquad)
+        character.velocityX = 0;
+        character.velocityZ = 0;
+
         game.squad.push(character);
     }
 
-    console.log(`✓ Created ${count} characters on bridge`);
+    console.log(`✓ Created ${count} sprite characters on bridge`);
     console.log(`   Position: Z=10 (bridge start)`);
     console.log(`   Formation: ${cols}×${Math.ceil(count/cols)} grid`);
-    console.log(`   Scale: 1.5 (large and visible)`);
+    console.log(`   Scale: 1.5 units tall (animated sprites)`);
     console.log(`   Blob physics: Separation radius = 1.2 units`);
 }
 
@@ -1041,17 +1078,66 @@ class Gate {
         const GATE_DEPTH = 0.3;
 
         // Gate color based on value (blue for positive, red for negative)
-        const gateColor = value >= 0 ? 0x00BFFF : 0xFF4444;
+        const baseColor = value >= 0 ? new THREE.Color(0x00FFFF) : new THREE.Color(0xFF0044);
+        const edgeColor = value >= 0 ? new THREE.Color(0x00BFFF) : new THREE.Color(0xFF4444);
 
-        // Create holographic gate material
-        const gateMaterial = new THREE.MeshPhongMaterial({
-            color: gateColor,
+        // Create holographic gate with custom shader (Phase 3 upgrade)
+        const gateMaterial = new THREE.ShaderMaterial({
+            uniforms: {
+                baseColor: { value: baseColor },
+                edgeColor: { value: edgeColor },
+                time: { value: 0 },
+                opacity: { value: 0.7 }
+            },
+            vertexShader: `
+                varying vec2 vUv;
+                varying vec3 vNormal;
+                varying vec3 vViewPosition;
+
+                void main() {
+                    vUv = uv;
+                    vNormal = normalize(normalMatrix * normal);
+                    vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
+                    vViewPosition = -mvPosition.xyz;
+                    gl_Position = projectionMatrix * mvPosition;
+                }
+            `,
+            fragmentShader: `
+                uniform vec3 baseColor;
+                uniform vec3 edgeColor;
+                uniform float time;
+                uniform float opacity;
+                varying vec2 vUv;
+                varying vec3 vNormal;
+                varying vec3 vViewPosition;
+
+                void main() {
+                    // Fresnel effect for glowing edges
+                    vec3 viewDir = normalize(vViewPosition);
+                    float fresnel = pow(1.0 - abs(dot(vNormal, viewDir)), 3.0);
+
+                    // Vertical gradient
+                    float gradient = vUv.y;
+
+                    // Animated scan lines
+                    float scanLine = sin(vUv.y * 20.0 + time * 2.0) * 0.5 + 0.5;
+                    scanLine = pow(scanLine, 3.0) * 0.3;
+
+                    // Mix colors
+                    vec3 color = mix(baseColor, edgeColor, gradient);
+                    color += fresnel * edgeColor * 2.0;  // Bright edges
+                    color += scanLine;  // Animated lines
+
+                    // Pulsing effect
+                    float pulse = sin(time * 3.0) * 0.2 + 0.8;
+
+                    gl_FragColor = vec4(color, opacity * pulse * (0.7 + fresnel * 0.3));
+                }
+            `,
             transparent: true,
-            opacity: 0.6,
-            emissive: gateColor,
-            emissiveIntensity: 0.3,
-            shininess: 100,
-            side: THREE.DoubleSide
+            side: THREE.DoubleSide,
+            blending: THREE.AdditiveBlending,
+            depthWrite: false
         });
 
         // Main gate panel
@@ -1059,6 +1145,19 @@ class Gate {
         this.gateMesh = new THREE.Mesh(gateGeometry, gateMaterial);
         this.gateMesh.position.y = GATE_HEIGHT / 2;
         this.group.add(this.gateMesh);
+
+        // Add glowing edges (additive blending)
+        const edgeGeometry = new THREE.BoxGeometry(GATE_WIDTH * 1.02, GATE_HEIGHT * 1.02, GATE_DEPTH * 0.5);
+        const edgeMaterial = new THREE.MeshBasicMaterial({
+            color: baseColor,
+            transparent: true,
+            opacity: 0.3,
+            blending: THREE.AdditiveBlending,
+            side: THREE.DoubleSide
+        });
+        this.edgeMesh = new THREE.Mesh(edgeGeometry, edgeMaterial);
+        this.edgeMesh.position.y = GATE_HEIGHT / 2;
+        this.group.add(this.edgeMesh);
 
         // Side pillars
         const pillarGeometry = new THREE.BoxGeometry(1, GATE_HEIGHT + 2, 1);
@@ -1148,19 +1247,34 @@ class Gate {
 
         this.textMesh.material.map.needsUpdate = true;
 
-        // Update gate color based on new value
-        const gateColor = this.value >= 0 ? 0x00BFFF : 0xFF4444;
-        this.gateMesh.material.color.setHex(gateColor);
-        this.gateMesh.material.emissive.setHex(gateColor);
+        // Update gate shader colors based on new value (Phase 3)
+        if (this.gateMesh.material.uniforms) {
+            const baseColor = this.value >= 0 ? new THREE.Color(0x00FFFF) : new THREE.Color(0xFF0044);
+            const edgeColor = this.value >= 0 ? new THREE.Color(0x00BFFF) : new THREE.Color(0xFF4444);
+            this.gateMesh.material.uniforms.baseColor.value = baseColor;
+            this.gateMesh.material.uniforms.edgeColor.value = edgeColor;
+
+            // Update edge glow color
+            if (this.edgeMesh) {
+                this.edgeMesh.material.color = baseColor;
+            }
+        }
     }
 
     update(deltaTime) {
         if (!this.active) return;
 
-        // Pulse animation
+        // Update shader time uniform (Phase 3 upgrade)
         this.pulseTime += deltaTime;
-        const pulse = Math.sin(this.pulseTime * 3) * 0.1 + 0.9;
-        this.gateMesh.material.opacity = 0.4 + pulse * 0.2;
+        if (this.gateMesh.material.uniforms) {
+            this.gateMesh.material.uniforms.time.value = this.pulseTime;
+        }
+
+        // Pulse edge glow
+        if (this.edgeMesh) {
+            const pulse = Math.sin(this.pulseTime * 3) * 0.15 + 0.85;
+            this.edgeMesh.material.opacity = 0.3 * pulse;
+        }
 
         // Make text always face camera
         if (this.textMesh) {
@@ -1330,9 +1444,12 @@ function addCharacterToSquad() {
     avgX /= game.squad.length;
     avgZ /= game.squad.length;
 
-    // Create new character at squad position
+    // Create new sprite character at squad position
     const index = game.squad.length;
-    const character = new Character(avgX, 0, avgZ - 2, index);
+    const character = new SpriteCharacter(avgX, 0, avgZ - 2, index, game.textureManager);
+
+    // Add to scene
+    game.scene.add(character.group);
 
     // Set formation offset
     const cols = Math.ceil(Math.sqrt(game.squad.length + 1));
@@ -1340,6 +1457,10 @@ function addCharacterToSquad() {
     const col = index % cols;
     character.formationOffsetX = (col - (cols - 1) / 2) * 1.5;
     character.formationOffsetZ = row * 1.5;
+
+    // Initialize velocity
+    character.velocityX = 0;
+    character.velocityZ = 0;
 
     game.squad.push(character);
 
@@ -1386,6 +1507,14 @@ function animate() {
     // Update polish effects (Iteration 10)
     updateCameraShake(deltaTime);
     updateUI();
+
+    // Update VFX systems (Phase 2)
+    if (game.particleManager) {
+        game.particleManager.update(deltaTime);
+    }
+    if (game.damageNumbers) {
+        game.damageNumbers.update(deltaTime);
+    }
 
     // Animate water (Iteration 9: Enhanced multi-wave shader)
     if (game.water) {
@@ -1482,7 +1611,7 @@ window.addEventListener('resize', onWindowResize);
 // INITIALIZATION
 // ============================================================================
 
-function init() {
+async function init() {
     console.log('🎮 Bridge Battle - Three.js 3D');
     console.log('🔧 Iteration 1: Scene Foundation ✓');
     console.log('🔧 Iteration 2: Characters ✓');
@@ -1493,12 +1622,33 @@ function init() {
     console.log('🔧 Iteration 7: Gate-Bullet Collision ✓');
     console.log('🔧 Iteration 9: Enhanced Water Shader ✓');
     console.log('🔧 Iteration 10: Polish & Effects ✓');
+    console.log('🔧 NEW: Sprite-Based Character System 🎨');
     console.log('');
 
     initScene();
     createBridge();
     createWater();
-    initBulletPool();
+
+    // Initialize VFX systems (Phase 2)
+    console.log('🎨 Initializing VFX systems...');
+    game.particleManager = new ParticleManager(game.scene);
+    game.damageNumbers = new DamageNumberManager(game.scene, 100);
+    game.enhancedBullets = new EnhancedBulletPool(game.scene, game.particleManager, 500);
+    console.log('✓ VFX systems initialized');
+
+    // Load sprite sheets before creating characters
+    console.log('⏳ Loading sprite sheets...');
+    game.textureManager = new SpriteTextureManager();
+    try {
+        await game.textureManager.preloadAll();
+        game.assetsLoaded = true;
+        console.log('✓ Sprite sheets loaded successfully');
+    } catch (error) {
+        console.error('❌ Failed to load sprites:', error);
+        alert('Failed to load game assets. Please refresh the page.');
+        return;
+    }
+
     createSquad(14);
     createUI();
 
