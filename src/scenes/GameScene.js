@@ -819,7 +819,7 @@ export default class GameScene extends Phaser.Scene {
     }
 
     /**
-     * Spawn a collectible item
+     * Spawn a collectible item (ENHANCED with polish)
      */
     spawnCollectible() {
         const centerX = GAME.WIDTH / 2;
@@ -835,30 +835,108 @@ export default class GameScene extends Phaser.Scene {
         // Create collectible container
         const collectible = this.add.container(x, y);
 
-        // Green circle
+        // OBJECT POLISH 1: Glowing pulsing aura (outer glow)
+        const aura = this.add.circle(0, 0, COLLECTIBLES.SIZE * 1.8, COLORS.COLLECTIBLE, 0.3);
+        aura.setBlendMode(Phaser.BlendModes.ADD); // Additive blending for glow effect
+
+        // Pulsing animation for aura
+        this.tweens.add({
+            targets: aura,
+            scale: 1.2,
+            alpha: 0.1,
+            duration: 1000,
+            yoyo: true,
+            repeat: -1,
+            ease: 'Sine.easeInOut'
+        });
+
+        // Green circle (main body)
         const circle = this.add.circle(0, 0, COLLECTIBLES.SIZE, COLORS.COLLECTIBLE);
+
+        // Inner glow ring
+        const innerGlow = this.add.circle(0, 0, COLLECTIBLES.SIZE * 0.8, 0x00FF88, 0.4);
 
         // Highlight
         const highlight = this.add.circle(-5, -5, COLLECTIBLES.SIZE * 0.4, 0xFFFFFF, 0.6);
+
+        // OBJECT POLISH 7: Color gradient effect (darker at bottom)
+        const gradient = this.add.circle(0, 3, COLLECTIBLES.SIZE * 0.9, 0x006633, 0.3);
 
         // +1 text
         const text = this.add.text(0, 0, '+1', {
             fontSize: '16px',
             fontFamily: 'Arial Black',
-            color: '#FFFFFF'
+            color: '#FFFFFF',
+            stroke: '#00AA44',
+            strokeThickness: 3
         });
         text.setOrigin(0.5);
 
-        collectible.add([circle, highlight, text]);
+        // Add all elements to container
+        collectible.add([aura, circle, innerGlow, gradient, highlight, text]);
         collectible.setDepth(8);
         collectible.type = 'collectible';
         collectible.collected = false;
+
+        // Store reference to aura for cleanup
+        collectible.aura = aura;
+
+        // OBJECT POLISH 2: Twinkle particles around collectible
+        this.createTwinkleParticles(collectible);
+
+        // Gentle rotation animation
+        this.tweens.add({
+            targets: collectible,
+            angle: 360,
+            duration: 8000,
+            repeat: -1,
+            ease: 'Linear'
+        });
 
         this.collectibles.push(collectible);
     }
 
     /**
-     * Spawn an obstacle
+     * OBJECT POLISH 2: Create twinkle particles around collectible
+     */
+    createTwinkleParticles(collectible) {
+        const numParticles = 4;
+        const particles = [];
+
+        for (let i = 0; i < numParticles; i++) {
+            const angle = (i / numParticles) * Math.PI * 2;
+            const distance = COLLECTIBLES.SIZE * 1.5;
+
+            // Small star/twinkle particle
+            const particle = this.add.circle(
+                Math.cos(angle) * distance,
+                Math.sin(angle) * distance,
+                2,
+                0xFFFFFF,
+                0.8
+            );
+            particle.setBlendMode(Phaser.BlendModes.ADD);
+
+            collectible.add(particle);
+            particles.push(particle);
+
+            // Orbit animation
+            this.tweens.add({
+                targets: particle,
+                alpha: 0.3,
+                scale: 0.5,
+                duration: 800 + (i * 200),
+                yoyo: true,
+                repeat: -1,
+                ease: 'Sine.easeInOut'
+            });
+        }
+
+        collectible.twinkleParticles = particles;
+    }
+
+    /**
+     * Spawn an obstacle (ENHANCED with polish)
      */
     spawnObstacle() {
         const centerX = GAME.WIDTH / 2;
@@ -874,32 +952,105 @@ export default class GameScene extends Phaser.Scene {
         // Create obstacle container
         const obstacle = this.add.container(x, y);
 
-        // Red rectangle
+        // OBJECT POLISH 7: Color gradient base (darker at bottom)
+        const gradientBase = this.add.rectangle(0, 5, OBSTACLES.WIDTH, OBSTACLES.HEIGHT, 0x660000, 0.5);
+
+        // Red rectangle (main body)
         const rect = this.add.rectangle(0, 0, OBSTACLES.WIDTH, OBSTACLES.HEIGHT, COLORS.OBSTACLE);
+
+        // OBJECT POLISH 3: Red warning glow around obstacle
+        const warningGlow = this.add.rectangle(0, 0, OBSTACLES.WIDTH + 8, OBSTACLES.HEIGHT + 8, 0xFF0000, 0.4);
+        warningGlow.setBlendMode(Phaser.BlendModes.ADD);
+
+        // Pulsing warning glow
+        this.tweens.add({
+            targets: warningGlow,
+            alpha: 0.1,
+            scale: 1.1,
+            duration: 600,
+            yoyo: true,
+            repeat: -1,
+            ease: 'Sine.easeInOut'
+        });
 
         // Dark border
         const border = this.add.rectangle(0, 0, OBSTACLES.WIDTH, OBSTACLES.HEIGHT);
         border.setStrokeStyle(4, 0x8B0000);
         border.setFillStyle();
 
+        // OBJECT POLISH 4: Scanline animation
+        const scanline = this.add.rectangle(
+            0,
+            -OBSTACLES.HEIGHT / 2,
+            OBSTACLES.WIDTH,
+            3,
+            0xFFFFFF,
+            0.5
+        );
+
+        // Scanline moves down repeatedly
+        this.tweens.add({
+            targets: scanline,
+            y: OBSTACLES.HEIGHT / 2,
+            duration: 1200,
+            repeat: -1,
+            ease: 'Linear'
+        });
+
+        // OBJECT POLISH 3: Exclamation mark warning above obstacle
+        const exclamation = this.add.text(0, -OBSTACLES.HEIGHT - 20, '⚠', {
+            fontSize: '24px',
+            color: '#FF0000',
+            stroke: '#FFFF00',
+            strokeThickness: 2
+        });
+        exclamation.setOrigin(0.5);
+
+        // Bobbing animation for warning
+        this.tweens.add({
+            targets: exclamation,
+            y: exclamation.y - 5,
+            duration: 400,
+            yoyo: true,
+            repeat: -1,
+            ease: 'Sine.easeInOut'
+        });
+
         // -5 text
         const text = this.add.text(0, 0, `-${OBSTACLES.DAMAGE}`, {
             fontSize: '20px',
             fontFamily: 'Arial Black',
-            color: '#FFFFFF'
+            color: '#FFFFFF',
+            stroke: '#000000',
+            strokeThickness: 4
         });
         text.setOrigin(0.5);
 
-        obstacle.add([rect, border, text]);
+        // Add all elements to container
+        obstacle.add([warningGlow, gradientBase, rect, border, scanline, exclamation, text]);
         obstacle.setDepth(8);
         obstacle.type = 'obstacle';
         obstacle.hit = false;
+
+        // Store references
+        obstacle.warningGlow = warningGlow;
+        obstacle.scanline = scanline;
+
+        // OBJECT POLISH 4: Transparency pulse on main rect
+        this.tweens.add({
+            targets: rect,
+            alpha: 0.7,
+            duration: 800,
+            yoyo: true,
+            repeat: -1,
+            ease: 'Sine.easeInOut'
+        });
 
         this.obstacles.push(obstacle);
     }
 
     /**
-     * Spawn a math gate (two options)
+     * Spawn a math gate (two options) - ENHANCED with polish
      */
     spawnGate() {
         const centerX = GAME.WIDTH / 2;
@@ -922,26 +1073,44 @@ export default class GameScene extends Phaser.Scene {
 
         // Create left gate
         const leftX = centerX - GATES.GAP / 2 - GATES.WIDTH / 2;
-        const leftGate = this.createGateHalf(leftX, y, left.op, left.color);
+        const leftGate = this.createGateHalf(leftX, y, left.op, left.color, 'LEFT');
         leftGate.operation = left;
 
         // Create right gate
         const rightX = centerX + GATES.GAP / 2 + GATES.WIDTH / 2;
-        const rightGate = this.createGateHalf(rightX, y, right.op, right.color);
+        const rightGate = this.createGateHalf(rightX, y, right.op, right.color, 'RIGHT');
         rightGate.operation = right;
 
         this.gates.push({ left: leftGate, right: rightGate, passed: false });
     }
 
     /**
-     * Create one half of a gate
+     * Create one half of a gate (ENHANCED with polish)
      */
-    createGateHalf(x, y, label, color) {
+    createGateHalf(x, y, label, color, side) {
         const gate = this.add.container(x, y);
+
+        // OBJECT POLISH 7: Gradient base (darker at bottom)
+        const gradientBase = this.add.rectangle(0, 10, GATES.WIDTH, GATES.HEIGHT, 0x000000, 0.3);
 
         // Background rectangle with gradient effect
         const bg = this.add.rectangle(0, 0, GATES.WIDTH, GATES.HEIGHT, color, 0.8);
         bg.setStrokeStyle(3, color, 0.5);
+
+        // OBJECT POLISH 7: Outer glow aura
+        const outerGlow = this.add.rectangle(0, 0, GATES.WIDTH + 12, GATES.HEIGHT + 12, color, 0.3);
+        outerGlow.setBlendMode(Phaser.BlendModes.ADD);
+
+        // Pulsing glow
+        this.tweens.add({
+            targets: outerGlow,
+            alpha: 0.1,
+            scale: 1.05,
+            duration: 1000,
+            yoyo: true,
+            repeat: -1,
+            ease: 'Sine.easeInOut'
+        });
 
         // Inner glow rectangle
         const innerGlow = this.add.rectangle(0, 0, GATES.WIDTH - 10, GATES.HEIGHT - 10, 0xFFFFFF, 0.2);
@@ -950,6 +1119,37 @@ export default class GameScene extends Phaser.Scene {
         const border = this.add.rectangle(0, 0, GATES.WIDTH, GATES.HEIGHT);
         border.setStrokeStyle(8, 0xFFFFFF, 0.9);
         border.setFillStyle();
+
+        // OBJECT POLISH 5: Directional arrow indicator
+        const arrow = side === 'LEFT' ? '←' : '→';
+        const arrowText = this.add.text(0, -GATES.HEIGHT / 2 - 30, arrow, {
+            fontSize: '32px',
+            color: '#FFFFFF',
+            stroke: color === COLORS.GATE_GOOD ? '#00FF00' : '#FF0000',
+            strokeThickness: 4
+        });
+        arrowText.setOrigin(0.5);
+
+        // Arrow bob animation
+        this.tweens.add({
+            targets: arrowText,
+            y: arrowText.y - 5,
+            duration: 600,
+            yoyo: true,
+            repeat: -1,
+            ease: 'Sine.easeInOut'
+        });
+
+        // OBJECT POLISH 5: Side label (LEFT/RIGHT)
+        const sideLabel = this.add.text(0, GATES.HEIGHT / 2 + 25, side, {
+            fontSize: '14px',
+            fontFamily: 'Arial',
+            color: '#FFFFFF',
+            stroke: '#000000',
+            strokeThickness: 3
+        });
+        sideLabel.setOrigin(0.5);
+        sideLabel.setAlpha(0.7);
 
         // Operation text - larger and more visible
         const text = this.add.text(0, 0, label, {
@@ -961,9 +1161,28 @@ export default class GameScene extends Phaser.Scene {
         });
         text.setOrigin(0.5);
 
-        gate.add([bg, innerGlow, border, text]);
+        // OBJECT POLISH 7: Motion blur trails (fake motion blur with fading rectangles)
+        const trailCount = 3;
+        const trails = [];
+        for (let i = 0; i < trailCount; i++) {
+            const trail = this.add.rectangle(
+                0,
+                (i + 1) * -15,
+                GATES.WIDTH * 0.9,
+                GATES.HEIGHT * 0.8,
+                color,
+                0.1 - (i * 0.03)
+            );
+            trails.push(trail);
+        }
+
+        gate.add([...trails, outerGlow, gradientBase, bg, innerGlow, border, arrowText, text, sideLabel]);
         gate.setDepth(8);
         gate.type = 'gate';
+
+        // Store references
+        gate.outerGlow = outerGlow;
+        gate.arrowText = arrowText;
 
         // Pulse animation
         this.tweens.add({
@@ -1496,10 +1715,38 @@ export default class GameScene extends Phaser.Scene {
                 const chosenGate = centerX < GAME.WIDTH / 2 ? gate.left : gate.right;
                 const unchosen = centerX < GAME.WIDTH / 2 ? gate.right : gate.left;
 
+                // OBJECT POLISH 6: Bright flash when passing through
+                const isGoodGate = chosenGate.operation.mult || chosenGate.operation.add;
+
+                // Create bright flash particle burst at gate position
+                const flashColor = isGoodGate ? 0x00FFFF : 0xFFAA00;
+                this.createParticleBurst(chosenGate.x, chosenGate.y, flashColor, 20);
+
+                // Intense screen flash
+                if (isGoodGate) {
+                    this.cameras.main.flash(300, 100, 255, 255); // Bright cyan flash
+                } else {
+                    this.cameras.main.flash(300, 255, 150, 0); // Bright orange flash
+                }
+
+                // Create expanding ring effect
+                const ring = this.add.circle(chosenGate.x, chosenGate.y, 20, flashColor, 0.8);
+                ring.setDepth(50);
+                ring.setBlendMode(Phaser.BlendModes.ADD);
+
+                this.tweens.add({
+                    targets: ring,
+                    scale: 4,
+                    alpha: 0,
+                    duration: 500,
+                    ease: 'Cubic.easeOut',
+                    onComplete: () => ring.destroy()
+                });
+
                 // Chosen gate - expand and flash
                 this.tweens.add({
                     targets: chosenGate,
-                    scale: 1.3,
+                    scale: 1.5,
                     alpha: 0,
                     duration: 400,
                     ease: 'Back.easeIn'
@@ -1511,14 +1758,6 @@ export default class GameScene extends Phaser.Scene {
                     alpha: 0,
                     duration: 300
                 });
-
-                // Flash effect based on gate type
-                const isGoodGate = chosenGate.operation.mult || chosenGate.operation.add;
-                if (isGoodGate) {
-                    this.cameras.main.flash(200, 0, 200, 255); // Cyan flash for good
-                } else {
-                    this.cameras.main.flash(200, 255, 100, 0); // Orange flash for bad
-                }
             }
         });
     }
