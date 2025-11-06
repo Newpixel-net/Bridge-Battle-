@@ -1,0 +1,370 @@
+{
+  "source": "processed-assets/ui-extracted/ui-master-highres.png",
+  "elements": [
+    {
+      "name": "panel_victory",
+      "original_box": [
+        258,
+        187,
+        1937,
+        3375
+      ],
+      "cropped_size": [
+        1977,
+        3415
+      ],
+      "file": "processed-assets/ui-elements/panel_victory.png"
+    },
+    {
+      "name": "star_filled_01",
+      "original_box": [
+        2325,
+        187,
+        645,
+        562
+      ],
+      "cropped_size": [
+        685,
+        602
+      ],
+      "file": "processed-assets/ui-elements/star_filled_01.png"
+    },
+    {
+      "name": "star_filled_02",
+      "original_box": [
+        3100,
+        187,
+        645,
+        562
+      ],
+      "cropped_size": [
+        685,
+        602
+      ],
+      "file": "processed-assets/ui-elements/star_filled_02.png"
+    },
+    {
+      "name": "star_filled_03",
+      "original_box": [
+        3875,
+        187,
+        645,
+        562
+      ],
+      "cropped_size": [
+        685,
+        602
+      ],
+      "file": "processed-assets/ui-elements/star_filled_03.png"
+    },
+    {
+      "name": "star_empty_01",
+      "original_box": [
+        2325,
+        937,
+        645,
+        562
+      ],
+      "cropped_size": [
+        685,
+        602
+      ],
+      "file": "processed-assets/ui-elements/star_empty_01.png"
+    },
+    {
+      "name": "star_empty_02",
+      "original_box": [
+        3100,
+        937,
+        645,
+        562
+      ],
+      "cropped_size": [
+        685,
+        602
+      ],
+      "file": "processed-assets/ui-elements/star_empty_02.png"
+    },
+    {
+      "name": "star_empty_03",
+      "original_box": [
+        3875,
+        937,
+        645,
+        562
+      ],
+      "cropped_size": [
+        685,
+        602
+      ],
+      "file": "processed-assets/ui-elements/star_empty_03.png"
+    },
+    {
+      "name": "star_empty_04",
+      "original_box": [
+        2325,
+        1687,
+        645,
+        562
+      ],
+      "cropped_size": [
+        685,
+        602
+      ],
+      "file": "processed-assets/ui-elements/star_empty_04.png"
+    },
+    {
+      "name": "star_empty_05",
+      "original_box": [
+        3100,
+        1687,
+        645,
+        562
+      ],
+      "cropped_size": [
+        685,
+        602
+      ],
+      "file": "processed-assets/ui-elements/star_empty_05.png"
+    },
+    {
+      "name": "star_empty_06",
+      "original_box": [
+        3875,
+        1687,
+        645,
+        562
+      ],
+      "cropped_size": [
+        685,
+        602
+      ],
+      "file": "processed-assets/ui-elements/star_empty_06.png"
+    },
+    {
+      "name": "icon_heart",
+      "original_box": [
+        4779,
+        187,
+        516,
+        450
+      ],
+      "cropped_size": [
+        556,
+        490
+      ],
+      "file": "processed-assets/ui-elements/icon_heart.png"
+    },
+    {
+      "name": "counter_timer",
+      "original_box": [
+        5425,
+        187,
+        1033,
+        450
+      ],
+      "cropped_size": [
+        1073,
+        490
+      ],
+      "file": "processed-assets/ui-elements/counter_timer.png"
+    },
+    {
+      "name": "icon_gem",
+      "original_box": [
+        6587,
+        187,
+        516,
+        450
+      ],
+      "cropped_size": [
+        556,
+        490
+      ],
+      "file": "processed-assets/ui-elements/icon_gem.png"
+    },
+    {
+      "name": "icon_coin",
+      "original_box": [
+        4779,
+        750,
+        516,
+        450
+      ],
+      "cropped_size": [
+        556,
+        490
+      ],
+      "file": "processed-assets/ui-elements/icon_coin.png"
+    },
+    {
+      "name": "counter_coins",
+      "original_box": [
+        5425,
+        750,
+        1033,
+        450
+      ],
+      "cropped_size": [
+        1073,
+        490
+      ],
+      "file": "processed-assets/ui-elements/counter_coins.png"
+    },
+    {
+      "name": "badge_level_24",
+      "original_box": [
+        4779,
+        2437,
+        516,
+        562
+      ],
+      "cropped_size": [
+        556,
+        602
+      ],
+      "file": "processed-assets/ui-elements/badge_level_24.png"
+    },
+    {
+      "name": "badge_level_25",
+      "original_box": [
+        5425,
+        2437,
+        516,
+        562
+      ],
+      "cropped_size": [
+        556,
+        602
+      ],
+      "file": "processed-assets/ui-elements/badge_level_25.png"
+    },
+    {
+      "name": "badge_level_26",
+      "original_box": [
+        6070,
+        2437,
+        516,
+        562
+      ],
+      "cropped_size": [
+        556,
+        602
+      ],
+      "file": "processed-assets/ui-elements/badge_level_26.png"
+    },
+    {
+      "name": "panel_defeat",
+      "original_box": [
+        7491,
+        187,
+        1937,
+        3375
+      ],
+      "cropped_size": [
+        1977,
+        3415
+      ],
+      "file": "processed-assets/ui-elements/panel_defeat.png"
+    },
+    {
+      "name": "button_new_game",
+      "original_box": [
+        9687,
+        187,
+        1550,
+        450
+      ],
+      "cropped_size": [
+        1590,
+        490
+      ],
+      "file": "processed-assets/ui-elements/button_new_game.png"
+    },
+    {
+      "name": "button_resume",
+      "original_box": [
+        9687,
+        750,
+        1550,
+        450
+      ],
+      "cropped_size": [
+        1590,
+        490
+      ],
+      "file": "processed-assets/ui-elements/button_resume.png"
+    },
+    {
+      "name": "button_settings",
+      "original_box": [
+        9687,
+        1312,
+        1550,
+        450
+      ],
+      "cropped_size": [
+        1590,
+        490
+      ],
+      "file": "processed-assets/ui-elements/button_settings.png"
+    },
+    {
+      "name": "button_shop",
+      "original_box": [
+        9687,
+        1875,
+        1550,
+        450
+      ],
+      "cropped_size": [
+        1590,
+        490
+      ],
+      "file": "processed-assets/ui-elements/button_shop.png"
+    },
+    {
+      "name": "button_exit",
+      "original_box": [
+        9687,
+        2437,
+        1550,
+        450
+      ],
+      "cropped_size": [
+        1590,
+        490
+      ],
+      "file": "processed-assets/ui-elements/button_exit.png"
+    },
+    {
+      "name": "decoration_grass_left",
+      "original_box": [
+        258,
+        3187,
+        1033,
+        450
+      ],
+      "cropped_size": [
+        1073,
+        490
+      ],
+      "file": "processed-assets/ui-elements/decoration_grass_left.png"
+    },
+    {
+      "name": "decoration_grass_right",
+      "original_box": [
+        11883,
+        3187,
+        1033,
+        450
+      ],
+      "cropped_size": [
+        1054,
+        490
+      ],
+      "file": "processed-assets/ui-elements/decoration_grass_right.png"
+    }
+  ],
+  "total": 26
+}
