@@ -1665,6 +1665,11 @@ export default class GameScene extends Phaser.Scene {
         const centerX = GAME.WIDTH / 2;
         const y = -GATES.HEIGHT; // Spawn above screen
 
+        // ADAPTIVE GATE SIZING: Make gates fill the entire road width
+        const roadWidth = WORLD.ROAD_WIDTH; // 75% of screen width
+        const gateSpacing = 20; // Small visual gap between gates
+        const gateWidth = (roadWidth - gateSpacing) / 2; // Each gate fills half the road
+
         // Generate random math operations
         const operations = [
             { op: 'x2', mult: 2, color: COLORS.GATE_GOOD },
@@ -1680,14 +1685,20 @@ export default class GameScene extends Phaser.Scene {
         const left = Phaser.Utils.Array.GetRandom(operations);
         const right = Phaser.Utils.Array.GetRandom(operations.filter(o => o !== left));
 
-        // Create left gate
-        const leftX = centerX - GATES.GAP / 2 - GATES.WIDTH / 2;
-        const leftGate = this.createGateHalf(leftX, y, left.op, left.color, 'LEFT');
+        // Calculate road edges
+        const roadLeft = centerX - roadWidth / 2;
+        const roadRight = centerX + roadWidth / 2;
+
+        // Position gates to fill the road (left half and right half)
+        const leftX = roadLeft + gateWidth / 2;
+        const rightX = roadRight - gateWidth / 2;
+
+        // Create left gate (with adaptive width)
+        const leftGate = this.createGateHalf(leftX, y, left.op, left.color, 'LEFT', gateWidth);
         leftGate.operation = left;
 
-        // Create right gate
-        const rightX = centerX + GATES.GAP / 2 + GATES.WIDTH / 2;
-        const rightGate = this.createGateHalf(rightX, y, right.op, right.color, 'RIGHT');
+        // Create right gate (with adaptive width)
+        const rightGate = this.createGateHalf(rightX, y, right.op, right.color, 'RIGHT', gateWidth);
         rightGate.operation = right;
 
         // OBJECT ANIMATION 3: Rise from ground with shake
@@ -1714,20 +1725,24 @@ export default class GameScene extends Phaser.Scene {
     }
 
     /**
-     * Create one half of a gate (ENHANCED with polish)
+     * Create one half of a gate (ENHANCED with polish + ADAPTIVE WIDTH)
      */
-    createGateHalf(x, y, label, color, side) {
+    createGateHalf(x, y, label, color, side, gateWidth) {
         const gate = this.add.container(x, y);
 
+        // Use adaptive width passed from spawnGate()
+        const width = gateWidth;
+        const height = GATES.HEIGHT;
+
         // OBJECT POLISH 7: Gradient base (darker at bottom)
-        const gradientBase = this.add.rectangle(0, 10, GATES.WIDTH, GATES.HEIGHT, 0x000000, 0.3);
+        const gradientBase = this.add.rectangle(0, 10, width, height, 0x000000, 0.3);
 
         // Background rectangle with gradient effect
-        const bg = this.add.rectangle(0, 0, GATES.WIDTH, GATES.HEIGHT, color, 0.8);
+        const bg = this.add.rectangle(0, 0, width, height, color, 0.8);
         bg.setStrokeStyle(3, color, 0.5);
 
         // OBJECT POLISH 7: Outer glow aura
-        const outerGlow = this.add.rectangle(0, 0, GATES.WIDTH + 12, GATES.HEIGHT + 12, color, 0.3);
+        const outerGlow = this.add.rectangle(0, 0, width + 12, height + 12, color, 0.3);
         outerGlow.setBlendMode(Phaser.BlendModes.ADD);
 
         // Pulsing glow
@@ -1742,10 +1757,10 @@ export default class GameScene extends Phaser.Scene {
         });
 
         // Inner glow rectangle
-        const innerGlow = this.add.rectangle(0, 0, GATES.WIDTH - 10, GATES.HEIGHT - 10, 0xFFFFFF, 0.2);
+        const innerGlow = this.add.rectangle(0, 0, width - 10, height - 10, 0xFFFFFF, 0.2);
 
         // Border - thicker and more prominent
-        const border = this.add.rectangle(0, 0, GATES.WIDTH, GATES.HEIGHT);
+        const border = this.add.rectangle(0, 0, width, height);
         border.setStrokeStyle(8, 0xFFFFFF, 0.9);
         border.setFillStyle();
 
@@ -1797,8 +1812,8 @@ export default class GameScene extends Phaser.Scene {
             const trail = this.add.rectangle(
                 0,
                 (i + 1) * -15,
-                GATES.WIDTH * 0.9,
-                GATES.HEIGHT * 0.8,
+                width * 0.9,
+                height * 0.8,
                 color,
                 0.1 - (i * 0.03)
             );
