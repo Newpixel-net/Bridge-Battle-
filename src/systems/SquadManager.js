@@ -33,42 +33,52 @@ export default class SquadManager {
 
     /**
      * Add a single member to the squad
+     * Creates 3D-looking sphere with shading (matching screenshots)
      */
     addMember() {
-        // Create simple circle sprite for now (will use sprite system later)
-        const member = this.scene.add.circle(
-            this.centerX,
-            this.centerY,
-            SQUAD.CHARACTER_SIZE / 2,
-            COLORS.SQUAD_BLUE
-        );
+        const radius = SQUAD.CHARACTER_RADIUS;
 
-        // Add physics body
-        this.scene.physics.add.existing(member);
-        member.body.setCircle(SQUAD.CHARACTER_SIZE / 2);
+        // Container to hold all visual elements
+        const container = this.scene.add.container(this.centerX, this.centerY);
 
-        // Visual properties
-        member.setDepth(10);
-        member.setScale(SQUAD.CHARACTER_SCALE);
+        // Main sphere body (bright blue)
+        const body = this.scene.add.circle(0, 0, radius, COLORS.SQUAD_BLUE);
+        body.setDepth(10);
+
+        // Dark shading (bottom-right) for 3D effect
+        const shadow = this.scene.add.circle(2, 2, radius * 0.8, COLORS.SQUAD_BLUE_DARK, 0.3);
+        shadow.setDepth(11);
+
+        // White highlight (top-left) for 3D sphere look
+        const highlight = this.scene.add.circle(-3, -3, radius * 0.4, COLORS.SQUAD_HIGHLIGHT, 0.8);
+        highlight.setDepth(12);
+
+        // Add to container
+        container.add([body, shadow, highlight]);
+        container.setDepth(10);
+
+        // Add physics to container
+        this.scene.physics.add.existing(container);
+        container.body.setCircle(radius);
 
         // Custom properties for formation
-        member.formationIndex = this.members.length;
-        member.targetX = 0;
-        member.targetY = 0;
+        container.formationIndex = this.members.length;
+        container.targetX = 0;
+        container.targetY = 0;
 
-        this.members.push(member);
+        this.members.push(container);
         this.recalculateFormation();
 
         // Spawn animation - grow from 0
-        member.setScale(0);
+        container.setScale(0);
         this.scene.tweens.add({
-            targets: member,
-            scale: SQUAD.CHARACTER_SCALE,
+            targets: container,
+            scale: 1.0,
             duration: 300,
             ease: 'Back.easeOut'
         });
 
-        return member;
+        return container;
     }
 
     /**
@@ -212,7 +222,7 @@ export default class SquadManager {
      * Apply separation force to prevent characters from overlapping
      */
     applySeparation(member, index) {
-        const minDist = SQUAD.CHARACTER_SIZE * SQUAD.CHARACTER_SCALE;
+        const minDist = SQUAD.CHARACTER_SIZE;
 
         this.members.forEach((other, otherIndex) => {
             if (index === otherIndex || !other.active) return;

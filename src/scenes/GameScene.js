@@ -138,6 +138,9 @@ export default class GameScene extends Phaser.Scene {
         // Lane markings (white dashed lines)
         this.createLaneMarkings(centerX);
 
+        // Zebra crossings (white stripes across road)
+        this.createZebraCrossings(centerX);
+
         console.log('✓ Environment created');
     }
 
@@ -154,19 +157,37 @@ export default class GameScene extends Phaser.Scene {
             graphics.lineBetween(centerX, y, centerX, y + 50);
         }
 
-        // Left lane line
-        const leftLaneX = centerX - WORLD.LANE_WIDTH;
-        for (let y = -200; y < WORLD.BRIDGE_LENGTH + 200; y += 100) {
-            graphics.lineBetween(leftLaneX, y, leftLaneX, y + 50);
-        }
-
-        // Right lane line
-        const rightLaneX = centerX + WORLD.LANE_WIDTH;
-        for (let y = -200; y < WORLD.BRIDGE_LENGTH + 200; y += 100) {
-            graphics.lineBetween(rightLaneX, y, rightLaneX, y + 50);
-        }
-
         graphics.strokePath();
+    }
+
+    /**
+     * Create zebra crossings (crosswalk stripes) - matching screenshots
+     */
+    createZebraCrossings(centerX) {
+        const graphics = this.add.graphics();
+        graphics.setDepth(-8);
+
+        // Create zebra crossings every 400-600 units
+        for (let y = 400; y < WORLD.BRIDGE_LENGTH; y += 550) {
+            this.drawZebraCrossing(graphics, centerX, y);
+        }
+    }
+
+    /**
+     * Draw a single zebra crossing at position
+     */
+    drawZebraCrossing(graphics, centerX, y) {
+        const stripeWidth = 40;
+        const stripeHeight = 12;
+        const roadWidth = WORLD.BRIDGE_WIDTH;
+        const numStripes = 12;
+
+        graphics.fillStyle(COLORS.BRIDGE_LINES, 0.9);
+
+        for (let i = 0; i < numStripes; i++) {
+            const x = centerX - roadWidth / 2 + (i * (roadWidth / numStripes));
+            graphics.fillRect(x, y, stripeWidth, stripeHeight);
+        }
     }
 
     /**
@@ -181,12 +202,16 @@ export default class GameScene extends Phaser.Scene {
             WORLD.BRIDGE_LENGTH + 2000
         );
 
+        // Set camera zoom for better character visibility
+        this.cameras.main.setZoom(CAMERA.ZOOM);
+
         // Start at squad position
         const squadPos = this.squadManager.getCenter();
         this.cameras.main.scrollY = squadPos.y + CAMERA.FOLLOW_OFFSET_Y;
         this.cameras.main.scrollX = 0; // Center horizontally
 
         console.log('✓ Camera setup complete');
+        console.log(`  Zoom: ${CAMERA.ZOOM}x`);
     }
 
     /**
