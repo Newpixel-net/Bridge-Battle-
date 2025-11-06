@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import { GAME, WORLD, SQUAD, COLORS, SCENES, UI, COLLECTIBLES, OBSTACLES, GATES } from '../utils/GameConstants.js';
+import { GAME, WORLD, SQUAD, COLORS, SCENES, UI, COLLECTIBLES, OBSTACLES, GATES, POWERUPS, SPECIAL_GATES } from '../utils/GameConstants.js';
 
 // COMBAT SYSTEM - Priority 1 Implementation
 import BulletPool from '../systems/BulletPool.js';
@@ -84,11 +84,23 @@ export default class GameScene extends Phaser.Scene {
         this.collectibles = [];
         this.obstacles = [];
         this.gates = [];
+        this.powerups = [];              // VARIETY: Power-ups array
 
         // Spawn tracking
         this.nextCollectibleSpawn = COLLECTIBLES.SPAWN_INTERVAL;
         this.nextObstacleSpawn = OBSTACLES.SPAWN_INTERVAL;
         this.nextGateSpawn = GATES.SPAWN_INTERVAL;
+        this.nextPowerupSpawn = POWERUPS.SPAWN_INTERVAL;
+
+        // VARIETY: Active power-up effects
+        this.activePowerups = {
+            shield: false,
+            shieldEndTime: 0,
+            magnet: false,
+            magnetEndTime: 0,
+            speed: false,
+            speedEndTime: 0
+        };
 
         // Input
         this.isDragging = false;
