@@ -35,8 +35,8 @@ export const SQUAD = {
     START_SIZE: 1,               // Start with 1 character
     MAX_SIZE: 200,               // Maximum squad size
 
-    // Formation
-    FORMATION_SPACING: 50,       // Space between characters
+    // Formation - ULTRA-TIGHT hexagonal formation
+    FORMATION_SPACING: 52,       // Space between character centers (tight!)
     FORMATION_LERP: 0.15,        // Smoothing factor for movement
 
     // Movement
@@ -48,7 +48,7 @@ export const SQUAD = {
     CHARACTER_SIZE: 50,          // Diameter for collision
 
     // Character position
-    START_Y: 650,                // Y position (lower third of screen: 960 * 0.68)
+    START_Y: 720,                // Y position (lower third of screen: 960 * 0.75)
 };
 
 // ============================================================================
@@ -87,7 +87,7 @@ export const COLORS = {
 // ============================================================================
 export const UI = {
     BUBBLE_RADIUS: 30,           // Size of squad counter bubble
-    BUBBLE_OFFSET_Y: -60,        // Above character (negative = up)
+    BUBBLE_OFFSET_Y: -70,        // Above character (negative = up)
     BUBBLE_FONT_SIZE: '48px',
 };
 
