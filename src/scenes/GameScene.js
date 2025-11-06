@@ -5,6 +5,8 @@ import { GAME, WORLD, SQUAD, COLORS, SCENES, UI, COLLECTIBLES, OBSTACLES, GATES,
 import BulletPool from '../systems/BulletPool.js';
 import AutoShootingSystem from '../systems/AutoShootingSystem.js';
 import EnemyManager from '../systems/EnemyManager.js';
+import WaveManager from '../systems/WaveManager.js';
+import Enemy from '../entities/Enemy.js';
 
 // ABILITY SYSTEM - Priority 2 Implementation
 import EnergySystem from '../systems/EnergySystem.js';
@@ -1360,8 +1362,20 @@ export default class GameScene extends Phaser.Scene {
         this.squadSizeUI.setScrollFactor(0);
         this.squadSizeUI.setResolution(2); // 2× resolution for crisp rendering
 
+        // WAVE SYSTEM: Wave info display
+        this.waveInfoText = this.add.text(20, 100, 'Wave: -', {
+            fontSize: '16px',
+            fontFamily: 'Arial Bold',
+            color: '#FF6B6B',
+            stroke: '#000000',
+            strokeThickness: 3
+        });
+        this.waveInfoText.setDepth(uiDepth + 1);
+        this.waveInfoText.setScrollFactor(0);
+        this.waveInfoText.setResolution(2);
+
         // UI/HUD POLISH 3: Visual gauge for squad size
-        this.createSquadGauge(20, 105, uiDepth);
+        this.createSquadGauge(20, 130, uiDepth);
 
         // UI/HUD POLISH 5 & 6: Combo tracker and multiplier display
         this.createComboUI(20, 135, uiDepth);
@@ -1545,6 +1559,35 @@ export default class GameScene extends Phaser.Scene {
                 label: distLabel,
                 type: null
             });
+        }
+    }
+
+    /**
+     * WAVE SYSTEM: Update wave display
+     */
+    updateWaveDisplay() {
+        if (!this.waveInfoText || !this.waveManager) return;
+
+        const waveInfo = this.waveManager.getCurrentWaveInfo();
+
+        if (waveInfo.currentWave === 0) {
+            // No wave started yet
+            this.waveInfoText.setText('Wave: -');
+        } else if (waveInfo.currentWave === 11) {
+            // Boss wave
+            this.waveInfoText.setText('Wave: BOSS');
+            this.waveInfoText.setColor('#FF0000');
+        } else {
+            // Regular wave
+            this.waveInfoText.setText(`Wave: ${waveInfo.currentWave}/10`);
+            this.waveInfoText.setColor('#FF6B6B');
+        }
+
+        // Show enemies remaining if wave is active
+        if (waveInfo.isActive && waveInfo.enemiesRemaining > 0) {
+            this.waveInfoText.setText(
+                this.waveInfoText.text + ` (${waveInfo.enemiesRemaining})`
+            );
         }
     }
 
@@ -2596,6 +2639,7 @@ export default class GameScene extends Phaser.Scene {
         this.updateDistanceDisplay();        // Rolling numbers + milestone
         this.updateUpcomingPreview();        // Upcoming obstacles preview
         this.updateMultiplierDisplay();      // Multiplier based on combo
+        this.updateWaveDisplay();            // Wave progress
 
         // ========== ABILITY SYSTEM UPDATES ==========
         // Update energy regeneration
@@ -2691,6 +2735,11 @@ export default class GameScene extends Phaser.Scene {
         // Update enemy manager (spawn waves, update enemies)
         if (this.enemyManager) {
             this.enemyManager.update(time, delta);
+        }
+
+        // WAVE SYSTEM: Update wave manager (check wave completion)
+        if (this.waveManager) {
+            this.waveManager.update();
         }
 
         // FORWARD MOTION FEEL: Update warning indicators for off-screen enemies
@@ -3631,18 +3680,21 @@ export default class GameScene extends Phaser.Scene {
             console.log(`⚔️ Combat stats applied: Damage ${(this.characterStats.damage * 100).toFixed(0)}%, Fire Rate ${(this.characterStats.fireRate * 100).toFixed(0)}%`);
         }
 
-        // Create enemy manager
+        // WAVE SYSTEM: Create wave manager (10 waves + boss)
+        this.waveManager = new WaveManager(this, 1);  // Stage 1
+
+        // Keep old enemy manager for now (backward compatibility)
         this.enemyManager = new EnemyManager(this);
 
         // Create warning indicator system for off-screen enemies
         this.createWarningIndicatorSystem();
 
-        // Start enemy spawning after countdown
-        this.time.delayedCall(3000, () => {
-            this.enemyManager.resumeSpawning(this.time.now);
+        // Start wave system after countdown (3 seconds)
+        this.time.delayedCall(4000, () => {
+            this.waveManager.startNextWave();  // Start Wave 1
         });
 
-        console.log('✓ Combat system initialized');
+        console.log('✓ Combat system initialized with Wave Manager');
     }
 
     /**
@@ -3916,6 +3968,86 @@ export default class GameScene extends Phaser.Scene {
             this.autoShootingSystem.squadManager.squadCenterY = this.squadCenterY;
             this.autoShootingSystem.squadManager.squadMembers = this.squadMembers;
         }
+    }
+
+    /**
+     * WAVE SYSTEM: Spawn a wave enemy (called by WaveManager)
+     */
+    spawnWaveEnemy(type, x, y, speed) {
+        // Import Enemy class dynamically or use existing enemyManager
+        const Enemy = require('../entities/Enemy.js').default;
+        const enemy = new Enemy(this, x, y, type, speed);
+
+        // Add to enemy manager's list
+        if (this.enemyManager) {
+            this.enemyManager.enemies.push(enemy);
+        }
+
+        return enemy;
+    }
+
+    /**
+     * WAVE SYSTEM: Spawn boss (called by WaveManager)
+     */
+    spawnBoss(bossData, x, y) {
+        // For now, spawn a large TANK enemy as placeholder
+        // TODO: Create dedicated Boss class in Session 3
+        const Enemy = require('../entities/Enemy.js').default;
+        const boss = new Enemy(this, x, y, 'TANK', bossData.speed);
+
+        // Scale up to indicate boss
+        boss.container.setScale(2.5);
+
+        // TODO: Add HP bar, abilities, etc. in Session 3
+
+        if (this.enemyManager) {
+            this.enemyManager.enemies.push(boss);
+        }
+
+        console.log('⚠️ BOSS SPAWNED (placeholder) - Full boss system in Session 3');
+
+        return boss;
+    }
+
+    /**
+     * WAVE SYSTEM: Show victory screen (called by WaveManager)
+     */
+    showVictoryScreen() {
+        // TODO: Implement proper victory screen in Session 4
+        // For now, just show a simple message
+
+        // Pause physics
+        this.physics.pause();
+        this.gameState = 'victory';
+
+        // Show message
+        const victoryText = this.add.text(
+            GAME.WIDTH / 2,
+            GAME.HEIGHT / 2,
+            'STAGE COMPLETE!',
+            {
+                fontSize: '64px',
+                fontFamily: 'Arial Black',
+                color: '#FFD700',
+                stroke: '#000000',
+                strokeThickness: 8
+            }
+        ).setOrigin(0.5);
+
+        victoryText.setDepth(5000);
+        victoryText.setScrollFactor(0);
+        victoryText.setResolution(2);
+
+        // Animate
+        victoryText.setScale(0);
+        this.tweens.add({
+            targets: victoryText,
+            scale: 1,
+            duration: 500,
+            ease: 'Back.easeOut'
+        });
+
+        console.log('🎉 VICTORY! (Full victory screen in Session 4)');
     }
 
     // ========================================

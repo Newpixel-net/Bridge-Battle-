@@ -16,11 +16,12 @@ import Phaser from 'phaser';
  * - Destroyed when HP reaches 0
  */
 export default class Enemy {
-    constructor(scene, x, y, enemyType = 'SOLDIER') {
+    constructor(scene, x, y, enemyType = 'SOLDIER', speed = 80) {
         this.scene = scene;
         this.x = x;
         this.y = y;
         this.enemyType = enemyType;
+        this.speed = speed;  // Movement speed toward player
 
         // Enemy stats based on type
         this.stats = this.getEnemyStats(enemyType);
@@ -39,11 +40,15 @@ export default class Enemy {
         // Create visual representation
         this.container = this.createVisuals();
 
+        // Add physics body to container for movement
+        this.scene.physics.add.existing(this.container);
+        this.container.body.setCircle(this.size);
+
         // Hit flash effect
         this.hitFlashDuration = 100;
         this.lastHitTime = 0;
 
-        console.log(`👹 Enemy spawned: ${enemyType} at (${x}, ${y}) - HP: ${this.hp}`);
+        console.log(`👹 Enemy spawned: ${enemyType} at (${x}, ${y}) - HP: ${this.hp}, Speed: ${speed}`);
     }
 
     /**
@@ -272,12 +277,42 @@ export default class Enemy {
 
     /**
      * Update enemy (called each frame)
+     * CRITICAL: Makes enemy advance toward player continuously
      */
     update(time, delta) {
-        if (!this.active || this.isDestroyed) return;
+        if (!this.active || this.isDestroyed || this.isDying) return;
 
-        // FORWARD MOTION FEEL: Rotate enemy to face player
+        // WAVE SYSTEM: Advance toward player
+        this.advanceTowardPlayer();
+
+        // FORWARD MOTION FEEL: Rotate to face player
         this.rotateTowardPlayer();
+    }
+
+    /**
+     * WAVE SYSTEM: Advance toward player continuously
+     */
+    advanceTowardPlayer() {
+        if (!this.scene.squadCenterX || !this.scene.squadCenterY) return;
+        if (!this.container.body) return;
+
+        // Get player position
+        const playerX = this.scene.squadCenterX;
+        const playerY = this.scene.squadCenterY;
+
+        // Calculate angle to player
+        const angle = Phaser.Math.Angle.Between(
+            this.container.x,
+            this.container.y,
+            playerX,
+            playerY
+        );
+
+        // Set velocity toward player
+        this.container.body.setVelocity(
+            Math.cos(angle) * this.speed,
+            Math.sin(angle) * this.speed
+        );
     }
 
     /**
