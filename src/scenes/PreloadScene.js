@@ -31,9 +31,9 @@ export default class PreloadScene extends Phaser.Scene {
         // Create placeholder textures for squad members
         this.createPlaceholderTextures();
 
-        // Small delay before starting game
+        // Small delay before starting menu
         this.time.delayedCall(500, () => {
-            this.scene.start(SCENES.GAME);
+            this.scene.start(SCENES.MENU);
         });
     }
 
@@ -123,7 +123,7 @@ export default class PreloadScene extends Phaser.Scene {
         const phaseText = this.add.text(
             width / 2,
             height - 100,
-            'Phase 1: Foundation',
+            'Phase 2: Enhanced Gameplay',
             {
                 fontSize: '28px',
                 fontFamily: 'Arial',

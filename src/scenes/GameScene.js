@@ -300,20 +300,51 @@ export default class GameScene extends Phaser.Scene {
     }
 
     /**
-     * Create distance/score UI
+     * Create enhanced UI
      */
     createDistanceUI() {
+        const uiDepth = 100;
+
+        // Top-left panel background
+        const panelBg = this.add.rectangle(10, 10, 250, 100, 0x000000, 0.5);
+        panelBg.setOrigin(0, 0);
+        panelBg.setDepth(uiDepth);
+        panelBg.setScrollFactor(0);
+
+        // Distance counter
         this.distanceText = this.add.text(20, 20, 'Distance: 0m', {
-            fontSize: '24px',
+            fontSize: '22px',
             fontFamily: 'Arial Black',
-            color: '#FFFFFF',
+            color: '#FFD700',
             stroke: '#000000',
             strokeThickness: 4
         });
-        this.distanceText.setDepth(100);
+        this.distanceText.setDepth(uiDepth + 1);
         this.distanceText.setScrollFactor(0);
 
-        console.log('✓ Distance UI created');
+        // Speed indicator
+        this.speedText = this.add.text(20, 50, `Speed: ${WORLD.SCROLL_SPEED}m/s`, {
+            fontSize: '18px',
+            fontFamily: 'Arial',
+            color: '#00BCD4',
+            stroke: '#000000',
+            strokeThickness: 3
+        });
+        this.speedText.setDepth(uiDepth + 1);
+        this.speedText.setScrollFactor(0);
+
+        // Squad size (separate from bubble - for clarity)
+        this.squadSizeUI = this.add.text(20, 75, 'Squad: 1', {
+            fontSize: '18px',
+            fontFamily: 'Arial',
+            color: COLORS.SQUAD_BLUE,
+            stroke: '#000000',
+            strokeThickness: 3
+        });
+        this.squadSizeUI.setDepth(uiDepth + 1);
+        this.squadSizeUI.setScrollFactor(0);
+
+        console.log('✓ Enhanced UI created');
     }
 
     /**
@@ -437,27 +468,41 @@ export default class GameScene extends Phaser.Scene {
     createGateHalf(x, y, label, color) {
         const gate = this.add.container(x, y);
 
-        // Background rectangle
-        const bg = this.add.rectangle(0, 0, GATES.WIDTH, GATES.HEIGHT, color, 0.7);
+        // Background rectangle with gradient effect
+        const bg = this.add.rectangle(0, 0, GATES.WIDTH, GATES.HEIGHT, color, 0.8);
+        bg.setStrokeStyle(3, color, 0.5);
 
-        // Border
+        // Inner glow rectangle
+        const innerGlow = this.add.rectangle(0, 0, GATES.WIDTH - 10, GATES.HEIGHT - 10, 0xFFFFFF, 0.2);
+
+        // Border - thicker and more prominent
         const border = this.add.rectangle(0, 0, GATES.WIDTH, GATES.HEIGHT);
-        border.setStrokeStyle(6, 0xFFFFFF);
+        border.setStrokeStyle(8, 0xFFFFFF, 0.9);
         border.setFillStyle();
 
-        // Operation text
+        // Operation text - larger and more visible
         const text = this.add.text(0, 0, label, {
-            fontSize: '32px',
+            fontSize: '42px',
             fontFamily: 'Arial Black',
             color: '#FFFFFF',
             stroke: '#000000',
-            strokeThickness: 4
+            strokeThickness: 6
         });
         text.setOrigin(0.5);
 
-        gate.add([bg, border, text]);
+        gate.add([bg, innerGlow, border, text]);
         gate.setDepth(8);
         gate.type = 'gate';
+
+        // Pulse animation
+        this.tweens.add({
+            targets: gate,
+            scale: 1.05,
+            duration: 800,
+            yoyo: true,
+            repeat: -1,
+            ease: 'Sine.easeInOut'
+        });
 
         return gate;
     }
@@ -646,6 +691,11 @@ export default class GameScene extends Phaser.Scene {
         const count = this.squadMembers.length;
         this.squadText.setText(count.toString());
 
+        // Update UI panel
+        if (this.squadSizeUI) {
+            this.squadSizeUI.setText(`Squad: ${count}`);
+        }
+
         // Pulse animation
         this.tweens.add({
             targets: [this.squadText, this.squadBubble],
@@ -808,12 +858,23 @@ export default class GameScene extends Phaser.Scene {
                 collectible.collected = true;
                 this.addSquadMember();
 
-                // Visual feedback
+                // Visual feedback - green flash
+                this.cameras.main.flash(100, 0, 255, 0, false, (camera, progress) => {
+                    if (progress === 1) {
+                        // Flash complete
+                    }
+                });
+
+                // Particle burst
+                this.createParticleBurst(collectible.x, collectible.y, COLORS.COLLECTIBLE, 8);
+
+                // Collect animation
                 this.tweens.add({
                     targets: collectible,
-                    scale: 0,
+                    scale: 1.5,
                     alpha: 0,
                     duration: 200,
+                    ease: 'Back.easeIn',
                     onComplete: () => collectible.destroy()
                 });
             }
@@ -832,11 +893,22 @@ export default class GameScene extends Phaser.Scene {
                 obstacle.hit = true;
                 this.removeSquadMembers(OBSTACLES.DAMAGE);
 
-                // Visual feedback - flash red
+                // Camera shake
+                this.cameras.main.shake(200, 0.01);
+
+                // Visual feedback - flash red and shake
+                this.cameras.main.flash(150, 255, 0, 0);
+
+                // Particle explosion
+                this.createParticleBurst(obstacle.x, obstacle.y, COLORS.OBSTACLE, 12);
+
                 this.tweens.add({
                     targets: obstacle,
+                    scale: 1.2,
                     alpha: 0,
+                    angle: 45,
                     duration: 300,
+                    ease: 'Back.easeIn',
                     onComplete: () => obstacle.destroy()
                 });
             }
@@ -859,12 +931,33 @@ export default class GameScene extends Phaser.Scene {
                 }
                 gate.passed = true;
 
-                // Visual feedback
+                // Determine which gate was chosen
+                const chosenGate = centerX < GAME.WIDTH / 2 ? gate.left : gate.right;
+                const unchosen = centerX < GAME.WIDTH / 2 ? gate.right : gate.left;
+
+                // Chosen gate - expand and flash
                 this.tweens.add({
-                    targets: [gate.left, gate.right],
+                    targets: chosenGate,
+                    scale: 1.3,
+                    alpha: 0,
+                    duration: 400,
+                    ease: 'Back.easeIn'
+                });
+
+                // Unchosen gate - fade out
+                this.tweens.add({
+                    targets: unchosen,
                     alpha: 0,
                     duration: 300
                 });
+
+                // Flash effect based on gate type
+                const isGoodGate = chosenGate.operation.mult || chosenGate.operation.add;
+                if (isGoodGate) {
+                    this.cameras.main.flash(200, 0, 200, 255); // Cyan flash for good
+                } else {
+                    this.cameras.main.flash(200, 255, 100, 0); // Orange flash for bad
+                }
             }
         });
     }
@@ -908,7 +1001,7 @@ export default class GameScene extends Phaser.Scene {
      * Remove squad members
      */
     removeSquadMembers(count) {
-        for (let i = 0; i < count && this.squadMembers.length > 1; i++) {
+        for (let i = 0; i < count && this.squadMembers.length > 0; i++) {
             const member = this.squadMembers.pop();
             const shadow = member.groundShadow;
 
@@ -933,6 +1026,57 @@ export default class GameScene extends Phaser.Scene {
 
         this.recalculateFormation();
         this.updateSquadCount();
+
+        // Check for game over
+        if (this.squadMembers.length === 0) {
+            this.triggerGameOver();
+        }
+    }
+
+    /**
+     * Trigger game over
+     */
+    triggerGameOver() {
+        console.log('💀 GAME OVER!');
+        this.gameState = 'gameOver';
+
+        // Camera shake
+        this.cameras.main.shake(500, 0.02);
+
+        // Screen flash red
+        this.cameras.main.flash(300, 255, 0, 0);
+
+        // Delay before showing game over screen
+        this.time.delayedCall(800, () => {
+            this.scene.start(SCENES.GAME_OVER, {
+                distance: this.distance,
+                squadSize: 0
+            });
+        });
+    }
+
+    /**
+     * Create particle burst effect
+     */
+    createParticleBurst(x, y, color, count) {
+        for (let i = 0; i < count; i++) {
+            const angle = (i / count) * Math.PI * 2;
+            const speed = Phaser.Math.Between(100, 200);
+
+            const particle = this.add.circle(x, y, 4, color);
+            particle.setDepth(50);
+
+            this.tweens.add({
+                targets: particle,
+                x: x + Math.cos(angle) * speed,
+                y: y + Math.sin(angle) * speed,
+                alpha: 0,
+                scale: 0,
+                duration: 400,
+                ease: 'Cubic.easeOut',
+                onComplete: () => particle.destroy()
+            });
+        }
     }
 
     shutdown() {

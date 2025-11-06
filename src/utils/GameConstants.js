@@ -127,7 +127,9 @@ export const UI = {
 export const SCENES = {
     BOOT: 'BootScene',
     PRELOAD: 'PreloadScene',
+    MENU: 'MenuScene',
     GAME: 'GameScene',
+    GAME_OVER: 'GameOverScene',
 };
 
 // ============================================================================

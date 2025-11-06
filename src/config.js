@@ -2,11 +2,13 @@ import Phaser from 'phaser';
 import { GAME } from './utils/GameConstants.js';
 import BootScene from './scenes/BootScene.js';
 import PreloadScene from './scenes/PreloadScene.js';
+import MenuScene from './scenes/MenuScene.js';
 import GameScene from './scenes/GameScene.js';
+import GameOverScene from './scenes/GameOverScene.js';
 
 /**
  * Phaser 3 Game Configuration
- * Phase 1: Foundation REBUILD - Portrait 540x960
+ * Phase 2: Enhanced Gameplay - Menu + Game Over + Effects
  */
 const config = {
     type: Phaser.AUTO,
@@ -44,11 +46,13 @@ const config = {
         forceSetTimeOut: false
     },
 
-    // Scene order - Only Boot, Preload, Game for Phase 1
+    // Scene order - Phase 2: Menu → Game → GameOver
     scene: [
         BootScene,
         PreloadScene,
-        GameScene
+        MenuScene,
+        GameScene,
+        GameOverScene
     ]
 };
 
