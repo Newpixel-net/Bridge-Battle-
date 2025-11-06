@@ -21,8 +21,42 @@ export default class PreloadScene extends Phaser.Scene {
         this.load.on('progress', this.onProgress, this);
         this.load.on('complete', this.onComplete, this);
 
-        // For Phase 1, we don't need to load external assets yet
-        // We'll create simple placeholder graphics in create()
+        // Load UI assets from processed-assets/game_assets-ui
+        const uiPath = 'processed-assets/game_assets-ui/';
+
+        // Menu buttons
+        this.load.image('ui_button_new_game', uiPath + 'button_new_game.png');
+        this.load.image('ui_button_resume', uiPath + 'button_resume.png');
+        this.load.image('ui_button_settings', uiPath + 'button_settings.png');
+        this.load.image('ui_button_shop', uiPath + 'button_shop.png');
+        this.load.image('ui_button_exit', uiPath + 'button_exit.png');
+
+        // Decorations
+        this.load.image('ui_grass_left', uiPath + 'decoration_grass_left.png');
+        this.load.image('ui_grass_right', uiPath + 'decoration_grass_right.png');
+
+        // Stars (for victory scene)
+        for (let i = 1; i <= 6; i++) {
+            this.load.image(`ui_star_filled_${i}`, uiPath + `star_filled_0${i}.png`);
+        }
+        for (let i = 1; i <= 7; i++) {
+            this.load.image(`ui_star_empty_${i}`, uiPath + `star_empty_0${i}.png`);
+        }
+
+        // Complete panels
+        this.load.image('ui_panel_win', uiPath + 'panel_win_complete.png');
+        this.load.image('ui_panel_lose', uiPath + 'panel_lose_complete.png');
+
+        // Continue buttons
+        this.load.image('ui_button_continue_win', uiPath + 'button_continue_win.png');
+        this.load.image('ui_button_continue_lose', uiPath + 'button_continue_lose.png');
+
+        // Icons
+        this.load.image('ui_icon_coin', uiPath + 'icon_coin_01.png');
+        this.load.image('ui_icon_gem', uiPath + 'icon_gem_large.png');
+        this.load.image('ui_icon_heart', uiPath + 'icon_heart.png');
+
+        console.log('📦 Loading UI assets from:', uiPath);
     }
 
     create() {

@@ -47,6 +47,9 @@ export default class MenuScene extends Phaser.Scene {
         // Version info
         this.createVersionInfo();
 
+        // Grass decorations (bottom corners)
+        this.createGrassDecorations();
+
         // Keyboard shortcuts
         this.setupKeyboardShortcuts();
 
@@ -145,55 +148,91 @@ export default class MenuScene extends Phaser.Scene {
     createMainButtons() {
         const centerX = GAME.WIDTH / 2;
         const startY = 340;
-        const buttonSpacing = 85;
+        const buttonSpacing = 90;
 
-        // Start Game button (larger, primary)
-        this.createButton(
+        // New Game button (using PNG asset)
+        this.createImageButton(
             centerX, startY,
-            'START GAME',
-            0x4CAF50, // Green
-            60,
-            380,
-            () => this.startGame(),
-            '48px'
-        );
-
-        // How to Play button
-        this.createButton(
-            centerX, startY + buttonSpacing,
-            'HOW TO PLAY',
-            0x2196F3, // Blue
-            55,
-            340,
-            () => this.showHowToPlay(),
-            '32px'
+            'ui_button_new_game',
+            () => this.startGame()
         );
 
         // Settings button
-        this.createButton(
-            centerX, startY + buttonSpacing * 2,
-            'SETTINGS',
-            0xFF9800, // Orange
-            55,
-            340,
-            () => this.showSettings(),
-            '32px'
+        this.createImageButton(
+            centerX, startY + buttonSpacing,
+            'ui_button_settings',
+            () => this.showSettings()
         );
 
-        // Credits button
-        this.createButton(
+        // Shop button (new feature - shows "How to Play" for now)
+        this.createImageButton(
+            centerX, startY + buttonSpacing * 2,
+            'ui_button_shop',
+            () => this.showHowToPlay()
+        );
+
+        // Exit button (shows credits)
+        this.createImageButton(
             centerX, startY + buttonSpacing * 3,
-            'CREDITS',
-            0x9C27B0, // Purple
-            55,
-            340,
-            () => this.showCredits(),
-            '32px'
+            'ui_button_exit',
+            () => this.showCredits()
         );
     }
 
     /**
-     * Create a button with hover/click effects
+     * Create an image button with hover/click effects (NEW - for PNG assets)
+     */
+    createImageButton(x, y, imageKey, callback) {
+        // Create image button
+        const button = this.add.image(x, y, imageKey);
+        button.setInteractive({ useHandCursor: true });
+        button.setScale(1.0);
+
+        // Hover effect - scale up slightly and brighten
+        button.on('pointerover', () => {
+            this.tweens.add({
+                targets: button,
+                scaleX: 1.08,
+                scaleY: 1.08,
+                duration: 150,
+                ease: 'Back.easeOut'
+            });
+            // Brighten effect
+            button.setTint(0xFFFFFF);
+        });
+
+        button.on('pointerout', () => {
+            this.tweens.add({
+                targets: button,
+                scaleX: 1.0,
+                scaleY: 1.0,
+                duration: 150
+            });
+            // Remove tint
+            button.clearTint();
+        });
+
+        // Click effect
+        button.on('pointerdown', () => {
+            // Quick scale down (press effect)
+            this.tweens.add({
+                targets: button,
+                scaleX: 0.95,
+                scaleY: 0.95,
+                duration: 100,
+                yoyo: true,
+                ease: 'Quad.easeInOut'
+            });
+
+            this.cameras.main.flash(100, 255, 255, 255);
+            this.time.delayedCall(100, callback);
+        });
+
+        return button;
+    }
+
+    /**
+     * Create a button with hover/click effects (OLD - for rectangle buttons in panels)
      */
     createButton(x, y, text, color, height, width, callback, fontSize = '32px') {
         // Button background
@@ -633,6 +672,42 @@ export default class MenuScene extends Phaser.Scene {
                     }
                 });
             }
+        });
+    }
+
+    /**
+     * Create grass decorations
+     */
+    createGrassDecorations() {
+        // Left grass decoration
+        const grassLeft = this.add.image(80, GAME.HEIGHT - 25, 'ui_grass_left');
+        grassLeft.setScale(1.2);
+        grassLeft.setAlpha(0.9);
+
+        // Right grass decoration
+        const grassRight = this.add.image(GAME.WIDTH - 80, GAME.HEIGHT - 25, 'ui_grass_right');
+        grassRight.setScale(1.2);
+        grassRight.setAlpha(0.9);
+
+        // Subtle swaying animation for left grass
+        this.tweens.add({
+            targets: grassLeft,
+            angle: -3,
+            duration: 2000,
+            yoyo: true,
+            repeat: -1,
+            ease: 'Sine.easeInOut'
+        });
+
+        // Subtle swaying animation for right grass (opposite phase)
+        this.tweens.add({
+            targets: grassRight,
+            angle: 3,
+            duration: 2000,
+            yoyo: true,
+            repeat: -1,
+            ease: 'Sine.easeInOut',
+            delay: 1000  // Offset animation
         });
     }
 
