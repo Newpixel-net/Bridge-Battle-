@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import { GAME, COLORS, SCENES } from '../utils/GameConstants.js';
+import { GAME, COLORS, SCENES, UI_SCALE } from '../utils/GameConstants.js';
 
 /**
  * MenuScene - Enhanced Main Menu
@@ -186,14 +186,16 @@ export default class MenuScene extends Phaser.Scene {
         // Create image button
         const button = this.add.image(x, y, imageKey);
         button.setInteractive({ useHandCursor: true });
-        button.setScale(1.0);
+        // FIXED: Scale buttons using UI_SCALE constant (788x370 -> 394x185)
+        button.setScale(UI_SCALE.BUTTON);
 
         // Hover effect - scale up slightly and brighten
+        const hoverScale = UI_SCALE.BUTTON * 1.08;
         button.on('pointerover', () => {
             this.tweens.add({
                 targets: button,
-                scaleX: 1.08,
-                scaleY: 1.08,
+                scaleX: hoverScale,
+                scaleY: hoverScale,
                 duration: 150,
                 ease: 'Back.easeOut'
             });
@@ -204,8 +206,8 @@ export default class MenuScene extends Phaser.Scene {
         button.on('pointerout', () => {
             this.tweens.add({
                 targets: button,
-                scaleX: 1.0,
-                scaleY: 1.0,
+                scaleX: UI_SCALE.BUTTON,
+                scaleY: UI_SCALE.BUTTON,
                 duration: 150
             });
             // Remove tint
@@ -215,10 +217,11 @@ export default class MenuScene extends Phaser.Scene {
         // Click effect
         button.on('pointerdown', () => {
             // Quick scale down (press effect)
+            const clickScale = UI_SCALE.BUTTON * 0.95;
             this.tweens.add({
                 targets: button,
-                scaleX: 0.95,
-                scaleY: 0.95,
+                scaleX: clickScale,
+                scaleY: clickScale,
                 duration: 100,
                 yoyo: true,
                 ease: 'Quad.easeInOut'
@@ -681,12 +684,14 @@ export default class MenuScene extends Phaser.Scene {
     createGrassDecorations() {
         // Left grass decoration
         const grassLeft = this.add.image(80, GAME.HEIGHT - 25, 'ui_grass_left');
-        grassLeft.setScale(1.2);
+        // FIXED: Scale using UI_SCALE.DECORATION constant
+        grassLeft.setScale(UI_SCALE.DECORATION);
         grassLeft.setAlpha(0.9);
 
         // Right grass decoration
         const grassRight = this.add.image(GAME.WIDTH - 80, GAME.HEIGHT - 25, 'ui_grass_right');
-        grassRight.setScale(1.2);
+        // FIXED: Scale using UI_SCALE.DECORATION constant
+        grassRight.setScale(UI_SCALE.DECORATION);
         grassRight.setAlpha(0.9);
 
         // Subtle swaying animation for left grass

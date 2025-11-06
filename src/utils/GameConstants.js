@@ -269,6 +269,33 @@ export const UI = {
 };
 
 // ============================================================================
+// UI SCALING - Scales for high-res UI assets (from processed-assets/ui-elements)
+// ============================================================================
+// Ultra-high-res assets from EPS source need scaling to fit 1280x720 screen
+export const UI_SCALE = {
+    // Buttons (788×370px native) → ~394×185px at 50% scale
+    BUTTON: 0.5,
+
+    // Panels (1640×1800px native) → ~623×684px at 38% scale (fits in 720px height)
+    PANEL: 0.38,
+
+    // Icons (440×440px native) → ~220×220px at 50% scale
+    ICON: 0.5,
+
+    // Stars (490×490px native) → ~245×245px at 50% scale
+    STAR: 0.5,
+
+    // Counters (700×450px native) → ~350×225px at 50% scale
+    COUNTER: 0.5,
+
+    // Level badges (660×660px native) → ~330×330px at 50% scale
+    BADGE: 0.5,
+
+    // Decorations (grass, etc.)
+    DECORATION: 0.5
+};
+
+// ============================================================================
 // SCENES
 // ============================================================================
 export const SCENES = {
