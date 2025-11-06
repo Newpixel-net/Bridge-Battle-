@@ -5,6 +5,7 @@ import PreloadScene from './scenes/PreloadScene.js';
 import MenuScene from './scenes/MenuScene.js';
 import CharacterSelectionScene from './scenes/CharacterSelectionScene.js';
 import GameScene from './scenes/GameScene.js';
+import VictoryScene from './scenes/VictoryScene.js';
 import GameOverScene from './scenes/GameOverScene.js';
 
 /**
@@ -48,13 +49,14 @@ const config = {
         forceSetTimeOut: false
     },
 
-    // Scene order - Phase 2: Menu → Character Selection → Game → GameOver
+    // Scene order - Phase 2: Menu → Character Selection → Game → Victory/GameOver
     scene: [
         BootScene,
         PreloadScene,
         MenuScene,
         CharacterSelectionScene,
         GameScene,
+        VictoryScene,
         GameOverScene
     ]
 };

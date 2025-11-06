@@ -142,6 +142,7 @@ export const SCENES = {
     MENU: 'MenuScene',
     CHARACTER_SELECTION: 'CharacterSelectionScene',
     GAME: 'GameScene',
+    VICTORY: 'VictoryScene',
     GAME_OVER: 'GameOverScene',
 };
 

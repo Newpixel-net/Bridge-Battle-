@@ -2827,9 +2827,14 @@ export default class GameScene extends Phaser.Scene {
         });
 
         this.time.delayedCall(5500, () => {
-            this.scene.start(SCENES.GAME_OVER, {
+            // Transition to victory screen
+            this.scene.start(SCENES.VICTORY, {
+                score: this.score,
                 distance: this.distance,
-                squadSize: this.squadMembers.length
+                enemiesKilled: this.enemiesKilled,
+                bossDefeated: false, // Distance victory, not boss victory
+                stageNumber: this.stageNumber,
+                timePlayed: this.time.now / 1000 // Convert to seconds
             });
         });
     }
@@ -3793,14 +3798,14 @@ export default class GameScene extends Phaser.Scene {
 
         // Transition to victory screen after fade
         this.time.delayedCall(2000, () => {
-            // For now, just go to game over with victory flag
-            // Priority 5 will add proper victory screen
-            this.scene.start(SCENES.GAME_OVER, {
-                victory: true,
+            // Go to victory screen
+            this.scene.start(SCENES.VICTORY, {
                 score: this.score,
                 distance: this.distance,
                 enemiesKilled: this.enemiesKilled,
-                bossDefeated: true
+                bossDefeated: true,
+                stageNumber: this.stageNumber,
+                timePlayed: this.time.now / 1000 // Convert to seconds
             });
         });
     }
