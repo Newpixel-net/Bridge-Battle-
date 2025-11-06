@@ -47,13 +47,7 @@ const config = {
         premultipliedAlpha: true,
         failIfMajorPerformanceCaveat: false,
         powerPreference: 'high-performance',
-        batchSize: 4096,          // Higher batch size for better performance
-    },
-
-    // Enhanced canvas quality for crisp text and graphics
-    canvas: {
-        alpha: false,
-        desynchronized: true      // Better performance on modern browsers
+        batchSize: 4096          // Higher batch size for better performance
     },
 
     // FPS target
