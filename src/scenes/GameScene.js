@@ -3,6 +3,8 @@ import { GAME, WORLD, SQUAD, COLORS, SCENES, UI, COLLECTIBLES, OBSTACLES, GATES,
 
 // COMBAT SYSTEM - Priority 1 Implementation
 import BulletPool from '../systems/BulletPool.js';
+import DamageNumberPool from '../systems/DamageNumberPool.js';
+import CoinPool from '../systems/CoinPool.js';
 import AutoShootingSystem from '../systems/AutoShootingSystem.js';
 import EnemyManager from '../systems/EnemyManager.js';
 import WaveManager from '../systems/WaveManager.js';
@@ -2727,6 +2729,16 @@ export default class GameScene extends Phaser.Scene {
             this.bulletPool.update(time, delta);
         }
 
+        // Update damage number pool (float and fade damage numbers)
+        if (this.damageNumberPool) {
+            this.damageNumberPool.update(time, delta);
+        }
+
+        // Update coin pool (magnetic collection, animations)
+        if (this.coinPool) {
+            this.coinPool.update(time, delta, this.squadCenterX, this.squadCenterY);
+        }
+
         // Update auto-shooting (fire bullets continuously)
         if (this.autoShootingSystem) {
             this.autoShootingSystem.update(time, delta);
@@ -3659,6 +3671,12 @@ export default class GameScene extends Phaser.Scene {
         // Create bullet pool (50 bullets max)
         this.bulletPool = new BulletPool(this, 50);
 
+        // Create damage number pool (50 damage numbers max)
+        this.damageNumberPool = new DamageNumberPool(this, 50);
+
+        // Create coin pool (100 coins max)
+        this.coinPool = new CoinPool(this, 100);
+
         // Create squad manager reference (needed for shooting system)
         const squadManagerProxy = {
             squadCenterX: this.squadCenterX,
@@ -3844,6 +3862,15 @@ export default class GameScene extends Phaser.Scene {
                     // Hit!
                     const killed = enemy.takeDamage(bullet.damage);
 
+                    // Spawn damage number
+                    if (this.damageNumberPool) {
+                        this.damageNumberPool.spawn(
+                            enemy.container.x,
+                            enemy.container.y,
+                            bullet.damage
+                        );
+                    }
+
                     // Recycle bullet
                     this.bulletPool.recycleBullet(bullet);
 
@@ -3851,6 +3878,11 @@ export default class GameScene extends Phaser.Scene {
                     if (killed) {
                         this.score += enemy.getScoreValue();
                         this.enemiesKilled++;
+
+                        // Coin drop (30% chance)
+                        if (this.coinPool && this.coinPool.shouldDropCoin(false)) {
+                            this.coinPool.spawn(enemy.container.x, enemy.container.y);
+                        }
                     }
 
                     // Play hit sound
@@ -3877,8 +3909,22 @@ export default class GameScene extends Phaser.Scene {
                         // Hit boss!
                         const killed = boss.takeDamage(bullet.damage);
 
+                        // Spawn damage number
+                        if (this.damageNumberPool) {
+                            this.damageNumberPool.spawn(
+                                boss.x,
+                                boss.y - boss.size,
+                                bullet.damage
+                            );
+                        }
+
                         // Recycle bullet
                         this.bulletPool.recycleBullet(bullet);
+
+                        // Boss defeated - drop many coins
+                        if (killed && this.coinPool) {
+                            this.coinPool.spawnMultiple(boss.x, boss.y, this.coinPool.config.bossDropCount);
+                        }
 
                         // Play hit sound (louder for boss)
                         if (this.playBulletHitSound) {
@@ -3916,6 +3962,52 @@ export default class GameScene extends Phaser.Scene {
                         projectile.destroy();
                     }
                     this.bossProjectiles.splice(i, 1);
+                }
+            }
+        }
+
+        // CONTACT DAMAGE: Check enemies vs player squad
+        if (this.enemyManager) {
+            for (let enemy of enemies) {
+                if (!enemy.active || enemy.isDying || enemy.isDestroyed) continue;
+
+                // Check collision with squad
+                const dist = Phaser.Math.Distance.Between(
+                    enemy.container.x,
+                    enemy.container.y,
+                    this.squadCenterX,
+                    this.squadCenterY
+                );
+
+                // Contact damage radius (enemy radius + squad radius)
+                const contactRadius = enemy.getRadius() + 30;
+
+                if (dist < contactRadius) {
+                    // Contact damage - remove 1 squad member
+                    if (this.squadMembers.length > 0) {
+                        // Remove squad member
+                        const member = this.squadMembers.pop();
+                        if (member && member.destroy) {
+                            // Death animation
+                            this.tweens.add({
+                                targets: member,
+                                alpha: 0,
+                                scale: 0,
+                                duration: 200,
+                                onComplete: () => {
+                                    member.destroy();
+                                }
+                            });
+                        }
+
+                        // Update squad formation after member loss
+                        this.updateSquadPositions();
+
+                        // Kill the enemy (they sacrifice themselves)
+                        enemy.die();
+
+                        console.log(`💥 Contact damage! Squad members remaining: ${this.squadMembers.length}`);
+                    }
                 }
             }
         }
