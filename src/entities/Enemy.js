@@ -143,7 +143,7 @@ export default class Enemy {
         container.setDepth(8); // Below player (10) but above road
 
         // Store references
-        container.body = body;
+        container.visualBody = body;  // Renamed to avoid conflict with physics body
         container.shadow = shadow;
         container.highlight = highlight;
 
@@ -170,10 +170,10 @@ export default class Enemy {
         this.lastHitTime = this.scene.time.now;
 
         // Visual feedback - white flash
-        this.container.body.setFillStyle(0xFFFFFF);
+        this.container.visualBody.setFillStyle(0xFFFFFF);
         this.scene.time.delayedCall(this.hitFlashDuration, () => {
-            if (this.container && this.container.body) {
-                this.container.body.setFillStyle(this.color);
+            if (this.container && this.container.visualBody) {
+                this.container.visualBody.setFillStyle(this.color);
             }
         });
 
