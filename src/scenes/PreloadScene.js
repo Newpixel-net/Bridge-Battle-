@@ -1,13 +1,18 @@
 import Phaser from 'phaser';
-import { SCENES } from '../utils/GameConstants.js';
+import { SCENES, COLORS } from '../utils/GameConstants.js';
 
+/**
+ * PreloadScene - Asset loading
+ * Shows loading screen with progress bar
+ * Creates placeholder assets for Phase 1
+ */
 export default class PreloadScene extends Phaser.Scene {
     constructor() {
         super({ key: SCENES.PRELOAD });
     }
 
     preload() {
-        console.log('📦 Preloading assets...');
+        console.log('📦 PreloadScene: Loading assets...');
 
         // Create loading UI
         this.createLoadingUI();
@@ -16,215 +21,156 @@ export default class PreloadScene extends Phaser.Scene {
         this.load.on('progress', this.onProgress, this);
         this.load.on('complete', this.onComplete, this);
 
-        // Load real character sprite sheets with atlases
-        console.log('Loading character sprite sheets...');
-        this.load.spritesheet('char-run', 'processed-assets/sprite-sheets/run/run@2x.png', {
-            frameWidth: 275 * 2, // @2x resolution
-            frameHeight: 294 * 2
-        });
-
-        this.load.spritesheet('char-gunfire', 'processed-assets/sprite-sheets/gunfire/gunfire@2x.png', {
-            frameWidth: 408 * 2, // @2x resolution
-            frameHeight: 408 * 2
-        });
-
-        this.load.spritesheet('char-power-attack', 'processed-assets/sprite-sheets/power-attack/power-attack@2x.png', {
-            frameWidth: 418 * 2, // @2x resolution
-            frameHeight: 440 * 2
-        });
-
-        // Load the JSON metadata (for reference, though Phaser spritesheet handles frames)
-        this.load.json('run-atlas', 'processed-assets/sprite-sheets/run/run.json');
-        this.load.json('gunfire-atlas', 'processed-assets/sprite-sheets/gunfire/gunfire.json');
-        this.load.json('power-attack-atlas', 'processed-assets/sprite-sheets/power-attack/power-attack.json');
+        // For Phase 1, we don't need to load external assets yet
+        // We'll create simple placeholder graphics in create()
     }
 
     create() {
-        console.log('✅ Assets loaded');
+        console.log('✓ Assets loaded');
 
-        // Create placeholder textures
+        // Create placeholder textures for squad members
         this.createPlaceholderTextures();
-
-        // Create character animations
-        this.createCharacterAnimations();
 
         // Small delay before starting game
         this.time.delayedCall(500, () => {
-            this.scene.start('GameSceneNew');
+            this.scene.start(SCENES.GAME);
         });
     }
 
-    createCharacterAnimations() {
-        console.log('🎬 Creating character animations...');
-
-        // Run animation - All 36 frames looping
-        this.anims.create({
-            key: 'anim-run',
-            frames: this.anims.generateFrameNumbers('char-run', { start: 0, end: 35 }),
-            frameRate: 24,
-            repeat: -1
-        });
-
-        // Gunfire animation - All 36 frames looping
-        this.anims.create({
-            key: 'anim-gunfire',
-            frames: this.anims.generateFrameNumbers('char-gunfire', { start: 0, end: 35 }),
-            frameRate: 24,
-            repeat: -1
-        });
-
-        // Power attack animation - All 36 frames looping
-        this.anims.create({
-            key: 'anim-power-attack',
-            frames: this.anims.generateFrameNumbers('char-power-attack', { start: 0, end: 35 }),
-            frameRate: 24,
-            repeat: -1
-        });
-
-        console.log('✅ Character animations created');
-    }
-
+    /**
+     * Create loading screen UI
+     */
     createLoadingUI() {
         const width = this.cameras.main.width;
         const height = this.cameras.main.height;
 
         // Background
-        const bg = this.add.rectangle(width / 2, height / 2, width, height, 0x1a1a2e);
+        const bg = this.add.rectangle(
+            width / 2,
+            height / 2,
+            width,
+            height,
+            0x1a1a2e
+        );
 
         // Title
-        const title = this.add.text(width / 2, height / 3, '🌉 BRIDGE BATTLE', {
-            fontSize: '84px',
-            fontFamily: 'Arial',
-            color: '#FFD700',
-            fontStyle: 'bold',
-            stroke: '#000000',
-            strokeThickness: 6
-        });
+        const title = this.add.text(
+            width / 2,
+            height / 3,
+            '🌉 BRIDGE BATTLE',
+            {
+                fontSize: '96px',
+                fontFamily: 'Arial',
+                color: '#FFD700',
+                fontStyle: 'bold',
+                stroke: '#000000',
+                strokeThickness: 8
+            }
+        );
         title.setOrigin(0.5);
+
+        // Subtitle
+        const subtitle = this.add.text(
+            width / 2,
+            height / 3 + 100,
+            'Crowd Runner × Auto-Shooter',
+            {
+                fontSize: '32px',
+                fontFamily: 'Arial',
+                color: '#AAAAAA',
+                fontStyle: 'italic'
+            }
+        );
+        subtitle.setOrigin(0.5);
 
         // Loading bar background
         const barWidth = 600;
         const barHeight = 40;
-        const barX = width / 2 - barWidth / 2;
-        const barY = height / 2 + 100;
+        const barY = height / 2 + 150;
 
-        this.loadingBarBg = this.add.rectangle(width / 2, barY, barWidth, barHeight, 0x444444);
-        this.loadingBarBg.setOrigin(0.5);
+        this.loadingBarBg = this.add.rectangle(
+            width / 2,
+            barY,
+            barWidth,
+            barHeight,
+            0x444444
+        );
 
         // Loading bar fill
-        this.loadingBar = this.add.rectangle(barX, barY, 0, barHeight, 0xFFD700);
+        this.loadingBar = this.add.rectangle(
+            width / 2 - barWidth / 2,
+            barY,
+            0,
+            barHeight,
+            0xFFD700
+        );
         this.loadingBar.setOrigin(0, 0.5);
 
         // Loading text
-        this.loadingText = this.add.text(width / 2, barY + 60, 'Loading... 0%', {
-            fontSize: '32px',
-            fontFamily: 'Arial',
-            color: '#FFFFFF'
-        });
+        this.loadingText = this.add.text(
+            width / 2,
+            barY + 60,
+            'Loading... 0%',
+            {
+                fontSize: '32px',
+                fontFamily: 'Arial',
+                color: '#FFFFFF'
+            }
+        );
         this.loadingText.setOrigin(0.5);
 
-        // Tip text
-        const tip = this.add.text(width / 2, height - 100, 'TIP: Shoot gates to increase their value!', {
-            fontSize: '28px',
-            fontFamily: 'Arial',
-            color: '#AAAAAA',
-            fontStyle: 'italic'
-        });
-        tip.setOrigin(0.5);
+        // Phase indicator
+        const phaseText = this.add.text(
+            width / 2,
+            height - 100,
+            'Phase 1: Foundation',
+            {
+                fontSize: '28px',
+                fontFamily: 'Arial',
+                color: '#00BCD4',
+                fontStyle: 'bold'
+            }
+        );
+        phaseText.setOrigin(0.5);
     }
 
+    /**
+     * Update loading progress
+     */
     onProgress(progress) {
         const barWidth = 600;
         this.loadingBar.width = barWidth * progress;
         this.loadingText.setText(`Loading... ${Math.round(progress * 100)}%`);
     }
 
+    /**
+     * Loading complete
+     */
     onComplete() {
         this.loadingText.setText('Loading Complete!');
     }
 
+    /**
+     * Create placeholder textures
+     * Phase 1: Simple shapes for squad members
+     */
     createPlaceholderTextures() {
-        // Create placeholder graphics for game objects
         const graphics = this.add.graphics();
 
-        // Squad member (soldier) - Green circle with gun
-        graphics.fillStyle(0x44AA44);
-        graphics.fillCircle(32, 32, 28);
-        graphics.fillStyle(0x333333);
-        graphics.fillRect(40, 28, 20, 8); // Gun
-        graphics.generateTexture('placeholder-squad', 64, 64);
-        graphics.clear();
-
-        // Enemy - Red circle with angry face
-        graphics.fillStyle(0xAA4444);
-        graphics.fillCircle(32, 32, 28);
-        graphics.fillStyle(0x000000);
-        graphics.fillCircle(22, 26, 4); // Eye
-        graphics.fillCircle(42, 26, 4); // Eye
-        graphics.generateTexture('placeholder-enemy', 64, 64);
-        graphics.clear();
-
-        // Bullet - Yellow glowing circle
-        graphics.fillStyle(0xFFD700);
-        graphics.fillCircle(8, 8, 6);
-        graphics.fillStyle(0xFFFFFF);
-        graphics.fillCircle(8, 8, 3);
-        graphics.generateTexture('placeholder-bullet', 16, 16);
-        graphics.clear();
-
-        // Obstacle (Tire) - Black circle with gray inside
-        graphics.fillStyle(0x222222);
-        graphics.fillCircle(64, 64, 60);
-        graphics.fillStyle(0x666666);
-        graphics.fillCircle(64, 64, 40);
-        graphics.fillStyle(0x222222);
-        graphics.fillCircle(64, 64, 20);
-        graphics.generateTexture('placeholder-obstacle-tire', 128, 128);
-        graphics.clear();
-
-        // Crate - Brown box
-        graphics.fillStyle(0x8B4513);
-        graphics.fillRect(0, 0, 128, 128);
-        graphics.lineStyle(4, 0x654321);
-        graphics.strokeRect(2, 2, 124, 124);
-        graphics.lineBetween(0, 64, 128, 64);
-        graphics.lineBetween(64, 0, 64, 128);
-        graphics.generateTexture('placeholder-obstacle-crate', 128, 128);
-        graphics.clear();
-
-        // Gate (positive) - Blue holographic
-        graphics.fillStyle(0x0088FF, 0.3);
-        graphics.fillRect(0, 0, 200, 300);
-        graphics.lineStyle(4, 0x00AAFF);
-        graphics.strokeRect(2, 2, 196, 296);
-        graphics.generateTexture('placeholder-gate-positive', 200, 300);
-        graphics.clear();
-
-        // Gate (negative) - Red holographic
-        graphics.fillStyle(0xFF4444, 0.3);
-        graphics.fillRect(0, 0, 200, 300);
-        graphics.lineStyle(4, 0xFF0000);
-        graphics.strokeRect(2, 2, 196, 296);
-        graphics.generateTexture('placeholder-gate-negative', 200, 300);
-        graphics.clear();
-
-        // Particle - Small white circle
-        graphics.fillStyle(0xFFFFFF);
-        graphics.fillCircle(4, 4, 3);
-        graphics.generateTexture('placeholder-particle', 8, 8);
-        graphics.clear();
-
-        // Weapon pickup - Glowing cyan gun
-        graphics.fillStyle(0x00FFFF, 0.5);
+        // Squad member placeholder (blue circle)
+        graphics.fillStyle(COLORS.SQUAD_BLUE);
         graphics.fillCircle(32, 32, 30);
-        graphics.fillStyle(0x00FFFF);
-        graphics.fillRect(20, 28, 40, 8);
-        graphics.fillRect(40, 20, 8, 24);
-        graphics.generateTexture('placeholder-weapon', 64, 64);
+
+        // Add simple "eye" details
+        graphics.fillStyle(0xFFFFFF);
+        graphics.fillCircle(24, 28, 4);
+        graphics.fillCircle(40, 28, 4);
+
+        graphics.generateTexture('squad-member', 64, 64);
         graphics.clear();
 
         graphics.destroy();
 
-        console.log('✅ Placeholder textures created');
+        console.log('✓ Placeholder textures created');
     }
 }
