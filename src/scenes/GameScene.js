@@ -156,6 +156,7 @@ export default class GameScene extends Phaser.Scene {
         this.enemyManager = null;
         this.score = 0;
         this.enemiesKilled = 0;
+        this.warningIndicators = []; // Warning arrows for off-screen enemies
 
         // PROGRESSION SYSTEM - Enhanced scoring and tracking
         this.distanceScore = 0;           // Score from distance (1 point per 10m)
@@ -1134,7 +1135,7 @@ export default class GameScene extends Phaser.Scene {
         this.squadBubble.setStrokeStyle(3, COLORS.BUBBLE_BORDER);
         this.squadBubble.setDepth(20);
 
-        // Squad count text
+        // Squad count text (crisp 2× resolution)
         this.squadText = this.add.text(x, y, '1', {
             fontSize: '48px',
             fontFamily: 'Arial Black',
@@ -1144,6 +1145,7 @@ export default class GameScene extends Phaser.Scene {
         });
         this.squadText.setOrigin(0.5);
         this.squadText.setDepth(21);
+        this.squadText.setResolution(2); // 2× resolution for crisp rendering
 
         console.log(`✓ Squad bubble created ABOVE character at (${x}, ${y})`);
     }
@@ -1170,7 +1172,7 @@ export default class GameScene extends Phaser.Scene {
         panelGlow.setScrollFactor(0);
         panelGlow.setStrokeStyle(2, 0x00AAFF, 0.5);
 
-        // UI/HUD POLISH 1: Distance counter with rolling numbers
+        // UI/HUD POLISH 1: Distance counter with rolling numbers (crisp 2× resolution)
         this.distanceText = this.add.text(20, 20, '0m', {
             fontSize: '28px',
             fontFamily: 'Arial Black',
@@ -1180,8 +1182,9 @@ export default class GameScene extends Phaser.Scene {
         });
         this.distanceText.setDepth(uiDepth + 1);
         this.distanceText.setScrollFactor(0);
+        this.distanceText.setResolution(2); // 2× resolution for crisp rendering
 
-        // UI/HUD POLISH 7: Milestone tracker
+        // UI/HUD POLISH 7: Milestone tracker (crisp 2× resolution)
         this.milestoneText = this.add.text(20, 52, 'Next: 100m', {
             fontSize: '14px',
             fontFamily: 'Arial',
@@ -1191,8 +1194,9 @@ export default class GameScene extends Phaser.Scene {
         });
         this.milestoneText.setDepth(uiDepth + 1);
         this.milestoneText.setScrollFactor(0);
+        this.milestoneText.setResolution(2); // 2× resolution for crisp rendering
 
-        // UI/HUD POLISH 2: Squad size with color coding
+        // UI/HUD POLISH 2: Squad size with color coding (crisp 2× resolution)
         this.squadSizeUI = this.add.text(20, 75, 'Squad: 1', {
             fontSize: '20px',
             fontFamily: 'Arial Black',
@@ -1202,6 +1206,7 @@ export default class GameScene extends Phaser.Scene {
         });
         this.squadSizeUI.setDepth(uiDepth + 1);
         this.squadSizeUI.setScrollFactor(0);
+        this.squadSizeUI.setResolution(2); // 2× resolution for crisp rendering
 
         // UI/HUD POLISH 3: Visual gauge for squad size
         this.createSquadGauge(20, 105, uiDepth);
@@ -1315,7 +1320,7 @@ export default class GameScene extends Phaser.Scene {
         comboBg.setDepth(depth);
         comboBg.setScrollFactor(0);
 
-        // Combo text
+        // Combo text (crisp 2× resolution)
         this.comboText = this.add.text(x + 10, y + 8, 'Combo: 0', {
             fontSize: '16px',
             fontFamily: 'Arial Black',
@@ -1325,9 +1330,10 @@ export default class GameScene extends Phaser.Scene {
         });
         this.comboText.setDepth(depth + 1);
         this.comboText.setScrollFactor(0);
+        this.comboText.setResolution(2); // 2× resolution for crisp rendering
         this.comboText.setVisible(false); // Hidden until combo > 0
 
-        // Multiplier text
+        // Multiplier text (crisp 2× resolution)
         this.multiplierText = this.add.text(x + 150, y + 8, 'x1', {
             fontSize: '18px',
             fontFamily: 'Arial Black',
@@ -1337,6 +1343,7 @@ export default class GameScene extends Phaser.Scene {
         });
         this.multiplierText.setDepth(depth + 1);
         this.multiplierText.setScrollFactor(0);
+        this.multiplierText.setResolution(2); // 2× resolution for crisp rendering
     }
 
     /**
@@ -2530,6 +2537,9 @@ export default class GameScene extends Phaser.Scene {
             this.enemyManager.update(time, delta);
         }
 
+        // FORWARD MOTION FEEL: Update warning indicators for off-screen enemies
+        this.updateWarningIndicators();
+
         // Update boss manager (boss behavior, attacks, projectiles)
         if (this.bossManager) {
             this.bossManager.update(time, delta);
@@ -3468,12 +3478,135 @@ export default class GameScene extends Phaser.Scene {
         // Create enemy manager
         this.enemyManager = new EnemyManager(this);
 
+        // Create warning indicator system for off-screen enemies
+        this.createWarningIndicatorSystem();
+
         // Start enemy spawning after countdown
         this.time.delayedCall(3000, () => {
             this.enemyManager.resumeSpawning(this.time.now);
         });
 
         console.log('✓ Combat system initialized');
+    }
+
+    /**
+     * FORWARD MOTION FEEL: Create warning indicator system for off-screen enemies
+     */
+    createWarningIndicatorSystem() {
+        // Create pool of warning indicators (reusable)
+        const maxIndicators = 10;
+
+        for (let i = 0; i < maxIndicators; i++) {
+            // Warning arrow (triangle pointing at enemy)
+            const arrow = this.add.triangle(
+                0, 0,
+                0, -15,    // Top
+                -10, 10,   // Bottom left
+                10, 10,    // Bottom right
+                0xFF4444,  // Red color
+                0.8
+            );
+            arrow.setDepth(150); // Above all UI
+            arrow.setScrollFactor(0); // Fixed to screen
+            arrow.setVisible(false);
+            arrow.setStrokeStyle(2, 0xFFFFFF, 1);
+
+            // Distance text (shows meters away)
+            const distText = this.add.text(0, 0, '', {
+                fontSize: '12px',
+                fontFamily: 'Arial Black',
+                color: '#FFFFFF',
+                stroke: '#000000',
+                strokeThickness: 3
+            });
+            distText.setDepth(151);
+            distText.setScrollFactor(0);
+            distText.setResolution(2); // Crisp text
+            distText.setVisible(false);
+            distText.setOrigin(0.5);
+
+            this.warningIndicators.push({
+                arrow: arrow,
+                distText: distText,
+                active: false,
+                targetEnemy: null
+            });
+        }
+
+        console.log('✓ Warning indicator system created');
+    }
+
+    /**
+     * FORWARD MOTION FEEL: Update warning indicators for off-screen enemies
+     */
+    updateWarningIndicators() {
+        if (!this.enemyManager) return;
+
+        const enemies = this.enemyManager.getActiveEnemies();
+        const screenPadding = 30; // Distance from edge
+        const playerY = this.squadCenterY;
+
+        // Reset all indicators
+        this.warningIndicators.forEach(indicator => {
+            indicator.active = false;
+            indicator.arrow.setVisible(false);
+            indicator.distText.setVisible(false);
+        });
+
+        let indicatorIndex = 0;
+
+        // Check each enemy
+        for (let enemy of enemies) {
+            if (indicatorIndex >= this.warningIndicators.length) break;
+
+            const enemyPos = enemy.getPosition();
+
+            // Only show warnings for enemies above screen (approaching from top)
+            const isOffScreenTop = enemyPos.y < -20;
+            const isOnScreen = enemyPos.y > 0 && enemyPos.y < GAME.HEIGHT;
+
+            if (isOffScreenTop || !isOnScreen) {
+                const indicator = this.warningIndicators[indicatorIndex];
+
+                // Calculate position on screen edge
+                let indicatorX = enemyPos.x;
+                let indicatorY = screenPadding;
+
+                // Clamp X to screen bounds
+                indicatorX = Phaser.Math.Clamp(indicatorX, screenPadding + 20, GAME.WIDTH - screenPadding - 20);
+
+                // Position arrow
+                indicator.arrow.setPosition(indicatorX, indicatorY);
+                indicator.arrow.setVisible(true);
+
+                // Calculate distance to enemy
+                const distanceToEnemy = Math.abs(enemyPos.y - playerY);
+                const distanceInMeters = Math.floor(distanceToEnemy / 10);
+
+                // Position and update text
+                indicator.distText.setPosition(indicatorX, indicatorY - 20);
+                indicator.distText.setText(`${distanceInMeters}m`);
+                indicator.distText.setVisible(true);
+
+                // Pulse animation for urgency
+                const urgency = Math.max(0.5, 1 - (distanceToEnemy / 500));
+                indicator.arrow.setAlpha(0.6 + urgency * 0.4);
+                indicator.arrow.setScale(0.8 + urgency * 0.4);
+
+                // Color based on distance (red when close, orange when far)
+                if (distanceInMeters < 30) {
+                    indicator.arrow.setFillStyle(0xFF0000); // Bright red - urgent!
+                } else if (distanceInMeters < 60) {
+                    indicator.arrow.setFillStyle(0xFF6644); // Orange-red
+                } else {
+                    indicator.arrow.setFillStyle(0xFFAA44); // Orange
+                }
+
+                indicator.active = true;
+                indicator.targetEnemy = enemy;
+                indicatorIndex++;
+            }
+        }
     }
 
     /**
