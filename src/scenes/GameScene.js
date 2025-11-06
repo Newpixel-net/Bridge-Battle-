@@ -51,6 +51,13 @@ export default class GameScene extends Phaser.Scene {
         // Input
         this.isDragging = false;
         this.targetX = this.squadCenterX;
+
+        // UI/HUD Polish tracking
+        this.previousSquadSize = 1;  // For color coding changes
+        this.comboCount = 0;          // Track consecutive collectibles
+        this.currentMultiplier = 1;   // Current score multiplier
+        this.lastCollectibleTime = 0; // For combo timeout
+        this.previousDistance = 0;    // For rolling number animation
     }
 
     create() {
@@ -771,20 +778,30 @@ export default class GameScene extends Phaser.Scene {
     }
 
     /**
-     * Create enhanced UI
+     * Create enhanced UI with all polish features
      */
     createDistanceUI() {
         const uiDepth = 100;
 
-        // Top-left panel background
-        const panelBg = this.add.rectangle(10, 10, 250, 100, 0x000000, 0.5);
+        // UI/HUD POLISH 8: Vignette effect - subtle edge darkening
+        this.createVignette(uiDepth - 1);
+
+        // Top-left panel background (expanded)
+        const panelBg = this.add.rectangle(10, 10, 280, 180, 0x000000, 0.6);
         panelBg.setOrigin(0, 0);
         panelBg.setDepth(uiDepth);
         panelBg.setScrollFactor(0);
 
-        // Distance counter
-        this.distanceText = this.add.text(20, 20, 'Distance: 0m', {
-            fontSize: '22px',
+        // Panel glow
+        const panelGlow = this.add.rectangle(10, 10, 280, 180, 0x00AAFF, 0.1);
+        panelGlow.setOrigin(0, 0);
+        panelGlow.setDepth(uiDepth);
+        panelGlow.setScrollFactor(0);
+        panelGlow.setStrokeStyle(2, 0x00AAFF, 0.5);
+
+        // UI/HUD POLISH 1: Distance counter with rolling numbers
+        this.distanceText = this.add.text(20, 20, '0m', {
+            fontSize: '28px',
             fontFamily: 'Arial Black',
             color: '#FFD700',
             stroke: '#000000',
@@ -793,21 +810,21 @@ export default class GameScene extends Phaser.Scene {
         this.distanceText.setDepth(uiDepth + 1);
         this.distanceText.setScrollFactor(0);
 
-        // Speed indicator
-        this.speedText = this.add.text(20, 50, `Speed: ${WORLD.SCROLL_SPEED}m/s`, {
-            fontSize: '18px',
+        // UI/HUD POLISH 7: Milestone tracker
+        this.milestoneText = this.add.text(20, 52, 'Next: 100m', {
+            fontSize: '14px',
             fontFamily: 'Arial',
-            color: '#00BCD4',
+            color: '#FFA500',
             stroke: '#000000',
             strokeThickness: 3
         });
-        this.speedText.setDepth(uiDepth + 1);
-        this.speedText.setScrollFactor(0);
+        this.milestoneText.setDepth(uiDepth + 1);
+        this.milestoneText.setScrollFactor(0);
 
-        // Squad size (separate from bubble - for clarity)
+        // UI/HUD POLISH 2: Squad size with color coding
         this.squadSizeUI = this.add.text(20, 75, 'Squad: 1', {
-            fontSize: '18px',
-            fontFamily: 'Arial',
+            fontSize: '20px',
+            fontFamily: 'Arial Black',
             color: COLORS.SQUAD_BLUE,
             stroke: '#000000',
             strokeThickness: 3
@@ -815,7 +832,338 @@ export default class GameScene extends Phaser.Scene {
         this.squadSizeUI.setDepth(uiDepth + 1);
         this.squadSizeUI.setScrollFactor(0);
 
-        console.log('✓ Enhanced UI created');
+        // UI/HUD POLISH 3: Visual gauge for squad size
+        this.createSquadGauge(20, 105, uiDepth);
+
+        // UI/HUD POLISH 5 & 6: Combo tracker and multiplier display
+        this.createComboUI(20, 135, uiDepth);
+
+        // UI/HUD POLISH 4: Upcoming obstacles preview (top-right)
+        this.createUpcomingPreview(GAME.WIDTH - 160, 10, uiDepth);
+
+        console.log('✓ Enhanced UI with all polish features created');
+    }
+
+    /**
+     * UI/HUD POLISH 8: Create vignette effect
+     */
+    createVignette(depth) {
+        const vignetteSize = 200;
+        const vignetteAlpha = 0.4;
+
+        // Top vignette
+        const topVignette = this.add.rectangle(
+            GAME.WIDTH / 2, 0,
+            GAME.WIDTH, vignetteSize,
+            0x000000, vignetteAlpha
+        );
+        topVignette.setOrigin(0.5, 0);
+        topVignette.setDepth(depth);
+        topVignette.setScrollFactor(0);
+        topVignette.setAlpha(0);
+
+        // Gradient fade
+        this.tweens.add({
+            targets: topVignette,
+            alpha: vignetteAlpha,
+            y: -vignetteSize / 2,
+            duration: 0
+        });
+
+        // Bottom vignette
+        const bottomVignette = this.add.rectangle(
+            GAME.WIDTH / 2, GAME.HEIGHT,
+            GAME.WIDTH, vignetteSize,
+            0x000000, vignetteAlpha
+        );
+        bottomVignette.setOrigin(0.5, 1);
+        bottomVignette.setDepth(depth);
+        bottomVignette.setScrollFactor(0);
+
+        // Left vignette
+        const leftVignette = this.add.rectangle(
+            0, GAME.HEIGHT / 2,
+            vignetteSize, GAME.HEIGHT,
+            0x000000, vignetteAlpha * 0.6
+        );
+        leftVignette.setOrigin(0, 0.5);
+        leftVignette.setDepth(depth);
+        leftVignette.setScrollFactor(0);
+
+        // Right vignette
+        const rightVignette = this.add.rectangle(
+            GAME.WIDTH, GAME.HEIGHT / 2,
+            vignetteSize, GAME.HEIGHT,
+            0x000000, vignetteAlpha * 0.6
+        );
+        rightVignette.setOrigin(1, 0.5);
+        rightVignette.setDepth(depth);
+        rightVignette.setScrollFactor(0);
+
+        console.log('✓ Vignette effect created');
+    }
+
+    /**
+     * UI/HUD POLISH 3: Create visual gauge for squad size
+     */
+    createSquadGauge(x, y, depth) {
+        const gaugeWidth = 240;
+        const gaugeHeight = 18;
+
+        // Gauge background
+        this.gaugeBackground = this.add.rectangle(x, y, gaugeWidth, gaugeHeight, 0x333333, 0.8);
+        this.gaugeBackground.setOrigin(0, 0);
+        this.gaugeBackground.setDepth(depth + 1);
+        this.gaugeBackground.setScrollFactor(0);
+        this.gaugeBackground.setStrokeStyle(2, 0x666666);
+
+        // Gauge fill (dynamic)
+        this.gaugeFill = this.add.rectangle(x + 2, y + 2, 10, gaugeHeight - 4, 0x00FF00, 1);
+        this.gaugeFill.setOrigin(0, 0);
+        this.gaugeFill.setDepth(depth + 2);
+        this.gaugeFill.setScrollFactor(0);
+
+        // Gauge segments (visual markers every 10 members)
+        const segmentCount = 10;
+        for (let i = 1; i < segmentCount; i++) {
+            const segmentX = x + (gaugeWidth / segmentCount) * i;
+            const segment = this.add.rectangle(segmentX, y, 1, gaugeHeight, 0xFFFFFF, 0.3);
+            segment.setOrigin(0, 0);
+            segment.setDepth(depth + 1);
+            segment.setScrollFactor(0);
+        }
+    }
+
+    /**
+     * UI/HUD POLISH 5 & 6: Create combo and multiplier UI
+     */
+    createComboUI(x, y, depth) {
+        // Combo/Multiplier container background
+        const comboBg = this.add.rectangle(x, y, 240, 35, 0x000000, 0.7);
+        comboBg.setOrigin(0, 0);
+        comboBg.setDepth(depth);
+        comboBg.setScrollFactor(0);
+
+        // Combo text
+        this.comboText = this.add.text(x + 10, y + 8, 'Combo: 0', {
+            fontSize: '16px',
+            fontFamily: 'Arial Black',
+            color: '#FFFF00',
+            stroke: '#000000',
+            strokeThickness: 3
+        });
+        this.comboText.setDepth(depth + 1);
+        this.comboText.setScrollFactor(0);
+        this.comboText.setVisible(false); // Hidden until combo > 0
+
+        // Multiplier text
+        this.multiplierText = this.add.text(x + 150, y + 8, 'x1', {
+            fontSize: '18px',
+            fontFamily: 'Arial Black',
+            color: '#00FFFF',
+            stroke: '#000000',
+            strokeThickness: 3
+        });
+        this.multiplierText.setDepth(depth + 1);
+        this.multiplierText.setScrollFactor(0);
+    }
+
+    /**
+     * UI/HUD POLISH 4: Create upcoming obstacles preview
+     */
+    createUpcomingPreview(x, y, depth) {
+        // Preview panel background
+        const previewBg = this.add.rectangle(x, y, 150, 200, 0x000000, 0.6);
+        previewBg.setOrigin(0, 0);
+        previewBg.setDepth(depth);
+        previewBg.setScrollFactor(0);
+
+        // Title
+        const previewTitle = this.add.text(x + 10, y + 10, 'AHEAD:', {
+            fontSize: '14px',
+            fontFamily: 'Arial Black',
+            color: '#FFFFFF',
+            stroke: '#000000',
+            strokeThickness: 3
+        });
+        previewTitle.setDepth(depth + 1);
+        previewTitle.setScrollFactor(0);
+
+        // Preview icons container
+        this.previewIcons = [];
+        for (let i = 0; i < 5; i++) {
+            const iconY = y + 40 + (i * 30);
+
+            // Icon background
+            const iconBg = this.add.circle(x + 20, iconY, 10, 0x444444, 0.5);
+            iconBg.setDepth(depth + 1);
+            iconBg.setScrollFactor(0);
+
+            // Distance label
+            const distLabel = this.add.text(x + 40, iconY - 8, '---', {
+                fontSize: '12px',
+                fontFamily: 'Arial',
+                color: '#AAAAAA',
+                stroke: '#000000',
+                strokeThickness: 2
+            });
+            distLabel.setDepth(depth + 1);
+            distLabel.setScrollFactor(0);
+
+            this.previewIcons.push({
+                background: iconBg,
+                label: distLabel,
+                type: null
+            });
+        }
+    }
+
+    /**
+     * UI/HUD POLISH 1: Update distance with rolling number animation
+     */
+    updateDistanceDisplay() {
+        const currentDist = Math.floor(this.distance);
+        const prevDist = Math.floor(this.previousDistance);
+
+        if (currentDist !== prevDist) {
+            // Rolling number animation
+            this.distanceText.setText(`${currentDist}m`);
+
+            // Scale pulse on increment
+            this.tweens.add({
+                targets: this.distanceText,
+                scale: 1.15,
+                duration: 100,
+                yoyo: true,
+                ease: 'Quad.easeOut'
+            });
+
+            this.previousDistance = this.distance;
+        }
+
+        // UI/HUD POLISH 7: Update milestone tracker
+        const milestones = [100, 250, 500, 1000, 2000, 5000];
+        let nextMilestone = milestones.find(m => m > currentDist);
+        if (!nextMilestone) nextMilestone = Math.ceil(currentDist / 1000) * 1000 + 1000;
+
+        const remaining = nextMilestone - currentDist;
+        this.milestoneText.setText(`Next: ${nextMilestone}m (${remaining}m)`);
+    }
+
+    /**
+     * UI/HUD POLISH 3: Update visual gauge
+     */
+    updateSquadGauge() {
+        const maxGaugeWidth = 236; // 240 - 4 (padding)
+        const maxSquadSize = 100; // Visual max for gauge
+        const currentSize = this.squadMembers.length;
+
+        const fillWidth = Math.min((currentSize / maxSquadSize) * maxGaugeWidth, maxGaugeWidth);
+
+        // Smooth tween to new width
+        this.tweens.add({
+            targets: this.gaugeFill,
+            width: fillWidth,
+            duration: 200,
+            ease: 'Quad.easeOut'
+        });
+
+        // Color based on squad size
+        let gaugeColor = 0x00FF00; // Green (good)
+        if (currentSize < 10) gaugeColor = 0xFF0000; // Red (danger)
+        else if (currentSize < 25) gaugeColor = 0xFFAA00; // Orange (warning)
+        else if (currentSize >= 50) gaugeColor = 0x00FFFF; // Cyan (excellent)
+
+        this.gaugeFill.setFillStyle(gaugeColor);
+    }
+
+    /**
+     * UI/HUD POLISH 4: Update upcoming preview
+     */
+    updateUpcomingPreview() {
+        // Gather next 5 objects
+        const allObjects = [
+            ...this.collectibles.map(c => ({ type: 'collectible', y: c.y, obj: c })),
+            ...this.obstacles.map(o => ({ type: 'obstacle', y: o.y, obj: o })),
+            ...this.gates.map(g => ({ type: 'gate', y: g.left.y, obj: g }))
+        ];
+
+        // Sort by distance (closest first)
+        allObjects.sort((a, b) => a.y - b.y);
+
+        // Update preview icons
+        for (let i = 0; i < 5; i++) {
+            const icon = this.previewIcons[i];
+
+            if (i < allObjects.length) {
+                const obj = allObjects[i];
+                const distanceAway = Math.max(0, Math.floor(obj.y - this.squadCenterY));
+
+                // Color based on type
+                let color = 0x444444;
+                if (obj.type === 'collectible') color = COLORS.COLLECTIBLE;
+                else if (obj.type === 'obstacle') color = COLORS.OBSTACLE;
+                else if (obj.type === 'gate') color = 0xFFFF00;
+
+                icon.background.setFillStyle(color, 0.8);
+                icon.label.setText(`${distanceAway}m`);
+                icon.type = obj.type;
+            } else {
+                icon.background.setFillStyle(0x444444, 0.3);
+                icon.label.setText('---');
+                icon.type = null;
+            }
+        }
+    }
+
+    /**
+     * UI/HUD POLISH 5: Update combo display
+     */
+    updateComboDisplay() {
+        if (this.comboCount > 0) {
+            this.comboText.setVisible(true);
+            this.comboText.setText(`Combo: ${this.comboCount}🔥`);
+
+            // Pulse animation
+            this.tweens.add({
+                targets: this.comboText,
+                scale: 1.2,
+                duration: 150,
+                yoyo: true,
+                ease: 'Back.easeOut'
+            });
+        } else {
+            this.comboText.setVisible(false);
+        }
+    }
+
+    /**
+     * UI/HUD POLISH 6: Update multiplier display
+     */
+    updateMultiplierDisplay() {
+        // Calculate multiplier based on combo
+        if (this.comboCount >= 10) this.currentMultiplier = 3;
+        else if (this.comboCount >= 5) this.currentMultiplier = 2;
+        else this.currentMultiplier = 1;
+
+        this.multiplierText.setText(`x${this.currentMultiplier}`);
+
+        // Color based on multiplier
+        if (this.currentMultiplier >= 3) this.multiplierText.setColor('#FF00FF'); // Magenta
+        else if (this.currentMultiplier >= 2) this.multiplierText.setColor('#00FFFF'); // Cyan
+        else this.multiplierText.setColor('#FFFFFF'); // White
+    }
+
+    /**
+     * Reset combo (called when hit obstacle or timeout)
+     */
+    resetCombo() {
+        if (this.comboCount > 0) {
+            this.comboCount = 0;
+            this.currentMultiplier = 1;
+            this.updateComboDisplay();
+            this.updateMultiplierDisplay();
+        }
     }
 
     /**
@@ -1342,15 +1690,34 @@ export default class GameScene extends Phaser.Scene {
     }
 
     /**
-     * Update squad count display
+     * Update squad count display (ENHANCED with color coding)
      */
     updateSquadCount() {
         const count = this.squadMembers.length;
         this.squadText.setText(count.toString());
 
-        // Update UI panel
+        // UI/HUD POLISH 2: Color coding based on growing/shrinking
+        let textColor = COLORS.SQUAD_BLUE; // Default
+
+        if (count > this.previousSquadSize) {
+            // Growing - GREEN
+            textColor = '#00FF00';
+        } else if (count < this.previousSquadSize) {
+            // Shrinking - RED
+            textColor = '#FF0000';
+        }
+
+        // Update color with fade back to default
         if (this.squadSizeUI) {
+            this.squadSizeUI.setColor(textColor);
             this.squadSizeUI.setText(`Squad: ${count}`);
+
+            // Fade back to default color after 500ms
+            this.time.delayedCall(500, () => {
+                if (this.squadSizeUI) {
+                    this.squadSizeUI.setColor(COLORS.SQUAD_BLUE);
+                }
+            });
         }
 
         // Pulse animation
@@ -1361,6 +1728,12 @@ export default class GameScene extends Phaser.Scene {
             yoyo: true,
             ease: 'Back.easeOut'
         });
+
+        // Update visual gauge
+        this.updateSquadGauge();
+
+        // Store for next comparison
+        this.previousSquadSize = count;
     }
 
     /**
@@ -1469,8 +1842,15 @@ export default class GameScene extends Phaser.Scene {
         this.distance += scrollAmount;
         this.scrollOffset += scrollAmount;
 
-        // Update distance UI
-        this.distanceText.setText(`Distance: ${Math.floor(this.distance)}m`);
+        // ========== UI/HUD POLISH UPDATES ==========
+        this.updateDistanceDisplay();        // Rolling numbers + milestone
+        this.updateUpcomingPreview();        // Upcoming obstacles preview
+        this.updateMultiplierDisplay();      // Multiplier based on combo
+
+        // Check combo timeout (3 seconds without collecting)
+        if (this.comboCount > 0 && time - this.lastCollectibleTime > 3000) {
+            this.resetCombo();
+        }
 
         // ========== SPAWN GAME OBJECTS ==========
         // Spawn collectibles
@@ -1626,6 +2006,11 @@ export default class GameScene extends Phaser.Scene {
                 collectible.collected = true;
                 this.addSquadMember();
 
+                // UI/HUD POLISH 5: Track combo
+                this.comboCount++;
+                this.lastCollectibleTime = this.time.now;
+                this.updateComboDisplay();
+
                 // 6. FACIAL EXPRESSIONS - Happy when collecting!
                 this.setSquadExpression('happy');
                 this.time.delayedCall(1000, () => {
@@ -1666,6 +2051,9 @@ export default class GameScene extends Phaser.Scene {
             if (dist < SQUAD.CHARACTER_RADIUS + OBSTACLES.WIDTH / 2) {
                 obstacle.hit = true;
                 this.removeSquadMembers(OBSTACLES.DAMAGE);
+
+                // UI/HUD POLISH: Reset combo on hit
+                this.resetCombo();
 
                 // 6. FACIAL EXPRESSIONS - Worried when hit!
                 this.setSquadExpression('worried');
