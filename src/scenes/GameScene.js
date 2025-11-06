@@ -58,6 +58,10 @@ export default class GameScene extends Phaser.Scene {
         this.currentMultiplier = 1;   // Current score multiplier
         this.lastCollectibleTime = 0; // For combo timeout
         this.previousDistance = 0;    // For rolling number animation
+
+        // Camera Animation tracking
+        this.targetCameraZoom = 1.0;  // Dynamic zoom target
+        this.cameraOffsetX = 0;       // Movement anticipation offset
     }
 
     create() {
@@ -1341,6 +1345,16 @@ export default class GameScene extends Phaser.Scene {
             ease: 'Linear'
         });
 
+        // OBJECT ANIMATION 1: Y-axis spin (3D effect via scaleX)
+        this.tweens.add({
+            targets: [circle, innerGlow, gradient, text],
+            scaleX: 0.3,
+            duration: 2000,
+            yoyo: true,
+            repeat: -1,
+            ease: 'Sine.easeInOut'
+        });
+
         this.collectibles.push(collectible);
     }
 
@@ -1494,6 +1508,22 @@ export default class GameScene extends Phaser.Scene {
             ease: 'Sine.easeInOut'
         });
 
+        // OBJECT ANIMATION 2: Drop from above with bounce
+        const targetY = obstacle.y;
+        obstacle.y = targetY - 200; // Start higher
+        obstacle.setScale(0.5);
+
+        this.tweens.add({
+            targets: obstacle,
+            y: targetY,
+            scale: 1,
+            duration: 600,
+            ease: 'Bounce.easeOut'
+        });
+
+        // Camera shake on obstacle spawn
+        this.cameras.main.shake(50, 0.002);
+
         this.obstacles.push(obstacle);
     }
 
@@ -1528,6 +1558,26 @@ export default class GameScene extends Phaser.Scene {
         const rightX = centerX + GATES.GAP / 2 + GATES.WIDTH / 2;
         const rightGate = this.createGateHalf(rightX, y, right.op, right.color, 'RIGHT');
         rightGate.operation = right;
+
+        // OBJECT ANIMATION 3: Rise from ground with shake
+        const targetYLeft = leftGate.y;
+        const targetYRight = rightGate.y;
+        leftGate.y = targetYLeft + 300; // Start below
+        rightGate.y = targetYRight + 300;
+        leftGate.setAlpha(0);
+        rightGate.setAlpha(0);
+
+        // Rise animation
+        this.tweens.add({
+            targets: [leftGate, rightGate],
+            y: targetYLeft,
+            alpha: 1,
+            duration: 800,
+            ease: 'Back.easeOut'
+        });
+
+        // Camera shake when gates appear
+        this.cameras.main.shake(100, 0.003);
 
         this.gates.push({ left: leftGate, right: rightGate, passed: false });
     }
@@ -1882,6 +1932,57 @@ export default class GameScene extends Phaser.Scene {
     }
 
     /**
+     * CAMERA ANIMATIONS: Update dynamic camera effects
+     */
+    updateCameraAnimations(movementDelta) {
+        // CAMERA ANIMATION 7: Dynamic zoom based on squad size
+        const squadSize = this.squadMembers.length;
+        let targetZoom = 1.0;
+
+        if (squadSize < 5) {
+            targetZoom = 1.1; // Zoom in when small
+        } else if (squadSize >= 50) {
+            targetZoom = 0.85; // Zoom out when large
+        } else if (squadSize >= 25) {
+            targetZoom = 0.95; // Slightly zoom out
+        }
+
+        this.targetCameraZoom = targetZoom;
+
+        // Smooth zoom transition
+        const currentZoom = this.cameras.main.zoom;
+        this.cameras.main.setZoom(
+            Phaser.Math.Linear(currentZoom, this.targetCameraZoom, 0.02)
+        );
+
+        // CAMERA ANIMATION 8: Movement anticipation (lead the camera)
+        const anticipationAmount = movementDelta * 15; // Amplify movement
+        this.cameraOffsetX = Phaser.Math.Linear(
+            this.cameraOffsetX,
+            anticipationAmount,
+            0.1
+        );
+
+        // Apply camera offset
+        this.cameras.main.scrollX = this.cameraOffsetX;
+    }
+
+    /**
+     * CAMERA ANIMATION 9: Quick zoom on event
+     */
+    cameraEventZoom(zoomAmount = 0.1, duration = 150) {
+        const originalZoom = this.cameras.main.zoom;
+
+        this.tweens.add({
+            targets: this.cameras.main,
+            zoom: originalZoom + zoomAmount,
+            duration: duration,
+            yoyo: true,
+            ease: 'Quad.easeInOut'
+        });
+    }
+
+    /**
      * Set facial expression for character
      * @param {Phaser.GameObjects.Container} character
      * @param {string} emotion - 'happy', 'worried', or 'neutral'
@@ -2055,6 +2156,9 @@ export default class GameScene extends Phaser.Scene {
         // Update all character animations (blinking, eye direction, rotation)
         this.updateCharacterAnimations(time, movementDirection);
 
+        // ========== CAMERA ANIMATIONS ==========
+        this.updateCameraAnimations(movementDelta);
+
         // ========== UPDATE SQUAD FORMATION ==========
         // Update all squad members to their formation positions
         this.squadMembers.forEach((member, index) => {
@@ -2116,6 +2220,9 @@ export default class GameScene extends Phaser.Scene {
                 this.lastCollectibleTime = this.time.now;
                 this.updateComboDisplay();
 
+                // CAMERA ANIMATION 9: Quick zoom on collectible
+                this.cameraEventZoom(0.05, 100);
+
                 // 6. FACIAL EXPRESSIONS - Happy when collecting!
                 this.setSquadExpression('happy');
                 this.time.delayedCall(1000, () => {
@@ -2159,6 +2266,9 @@ export default class GameScene extends Phaser.Scene {
 
                 // UI/HUD POLISH: Reset combo on hit
                 this.resetCombo();
+
+                // CAMERA ANIMATION 9: Quick zoom on impact
+                this.cameraEventZoom(0.15, 150);
 
                 // 6. FACIAL EXPRESSIONS - Worried when hit!
                 this.setSquadExpression('worried');
@@ -2210,6 +2320,9 @@ export default class GameScene extends Phaser.Scene {
 
                 // OBJECT POLISH 6: Bright flash when passing through
                 const isGoodGate = chosenGate.operation.mult || chosenGate.operation.add;
+
+                // CAMERA ANIMATION 9: Quick zoom on gate pass
+                this.cameraEventZoom(0.12, 200);
 
                 // Create bright flash particle burst at gate position
                 const flashColor = isGoodGate ? 0x00FFFF : 0xFFAA00;
@@ -2293,16 +2406,28 @@ export default class GameScene extends Phaser.Scene {
     /**
      * Remove squad members
      */
+    /**
+     * Remove squad members (ENHANCED with death animation)
+     */
     removeSquadMembers(count) {
         for (let i = 0; i < count && this.squadMembers.length > 0; i++) {
             const member = this.squadMembers.pop();
             const shadow = member.groundShadow;
 
+            // OBJECT ANIMATION 6: Death particle explosion
+            const memberColor = member.body ? member.body.fillColor : 0x03A9F4;
+            this.createParticleBurst(member.x, member.y, memberColor, 15);
+
+            // Add additional death effects
+            this.cameras.main.flash(50, 255, 255, 255, false);
+
             this.tweens.add({
                 targets: member,
                 scale: 0,
                 alpha: 0,
+                angle: 360,
                 duration: 200,
+                ease: 'Back.easeIn',
                 onComplete: () => member.destroy()
             });
 
@@ -2409,9 +2534,14 @@ export default class GameScene extends Phaser.Scene {
         console.log('🎉 VICTORY!');
         this.gameState = 'victory';
 
-        // Stop scrolling
-        // Camera celebration zoom
-        this.cameras.main.zoomTo(0.9, 1000, 'Sine.easeInOut');
+        // CAMERA ANIMATION 10: Zoom in on squad at level end
+        // First zoom in on squad, then zoom out for celebration
+        this.cameras.main.zoomTo(1.3, 500, 'Quad.easeIn', false, (camera, progress) => {
+            if (progress === 1) {
+                // Then zoom out for celebration view
+                camera.zoomTo(0.9, 1000, 'Sine.easeInOut');
+            }
+        });
 
         // Victory overlay
         const victoryOverlay = this.add.rectangle(
