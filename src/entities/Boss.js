@@ -71,6 +71,19 @@ export default class Boss {
      */
     getBossStats(type) {
         const types = {
+            'WAVE_BOSS': {
+                name: 'WAVE BOSS',
+                maxHp: 200,
+                size: 45,
+                color: 0xCC0000,        // Deep red
+                glowColor: 0xFF3333,    // Bright red glow
+                shadowColor: 0x880000,  // Dark red
+                attackCooldown: 3000,   // 3 seconds between attacks
+                specialAttackCooldown: 6000, // 6 seconds for special
+                scoreValue: 1000,
+                abilities: ['PROJECTILE_BARRAGE', 'SUMMON_MINIONS', 'CHARGE_ATTACK', 'AREA_SLAM'],
+                phaseCount: 2           // Simple 2-phase system (50% HP)
+            },
             'TANK_BOSS': {
                 name: 'Iron Colossus',
                 maxHp: 500,
@@ -81,7 +94,8 @@ export default class Boss {
                 attackCooldown: 2000,   // 2 seconds between attacks
                 specialAttackCooldown: 8000, // 8 seconds for special
                 scoreValue: 500,
-                abilities: ['PROJECTILE_SPREAD', 'SPAWN_MINIONS', 'GROUND_SLAM']
+                abilities: ['PROJECTILE_SPREAD', 'SPAWN_MINIONS', 'GROUND_SLAM'],
+                phaseCount: 4           // Complex 4-phase system
             },
             'SPEED_BOSS': {
                 name: 'Lightning Striker',
@@ -93,7 +107,8 @@ export default class Boss {
                 attackCooldown: 800,    // Fast attacks
                 specialAttackCooldown: 5000,
                 scoreValue: 400,
-                abilities: ['RAPID_FIRE', 'DASH_ATTACK', 'LIGHTNING_STORM']
+                abilities: ['RAPID_FIRE', 'DASH_ATTACK', 'LIGHTNING_STORM'],
+                phaseCount: 4
             },
             'MAGE_BOSS': {
                 name: 'Arcane Destroyer',
@@ -105,7 +120,8 @@ export default class Boss {
                 attackCooldown: 1500,
                 specialAttackCooldown: 6000,
                 scoreValue: 450,
-                abilities: ['MAGIC_MISSILES', 'TELEPORT', 'ENERGY_WAVE']
+                abilities: ['MAGIC_MISSILES', 'TELEPORT', 'ENERGY_WAVE'],
+                phaseCount: 4
             }
         };
 
@@ -272,7 +288,14 @@ export default class Boss {
     performBasicAttack(time) {
         console.log(`👑 Boss basic attack - Phase ${this.currentPhase}`);
 
-        if (this.bossType === 'TANK_BOSS') {
+        if (this.bossType === 'WAVE_BOSS') {
+            // Alternate between projectile barrage and charge attack
+            if (Math.random() < 0.5) {
+                this.attackProjectileBarrage();
+            } else {
+                this.attackChargeAttack();
+            }
+        } else if (this.bossType === 'TANK_BOSS') {
             this.attackProjectileSpread();
         } else if (this.bossType === 'SPEED_BOSS') {
             this.attackRapidFire();
@@ -287,7 +310,14 @@ export default class Boss {
     performSpecialAttack(time) {
         console.log(`💥 Boss special attack - Phase ${this.currentPhase}`);
 
-        if (this.bossType === 'TANK_BOSS') {
+        if (this.bossType === 'WAVE_BOSS') {
+            // Alternate between summon minions and area slam
+            if (Math.random() < 0.5) {
+                this.attackSummonMinions();
+            } else {
+                this.attackAreaSlam();
+            }
+        } else if (this.bossType === 'TANK_BOSS') {
             if (this.currentPhase >= 2) {
                 this.spawnMinions();
             }
@@ -403,6 +433,245 @@ export default class Boss {
             }
         }
     }
+
+    // =====================================================
+    // WAVE BOSS ABILITIES (Session 3)
+    // =====================================================
+
+    /**
+     * WAVE BOSS ABILITY 1: Projectile Barrage (8 bullets in circle)
+     */
+    attackProjectileBarrage() {
+        const projectileCount = 8;
+        const angleStep = 360 / projectileCount;
+
+        for (let i = 0; i < projectileCount; i++) {
+            const angle = i * angleStep;
+            this.createBossProjectile(this.x, this.y, angle);
+        }
+
+        console.log(`💥 Projectile Barrage: ${projectileCount} bullets!`);
+    }
+
+    /**
+     * WAVE BOSS ABILITY 2: Summon Minions (spawn 5 regular enemies)
+     */
+    attackSummonMinions() {
+        const minionCount = 5;
+        const spawnRadius = 80;
+
+        for (let i = 0; i < minionCount; i++) {
+            const angle = (i / minionCount) * Math.PI * 2;
+            const spawnX = this.x + Math.cos(angle) * spawnRadius;
+            const spawnY = this.y + Math.sin(angle) * spawnRadius;
+
+            // Spawn enemy using wave system
+            if (this.scene.spawnWaveEnemy) {
+                this.scene.time.delayedCall(i * 200, () => {
+                    if (this.active) {
+                        this.scene.spawnWaveEnemy('SOLDIER', spawnX, spawnY, 80);
+
+                        // Spawn effect
+                        const spawnEffect = this.scene.add.circle(spawnX, spawnY, 30, this.stats.glowColor, 0.6);
+                        spawnEffect.setBlendMode(Phaser.BlendModes.ADD);
+                        this.scene.tweens.add({
+                            targets: spawnEffect,
+                            scaleX: 2,
+                            scaleY: 2,
+                            alpha: 0,
+                            duration: 400,
+                            onComplete: () => {
+                                spawnEffect.destroy();
+                            }
+                        });
+                    }
+                });
+            }
+        }
+
+        console.log(`👹 Summoning ${minionCount} minions!`);
+    }
+
+    /**
+     * WAVE BOSS ABILITY 3: Charge Attack (dash toward player)
+     */
+    attackChargeAttack() {
+        if (!this.scene.squadCenterX || !this.scene.squadCenterY) return;
+
+        // Visual warning
+        const warningLine = this.scene.add.line(
+            0, 0,
+            this.x, this.y,
+            this.scene.squadCenterX, this.scene.squadCenterY,
+            0xFF0000, 0.6
+        );
+        warningLine.setLineWidth(4);
+        warningLine.setOrigin(0, 0);
+
+        // Flash warning
+        this.scene.tweens.add({
+            targets: warningLine,
+            alpha: 0,
+            duration: 500,
+            onComplete: () => {
+                warningLine.destroy();
+
+                // Execute charge
+                const startX = this.x;
+                const startY = this.y;
+                const targetX = this.scene.squadCenterX;
+                const targetY = this.scene.squadCenterY;
+
+                // Charge animation
+                this.scene.tweens.add({
+                    targets: this,
+                    x: targetX,
+                    y: targetY,
+                    duration: 400,
+                    ease: 'Quad.easeIn',
+                    onUpdate: () => {
+                        // Check collision during charge
+                        const dist = Phaser.Math.Distance.Between(
+                            this.x, this.y,
+                            this.scene.squadCenterX, this.scene.squadCenterY
+                        );
+
+                        if (dist < this.size + 30) {
+                            // Hit player during charge
+                            if (this.scene.takeDamage) {
+                                this.scene.takeDamage(20); // Charge damage
+                            }
+                        }
+                    },
+                    onComplete: () => {
+                        // Return to original position
+                        this.scene.tweens.add({
+                            targets: this,
+                            x: startX + Phaser.Math.Between(-30, 30),
+                            y: startY,
+                            duration: 800,
+                            ease: 'Quad.easeOut'
+                        });
+                    }
+                });
+
+                // Trail effect during charge
+                for (let i = 0; i < 10; i++) {
+                    this.scene.time.delayedCall(i * 40, () => {
+                        const trail = this.scene.add.circle(this.x, this.y, this.size * 0.8, this.stats.color, 0.4);
+                        this.scene.tweens.add({
+                            targets: trail,
+                            alpha: 0,
+                            scaleX: 0.3,
+                            scaleY: 0.3,
+                            duration: 400,
+                            onComplete: () => {
+                                trail.destroy();
+                            }
+                        });
+                    });
+                }
+            }
+        });
+
+        console.log(`⚡ Charge Attack!`);
+    }
+
+    /**
+     * WAVE BOSS ABILITY 4: Area Slam (jump + shockwave)
+     */
+    attackAreaSlam() {
+        const originalY = this.y;
+
+        // Jump up
+        this.scene.tweens.add({
+            targets: this,
+            y: this.y - 80,
+            scaleX: 1.2,
+            scaleY: 1.2,
+            duration: 600,
+            ease: 'Quad.easeOut',
+            onComplete: () => {
+                // Slam down
+                this.scene.tweens.add({
+                    targets: this,
+                    y: originalY,
+                    scaleX: 1,
+                    scaleY: 1,
+                    duration: 300,
+                    ease: 'Quad.easeIn',
+                    onComplete: () => {
+                        // Shockwave on impact
+                        this.scene.cameras.main.shake(400, 0.015);
+
+                        // Create expanding shockwave rings
+                        for (let i = 0; i < 3; i++) {
+                            this.scene.time.delayedCall(i * 100, () => {
+                                const shockwave = this.scene.add.circle(this.x, this.y, this.size, 0xFF3333, 0);
+                                shockwave.setStrokeStyle(8, 0xFF0000, 0.8);
+                                shockwave.setBlendMode(Phaser.BlendModes.ADD);
+                                shockwave.damage = 15;
+                                shockwave.isShockwave = true;
+
+                                // Add to projectiles for collision detection
+                                if (!this.scene.bossProjectiles) {
+                                    this.scene.bossProjectiles = [];
+                                }
+                                this.scene.bossProjectiles.push(shockwave);
+
+                                this.scene.tweens.add({
+                                    targets: shockwave,
+                                    scaleX: 4,
+                                    scaleY: 4,
+                                    alpha: 0,
+                                    duration: 800,
+                                    ease: 'Quad.easeOut',
+                                    onComplete: () => {
+                                        const index = this.scene.bossProjectiles.indexOf(shockwave);
+                                        if (index > -1) {
+                                            this.scene.bossProjectiles.splice(index, 1);
+                                        }
+                                        shockwave.destroy();
+                                    }
+                                });
+                            });
+                        }
+
+                        // Debris particles
+                        for (let i = 0; i < 20; i++) {
+                            const angle = (i / 20) * Math.PI * 2;
+                            const speed = Phaser.Math.Between(50, 150);
+                            const debris = this.scene.add.circle(
+                                this.x,
+                                this.y,
+                                Phaser.Math.Between(3, 8),
+                                0x888888,
+                                1
+                            );
+
+                            this.scene.tweens.add({
+                                targets: debris,
+                                x: debris.x + Math.cos(angle) * speed,
+                                y: debris.y + Math.sin(angle) * speed,
+                                alpha: 0,
+                                duration: 600,
+                                ease: 'Quad.easeOut',
+                                onComplete: () => {
+                                    debris.destroy();
+                                }
+                            });
+                        }
+                    }
+                });
+            }
+        });
+
+        console.log(`💥 Area Slam!`);
+    }
+
+    // =====================================================
+    // END WAVE BOSS ABILITIES
+    // =====================================================
 
     /**
      * Create boss projectile
@@ -554,12 +823,21 @@ export default class Boss {
     checkPhaseTransition() {
         const hpPercent = this.hp / this.maxHp;
 
-        if (hpPercent <= 0.75 && this.currentPhase === 1) {
-            this.transitionToPhase(2);
-        } else if (hpPercent <= 0.50 && this.currentPhase === 2) {
-            this.transitionToPhase(3);
-        } else if (hpPercent <= 0.25 && this.currentPhase === 3) {
-            this.transitionToPhase(4);
+        // WAVE_BOSS: Simple 2-phase system (only at 50% HP)
+        if (this.bossType === 'WAVE_BOSS') {
+            if (hpPercent <= 0.50 && this.currentPhase === 1) {
+                this.transitionToPhase(2);
+            }
+        }
+        // Other bosses: Complex 4-phase system
+        else {
+            if (hpPercent <= 0.75 && this.currentPhase === 1) {
+                this.transitionToPhase(2);
+            } else if (hpPercent <= 0.50 && this.currentPhase === 2) {
+                this.transitionToPhase(3);
+            } else if (hpPercent <= 0.25 && this.currentPhase === 3) {
+                this.transitionToPhase(4);
+            }
         }
     }
 
@@ -573,6 +851,15 @@ export default class Boss {
         this.currentPhase = newPhase;
 
         console.log(`🔥 BOSS PHASE ${newPhase}!`);
+
+        // WAVE_BOSS: Change color to darker red in phase 2
+        if (this.bossType === 'WAVE_BOSS' && newPhase === 2) {
+            this.color = 0x880000; // Darker red
+            this.stats.glowColor = 0xDD0000; // Darker glow
+            if (this.container && this.container.body) {
+                this.container.body.setFillStyle(this.color);
+            }
+        }
 
         // Visual effect for phase transition
         const flash = this.scene.add.circle(

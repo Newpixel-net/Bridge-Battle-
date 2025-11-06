@@ -3,8 +3,12 @@ import { GAME, WORLD, SQUAD, COLORS, SCENES, UI, COLLECTIBLES, OBSTACLES, GATES,
 
 // COMBAT SYSTEM - Priority 1 Implementation
 import BulletPool from '../systems/BulletPool.js';
+import DamageNumberPool from '../systems/DamageNumberPool.js';
+import CoinPool from '../systems/CoinPool.js';
 import AutoShootingSystem from '../systems/AutoShootingSystem.js';
 import EnemyManager from '../systems/EnemyManager.js';
+import WaveManager from '../systems/WaveManager.js';
+import Enemy from '../entities/Enemy.js';
 
 // ABILITY SYSTEM - Priority 2 Implementation
 import EnergySystem from '../systems/EnergySystem.js';
@@ -279,6 +283,9 @@ export default class GameScene extends Phaser.Scene {
                         countdownText.destroy();
                         overlay.destroy();
                         this.gameState = 'playing';
+
+                        // CRITICAL: Setup camera for forward motion feel
+                        this.setupForwardMotionCamera();
                     }
                 });
                 return;
@@ -323,6 +330,155 @@ export default class GameScene extends Phaser.Scene {
 
         // Start countdown
         showNumber();
+    }
+
+    /**
+     * FORWARD MOTION FEEL: Setup camera for dynamic forward motion
+     * CRITICAL Priority 1 & 2 features from guide
+     */
+    setupForwardMotionCamera() {
+        const camera = this.cameras.main;
+
+        // PRIORITY 1: Camera look-ahead offset (-200px Y)
+        // Shows more of what's coming - CRITICAL for forward motion feel
+        const lookAheadY = -200;  // Show 200px ahead
+
+        // Create a virtual target point for camera to follow
+        // This allows us to smoothly pan ahead of the player
+        this.cameraTarget = {
+            x: this.squadCenterX,
+            y: this.squadCenterY + lookAheadY
+        };
+
+        // PRIORITY 1: Start following with smooth lerp
+        camera.startFollow(
+            this.cameraTarget,
+            true,              // Round pixels
+            0.08,              // Horizontal lerp (slower = smoother)
+            0.12,              // Vertical lerp (faster = more responsive)
+            0,                 // Offset X
+            0                  // Offset Y (already in target position)
+        );
+
+        // PRIORITY 2: Camera forward tilt (-2 degrees)
+        // Makes player feel like leaning into motion
+        camera.setRotation(-0.035);  // ~2 degrees in radians
+
+        // PRIORITY 2: Continuous subtle shake (simulates movement vibration)
+        // VERY subtle - mimics the "rumble" of running
+        camera.shake(
+            Number.MAX_SAFE_INTEGER,  // Duration (continuous)
+            0.0008,                    // Intensity (barely noticeable but effective)
+            false                      // Don't force
+        );
+
+        // Create progress bar UI
+        this.createProgressBar();
+
+        console.log('✓ Forward motion camera activated: Look-ahead=' + lookAheadY + ', Tilt=-2°, Shake=0.0008');
+    }
+
+    /**
+     * FORWARD MOTION FEEL: Update camera target position
+     * Call this in update() to keep camera following squad
+     */
+    updateCameraTarget() {
+        if (!this.cameraTarget) return;
+
+        // Update virtual target to stay ahead of squad
+        this.cameraTarget.x = this.squadCenterX;
+        this.cameraTarget.y = this.squadCenterY - 200;  // Always 200px ahead
+
+        // Dynamic look-ahead based on movement speed (optional enhancement)
+        // const speedMultiplier = this.difficultyMultiplier || 1.0;
+        // this.cameraTarget.y = this.squadCenterY - (200 * speedMultiplier);
+    }
+
+    /**
+     * PRIORITY 2: Create progress bar showing level completion
+     */
+    createProgressBar() {
+        const barWidth = 600;
+        const barHeight = 15;
+        const x = (GAME.WIDTH - barWidth) / 2;
+        const y = 110;  // Below distance counter
+
+        // Background
+        this.progressBarBg = this.add.rectangle(
+            x, y,
+            barWidth, barHeight,
+            0x333333,
+            0.7
+        );
+        this.progressBarBg.setOrigin(0);
+        this.progressBarBg.setScrollFactor(0);
+        this.progressBarBg.setDepth(99);
+
+        // Border
+        const border = this.add.rectangle(
+            x - 2, y - 2,
+            barWidth + 4, barHeight + 4
+        );
+        border.setOrigin(0);
+        border.setStrokeStyle(2, 0xFFFFFF, 0.5);
+        border.setFillStyle();
+        border.setScrollFactor(0);
+        border.setDepth(98);
+
+        // Fill (shows progress)
+        this.progressBarFill = this.add.rectangle(
+            x, y,
+            0, barHeight,  // Starts at 0 width
+            0x00FF00,
+            0.9
+        );
+        this.progressBarFill.setOrigin(0);
+        this.progressBarFill.setScrollFactor(0);
+        this.progressBarFill.setDepth(100);
+
+        // Progress text
+        this.progressText = this.add.text(
+            x + barWidth / 2, y - 5,
+            'PROGRESS',
+            {
+                fontSize: '12px',
+                fontFamily: 'Arial Bold',
+                color: '#FFFFFF',
+                stroke: '#000000',
+                strokeThickness: 3
+            }
+        );
+        this.progressText.setOrigin(0.5, 1);
+        this.progressText.setScrollFactor(0);
+        this.progressText.setDepth(101);
+        this.progressText.setResolution(2);
+
+        console.log('✓ Progress bar created at top of screen');
+    }
+
+    /**
+     * FORWARD MOTION FEEL: Update progress bar based on distance
+     */
+    updateProgressBar() {
+        if (!this.progressBarFill) return;
+
+        // Progress based on distance (5000m = 100%)
+        const targetDistance = 5000;
+        const progress = Math.min(1.0, this.distance / targetDistance);
+        const barWidth = 600;
+
+        this.progressBarFill.width = barWidth * progress;
+
+        // Change color based on progress
+        if (progress > 0.75) {
+            this.progressBarFill.setFillStyle(0xFFD700);  // Gold (near finish)
+        } else if (progress > 0.5) {
+            this.progressBarFill.setFillStyle(0xFFFF00);  // Yellow
+        } else if (progress > 0.25) {
+            this.progressBarFill.setFillStyle(0x00FFFF);  // Cyan
+        } else {
+            this.progressBarFill.setFillStyle(0x00FF00);  // Green
+        }
     }
 
     /**
@@ -1208,8 +1364,20 @@ export default class GameScene extends Phaser.Scene {
         this.squadSizeUI.setScrollFactor(0);
         this.squadSizeUI.setResolution(2); // 2× resolution for crisp rendering
 
+        // WAVE SYSTEM: Wave info display
+        this.waveInfoText = this.add.text(20, 100, 'Wave: -', {
+            fontSize: '16px',
+            fontFamily: 'Arial Bold',
+            color: '#FF6B6B',
+            stroke: '#000000',
+            strokeThickness: 3
+        });
+        this.waveInfoText.setDepth(uiDepth + 1);
+        this.waveInfoText.setScrollFactor(0);
+        this.waveInfoText.setResolution(2);
+
         // UI/HUD POLISH 3: Visual gauge for squad size
-        this.createSquadGauge(20, 105, uiDepth);
+        this.createSquadGauge(20, 130, uiDepth);
 
         // UI/HUD POLISH 5 & 6: Combo tracker and multiplier display
         this.createComboUI(20, 135, uiDepth);
@@ -1393,6 +1561,35 @@ export default class GameScene extends Phaser.Scene {
                 label: distLabel,
                 type: null
             });
+        }
+    }
+
+    /**
+     * WAVE SYSTEM: Update wave display
+     */
+    updateWaveDisplay() {
+        if (!this.waveInfoText || !this.waveManager) return;
+
+        const waveInfo = this.waveManager.getCurrentWaveInfo();
+
+        if (waveInfo.currentWave === 0) {
+            // No wave started yet
+            this.waveInfoText.setText('Wave: -');
+        } else if (waveInfo.currentWave === 11) {
+            // Boss wave
+            this.waveInfoText.setText('Wave: BOSS');
+            this.waveInfoText.setColor('#FF0000');
+        } else {
+            // Regular wave
+            this.waveInfoText.setText(`Wave: ${waveInfo.currentWave}/10`);
+            this.waveInfoText.setColor('#FF6B6B');
+        }
+
+        // Show enemies remaining if wave is active
+        if (waveInfo.isActive && waveInfo.enemiesRemaining > 0) {
+            this.waveInfoText.setText(
+                this.waveInfoText.text + ` (${waveInfo.enemiesRemaining})`
+            );
         }
     }
 
@@ -2413,6 +2610,10 @@ export default class GameScene extends Phaser.Scene {
         // ========== ENVIRONMENT POLISH - PARALLAX ==========
         this.updateParallaxLayers(dt);
 
+        // ========== FORWARD MOTION CAMERA ==========
+        this.updateCameraTarget();
+        this.updateProgressBar();
+
         // ========== AUTO-SCROLL ==========
         const scrollAmount = WORLD.SCROLL_SPEED * dt;
         this.distance += scrollAmount;
@@ -2440,6 +2641,7 @@ export default class GameScene extends Phaser.Scene {
         this.updateDistanceDisplay();        // Rolling numbers + milestone
         this.updateUpcomingPreview();        // Upcoming obstacles preview
         this.updateMultiplierDisplay();      // Multiplier based on combo
+        this.updateWaveDisplay();            // Wave progress
 
         // ========== ABILITY SYSTEM UPDATES ==========
         // Update energy regeneration
@@ -2527,6 +2729,16 @@ export default class GameScene extends Phaser.Scene {
             this.bulletPool.update(time, delta);
         }
 
+        // Update damage number pool (float and fade damage numbers)
+        if (this.damageNumberPool) {
+            this.damageNumberPool.update(time, delta);
+        }
+
+        // Update coin pool (magnetic collection, animations)
+        if (this.coinPool) {
+            this.coinPool.update(time, delta, this.squadCenterX, this.squadCenterY);
+        }
+
         // Update auto-shooting (fire bullets continuously)
         if (this.autoShootingSystem) {
             this.autoShootingSystem.update(time, delta);
@@ -2535,6 +2747,16 @@ export default class GameScene extends Phaser.Scene {
         // Update enemy manager (spawn waves, update enemies)
         if (this.enemyManager) {
             this.enemyManager.update(time, delta);
+        }
+
+        // WAVE SYSTEM: Update wave manager (check wave completion)
+        if (this.waveManager) {
+            this.waveManager.update();
+        }
+
+        // WAVE SYSTEM: Update wave boss (attacks, movement, phase transitions)
+        if (this.currentWaveBoss && this.currentWaveBoss.active) {
+            this.currentWaveBoss.update(time, delta);
         }
 
         // FORWARD MOTION FEEL: Update warning indicators for off-screen enemies
@@ -3454,6 +3676,12 @@ export default class GameScene extends Phaser.Scene {
         // Create bullet pool (50 bullets max)
         this.bulletPool = new BulletPool(this, 50);
 
+        // Create damage number pool (50 damage numbers max)
+        this.damageNumberPool = new DamageNumberPool(this, 50);
+
+        // Create coin pool (100 coins max)
+        this.coinPool = new CoinPool(this, 100);
+
         // Create squad manager reference (needed for shooting system)
         const squadManagerProxy = {
             squadCenterX: this.squadCenterX,
@@ -3475,18 +3703,21 @@ export default class GameScene extends Phaser.Scene {
             console.log(`⚔️ Combat stats applied: Damage ${(this.characterStats.damage * 100).toFixed(0)}%, Fire Rate ${(this.characterStats.fireRate * 100).toFixed(0)}%`);
         }
 
-        // Create enemy manager
+        // WAVE SYSTEM: Create wave manager (10 waves + boss)
+        this.waveManager = new WaveManager(this, 1);  // Stage 1
+
+        // Keep old enemy manager for now (backward compatibility)
         this.enemyManager = new EnemyManager(this);
 
         // Create warning indicator system for off-screen enemies
         this.createWarningIndicatorSystem();
 
-        // Start enemy spawning after countdown
-        this.time.delayedCall(3000, () => {
-            this.enemyManager.resumeSpawning(this.time.now);
+        // Start wave system after countdown (3 seconds)
+        this.time.delayedCall(4000, () => {
+            this.waveManager.startNextWave();  // Start Wave 1
         });
 
-        console.log('✓ Combat system initialized');
+        console.log('✓ Combat system initialized with Wave Manager');
     }
 
     /**
@@ -3636,6 +3867,15 @@ export default class GameScene extends Phaser.Scene {
                     // Hit!
                     const killed = enemy.takeDamage(bullet.damage);
 
+                    // Spawn damage number
+                    if (this.damageNumberPool) {
+                        this.damageNumberPool.spawn(
+                            enemy.container.x,
+                            enemy.container.y,
+                            bullet.damage
+                        );
+                    }
+
                     // Recycle bullet
                     this.bulletPool.recycleBullet(bullet);
 
@@ -3643,6 +3883,11 @@ export default class GameScene extends Phaser.Scene {
                     if (killed) {
                         this.score += enemy.getScoreValue();
                         this.enemiesKilled++;
+
+                        // Coin drop (30% chance)
+                        if (this.coinPool && this.coinPool.shouldDropCoin(false)) {
+                            this.coinPool.spawn(enemy.container.x, enemy.container.y);
+                        }
                     }
 
                     // Play hit sound
@@ -3669,8 +3914,22 @@ export default class GameScene extends Phaser.Scene {
                         // Hit boss!
                         const killed = boss.takeDamage(bullet.damage);
 
+                        // Spawn damage number
+                        if (this.damageNumberPool) {
+                            this.damageNumberPool.spawn(
+                                boss.x,
+                                boss.y - boss.size,
+                                bullet.damage
+                            );
+                        }
+
                         // Recycle bullet
                         this.bulletPool.recycleBullet(bullet);
+
+                        // Boss defeated - drop many coins
+                        if (killed && this.coinPool) {
+                            this.coinPool.spawnMultiple(boss.x, boss.y, this.coinPool.config.bossDropCount);
+                        }
 
                         // Play hit sound (louder for boss)
                         if (this.playBulletHitSound) {
@@ -3708,6 +3967,52 @@ export default class GameScene extends Phaser.Scene {
                         projectile.destroy();
                     }
                     this.bossProjectiles.splice(i, 1);
+                }
+            }
+        }
+
+        // CONTACT DAMAGE: Check enemies vs player squad
+        if (this.enemyManager) {
+            for (let enemy of enemies) {
+                if (!enemy.active || enemy.isDying || enemy.isDestroyed) continue;
+
+                // Check collision with squad
+                const dist = Phaser.Math.Distance.Between(
+                    enemy.container.x,
+                    enemy.container.y,
+                    this.squadCenterX,
+                    this.squadCenterY
+                );
+
+                // Contact damage radius (enemy radius + squad radius)
+                const contactRadius = enemy.getRadius() + 30;
+
+                if (dist < contactRadius) {
+                    // Contact damage - remove 1 squad member
+                    if (this.squadMembers.length > 0) {
+                        // Remove squad member
+                        const member = this.squadMembers.pop();
+                        if (member && member.destroy) {
+                            // Death animation
+                            this.tweens.add({
+                                targets: member,
+                                alpha: 0,
+                                scale: 0,
+                                duration: 200,
+                                onComplete: () => {
+                                    member.destroy();
+                                }
+                            });
+                        }
+
+                        // Update squad formation after member loss
+                        this.updateSquadPositions();
+
+                        // Kill the enemy (they sacrifice themselves)
+                        enemy.die();
+
+                        console.log(`💥 Contact damage! Squad members remaining: ${this.squadMembers.length}`);
+                    }
                 }
             }
         }
@@ -3760,6 +4065,94 @@ export default class GameScene extends Phaser.Scene {
             this.autoShootingSystem.squadManager.squadCenterY = this.squadCenterY;
             this.autoShootingSystem.squadManager.squadMembers = this.squadMembers;
         }
+    }
+
+    /**
+     * WAVE SYSTEM: Spawn a wave enemy (called by WaveManager)
+     */
+    spawnWaveEnemy(type, x, y, speed) {
+        // Import Enemy class dynamically or use existing enemyManager
+        const Enemy = require('../entities/Enemy.js').default;
+        const enemy = new Enemy(this, x, y, type, speed);
+
+        // Add to enemy manager's list
+        if (this.enemyManager) {
+            this.enemyManager.enemies.push(enemy);
+        }
+
+        return enemy;
+    }
+
+    /**
+     * WAVE SYSTEM: Spawn boss (called by WaveManager)
+     */
+    spawnBoss(bossData, x, y) {
+        // Import Boss class
+        const Boss = require('../entities/Boss.js').default;
+        const BossHealthBar = require('../ui/BossHealthBar.js').default;
+
+        // Create WAVE_BOSS
+        const boss = new Boss(this, x, y, 'WAVE_BOSS');
+
+        // Add to enemy manager for collision detection
+        if (this.enemyManager) {
+            this.enemyManager.enemies.push(boss);
+        }
+
+        // Store boss reference
+        this.currentWaveBoss = boss;
+
+        // Create HP bar after short delay for dramatic effect
+        this.time.delayedCall(1000, () => {
+            if (boss && !boss.isDestroyed) {
+                this.bossHealthBar = new BossHealthBar(this, boss);
+            }
+        });
+
+        console.log('👑 WAVE BOSS SPAWNED - HP: 200, Phase System Active');
+
+        return boss;
+    }
+
+    /**
+     * WAVE SYSTEM: Show victory screen (called by WaveManager)
+     */
+    showVictoryScreen() {
+        // TODO: Implement proper victory screen in Session 4
+        // For now, just show a simple message
+
+        // Pause physics
+        this.physics.pause();
+        this.gameState = 'victory';
+
+        // Show message
+        const victoryText = this.add.text(
+            GAME.WIDTH / 2,
+            GAME.HEIGHT / 2,
+            'STAGE COMPLETE!',
+            {
+                fontSize: '64px',
+                fontFamily: 'Arial Black',
+                color: '#FFD700',
+                stroke: '#000000',
+                strokeThickness: 8
+            }
+        ).setOrigin(0.5);
+
+        victoryText.setDepth(5000);
+        victoryText.setScrollFactor(0);
+        victoryText.setResolution(2);
+
+        // Animate
+        victoryText.setScale(0);
+        this.tweens.add({
+            targets: victoryText,
+            scale: 1,
+            duration: 500,
+            ease: 'Back.easeOut'
+        });
+
+        console.log('🎉 VICTORY! (Full victory screen in Session 4)');
     }
 
     // ========================================
