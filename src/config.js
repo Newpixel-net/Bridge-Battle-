@@ -8,18 +8,19 @@ import GameOverScene from './scenes/GameOverScene.js';
 
 /**
  * Phaser 3 Game Configuration
- * Phase 2: Enhanced Gameplay - Menu + Game Over + Effects
+ * Phase 2: RESPONSIVE - Adapts to desktop and mobile
  */
 const config = {
     type: Phaser.AUTO,
     parent: 'game-container',
-    width: GAME.WIDTH,   // 540 (portrait)
-    height: GAME.HEIGHT,  // 960 (portrait)
+    width: GAME.WIDTH,
+    height: GAME.HEIGHT,
 
-    // Scale settings for mobile + desktop
+    // Responsive scale settings - fills screen properly
     scale: {
-        mode: Phaser.Scale.FIT,
+        mode: Phaser.Scale.FIT,           // Fit to container
         autoCenter: Phaser.Scale.CENTER_BOTH,
+        parent: 'game-container',
         width: GAME.WIDTH,
         height: GAME.HEIGHT
     },
