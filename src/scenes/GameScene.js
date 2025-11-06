@@ -22,12 +22,13 @@ export default class GameScene extends Phaser.Scene {
     }
 
     init() {
-        console.log('🎮 GameScene - Phase 1: Gaming Functionality');
+        console.log('🎮 GameScene - Phase 1: Gaming Functionality + Character Polish');
 
         // Game state
         this.gameState = 'playing';
         this.distance = 0;              // Total distance traveled
         this.scrollOffset = 0;          // Current scroll offset for objects
+        this.lastMovementDirection = 0; // Track movement direction for character tilt
 
         // Squad
         this.squadMembers = [];
@@ -35,6 +36,7 @@ export default class GameScene extends Phaser.Scene {
         this.formationPositions = [];
         this.squadCenterX = GAME.WIDTH / 2;  // Center horizontally
         this.squadCenterY = SQUAD.START_Y;    // Lower third vertically
+        this.previousSquadCenterX = GAME.WIDTH / 2; // For movement direction calculation
 
         // Game objects
         this.collectibles = [];
@@ -222,12 +224,31 @@ export default class GameScene extends Phaser.Scene {
     }
 
     /**
-     * STEP 5-6: Create single character (blue sphere with 3D effect)
+     * Create enhanced character with all polish features
+     * 1. Size variation (0.9x - 1.1x)
+     * 2. Color variation (subtle blue tints)
+     * 3. Bobbing animation
+     * 4. Eye blinking
+     * 5. Eye direction
+     * 6. Facial expressions
+     * 7. Rotation based on movement
      */
-    createCharacter() {
-        const x = this.squadCenterX;
-        const y = this.squadCenterY;
-        const radius = SQUAD.CHARACTER_RADIUS;
+    createEnhancedCharacter(x, y) {
+        const baseRadius = SQUAD.CHARACTER_RADIUS;
+
+        // 1. SIZE VARIATION (0.9x to 1.1x for organic feel)
+        const sizeVariation = Phaser.Math.FloatBetween(0.9, 1.1);
+        const radius = baseRadius * sizeVariation;
+
+        // 2. COLOR VARIATION (subtle blue tints)
+        const colorVariations = [
+            0x03A9F4, // Original blue
+            0x0288D1, // Slightly darker
+            0x039BE5, // Slightly lighter
+            0x03A0E3, // Subtle tint
+            0x04B5FF, // Brighter tint
+        ];
+        const bodyColor = Phaser.Utils.Array.GetRandom(colorVariations);
 
         // Ground shadow (ellipse beneath character)
         const groundShadow = this.add.ellipse(x, y + radius + 5, radius * 1.5, radius * 0.5, 0x000000, 0.3);
@@ -236,18 +257,18 @@ export default class GameScene extends Phaser.Scene {
         // Container for character
         const character = this.add.container(x, y);
 
-        // Main body (bright blue)
-        const body = this.add.circle(0, 0, radius, COLORS.SQUAD_BLUE);
+        // Main body (bright blue with variation)
+        const body = this.add.circle(0, 0, radius, bodyColor);
 
-        // Shadow gradient (darker blue, bottom-right) - larger for better 3D effect
+        // Shadow gradient (darker blue, bottom-right)
         const shadow1 = this.add.circle(4, 4, radius * 0.85, COLORS.SQUAD_BLUE_DARK, 0.25);
         const shadow2 = this.add.circle(3, 3, radius * 0.7, COLORS.SQUAD_BLUE_DARK, 0.35);
 
-        // Highlight (white, top-left) - brighter and more defined
+        // Highlight (white, top-left)
         const highlight1 = this.add.circle(-6, -6, radius * 0.4, COLORS.SQUAD_HIGHLIGHT, 0.6);
         const highlight2 = this.add.circle(-4, -4, radius * 0.25, COLORS.SQUAD_HIGHLIGHT, 0.95);
 
-        // Simple face - two eyes
+        // Eyes (will be animated for blinking and direction)
         const eyeSize = radius * 0.12;
         const eyeY = -radius * 0.1;
         const eyeSpacing = radius * 0.35;
@@ -255,22 +276,123 @@ export default class GameScene extends Phaser.Scene {
         const leftEye = this.add.circle(-eyeSpacing, eyeY, eyeSize, 0x000000, 0.8);
         const rightEye = this.add.circle(eyeSpacing, eyeY, eyeSize, 0x000000, 0.8);
 
-        // Add to container in correct order (back to front)
-        character.add([body, shadow1, shadow2, highlight1, highlight2, leftEye, rightEye]);
+        // Mouth (for expressions - initially neutral)
+        const mouth = this.add.arc(0, radius * 0.15, radius * 0.15, 0, 180, false, 0x000000, 0.6);
+        mouth.setStrokeStyle(2, 0x000000, 0.8);
+        mouth.isClosed = true;
+
+        // 8. RUNNING ANIMATION - Add legs that will animate
+        const legLength = radius * 0.6;
+        const legWidth = 3;
+        const legSpacing = radius * 0.25;
+        const legStartY = radius * 0.5;
+
+        // Left leg (line from hip to foot)
+        const leftLeg = this.add.line(
+            0, 0,
+            -legSpacing, legStartY,
+            -legSpacing, legStartY + legLength,
+            0x0277BD,
+            1
+        );
+        leftLeg.setLineWidth(legWidth);
+        leftLeg.setOrigin(0, 0);
+
+        // Right leg (line from hip to foot)
+        const rightLeg = this.add.line(
+            0, 0,
+            legSpacing, legStartY,
+            legSpacing, legStartY + legLength,
+            0x0277BD,
+            1
+        );
+        rightLeg.setLineWidth(legWidth);
+        rightLeg.setOrigin(0, 0);
+
+        // Add to container in correct order (legs first, then body, then details on top)
+        character.add([leftLeg, rightLeg, body, shadow1, shadow2, highlight1, highlight2, leftEye, rightEye, mouth]);
         character.setDepth(10);
 
-        // Store formation properties
+        // Store references for animations
+        character.body = body;
+        character.leftEye = leftEye;
+        character.rightEye = rightEye;
+        character.mouth = mouth;
+        character.leftLeg = leftLeg;
+        character.rightLeg = rightLeg;
+        character.baseRadius = radius;
+        character.sizeVariation = sizeVariation;
+        character.legSpacing = legSpacing;
+        character.legStartY = legStartY;
+        character.legLength = legLength;
+
+        // Formation properties
         character.formationX = 0;
         character.formationY = 0;
         character.groundShadow = groundShadow;
 
+        // Animation properties
+        character.bobbingOffset = Math.random() * Math.PI * 2; // Random phase for organic look
+        character.nextBlinkTime = this.time.now + Phaser.Math.Between(2000, 4000);
+        character.isBlinking = false;
+        character.currentEmotion = 'neutral'; // 'neutral', 'happy', 'worried'
+
+        // 3. BOBBING ANIMATION - Continuous up/down bounce
+        this.tweens.add({
+            targets: character,
+            y: y - 3, // Bob up 3 pixels
+            duration: 600,
+            yoyo: true,
+            repeat: -1,
+            ease: 'Sine.easeInOut',
+            delay: character.bobbingOffset * 100 // Stagger animations
+        });
+
+        // 8. RUNNING ANIMATION - Alternating leg movement
+        const legSwingAmount = 8; // Pixels to swing forward/back
+        const runCycleDuration = 300; // Fast running cycle
+
+        // Left leg - swings forward first
+        this.tweens.add({
+            targets: leftLeg,
+            x2: -legSpacing + legSwingAmount, // Foot forward
+            duration: runCycleDuration,
+            yoyo: true,
+            repeat: -1,
+            ease: 'Sine.easeInOut',
+            delay: character.bobbingOffset * 50 // Slight stagger
+        });
+
+        // Right leg - swings backward first (opposite of left)
+        this.tweens.add({
+            targets: rightLeg,
+            x2: legSpacing - legSwingAmount, // Foot backward
+            duration: runCycleDuration,
+            yoyo: true,
+            repeat: -1,
+            ease: 'Sine.easeInOut',
+            delay: (character.bobbingOffset * 50) + (runCycleDuration / 2) // Offset by half cycle
+        });
+
+        return character;
+    }
+
+    /**
+     * STEP 5-6: Create single character (blue sphere with 3D effect)
+     */
+    createCharacter() {
+        const x = this.squadCenterX;
+        const y = this.squadCenterY;
+
+        const character = this.createEnhancedCharacter(x, y);
+
         this.squadMembers.push(character);
-        this.groundShadows.push(groundShadow);
+        this.groundShadows.push(character.groundShadow);
 
         // Calculate initial formation
         this.recalculateFormation();
 
-        console.log(`✓ Character created at (${x}, ${y}) - radius ${radius}px`);
+        console.log(`✓ Enhanced character created at (${x}, ${y})`);
     }
 
     /**
@@ -618,62 +740,29 @@ export default class GameScene extends Phaser.Scene {
 
         const x = this.squadCenterX;
         const y = this.squadCenterY;
-        const radius = SQUAD.CHARACTER_RADIUS;
 
-        // Ground shadow (ellipse beneath character)
-        const groundShadow = this.add.ellipse(x, y + radius + 5, radius * 1.5, radius * 0.5, 0x000000, 0.3);
-        groundShadow.setDepth(5);
+        // Create enhanced character with all polish features
+        const character = this.createEnhancedCharacter(x, y);
 
-        // Container for character
-        const character = this.add.container(x, y);
-
-        // Main body (bright blue)
-        const body = this.add.circle(0, 0, radius, COLORS.SQUAD_BLUE);
-
-        // Shadow gradient (darker blue, bottom-right) - larger for better 3D effect
-        const shadow1 = this.add.circle(4, 4, radius * 0.85, COLORS.SQUAD_BLUE_DARK, 0.25);
-        const shadow2 = this.add.circle(3, 3, radius * 0.7, COLORS.SQUAD_BLUE_DARK, 0.35);
-
-        // Highlight (white, top-left) - brighter and more defined
-        const highlight1 = this.add.circle(-6, -6, radius * 0.4, COLORS.SQUAD_HIGHLIGHT, 0.6);
-        const highlight2 = this.add.circle(-4, -4, radius * 0.25, COLORS.SQUAD_HIGHLIGHT, 0.95);
-
-        // Simple face - two eyes
-        const eyeSize = radius * 0.12;
-        const eyeY = -radius * 0.1;
-        const eyeSpacing = radius * 0.35;
-
-        const leftEye = this.add.circle(-eyeSpacing, eyeY, eyeSize, 0x000000, 0.8);
-        const rightEye = this.add.circle(eyeSpacing, eyeY, eyeSize, 0x000000, 0.8);
-
-        // Add to container in correct order (back to front)
-        character.add([body, shadow1, shadow2, highlight1, highlight2, leftEye, rightEye]);
-        character.setDepth(10);
-
-        // Formation properties
-        character.formationX = 0;
-        character.formationY = 0;
-        character.groundShadow = groundShadow;
-
-        // Spawn animation
+        // Spawn animation (overrides bobbing temporarily)
         character.setScale(0);
         this.tweens.add({
             targets: character,
-            scale: 1.0,
+            scale: character.sizeVariation, // Scale to character's unique size
             duration: 300,
             ease: 'Back.easeOut'
         });
 
-        groundShadow.setScale(0);
+        character.groundShadow.setScale(0);
         this.tweens.add({
-            targets: groundShadow,
+            targets: character.groundShadow,
             scale: 1.0,
             duration: 300,
             ease: 'Back.easeOut'
         });
 
         this.squadMembers.push(character);
-        this.groundShadows.push(groundShadow);
+        this.groundShadows.push(character.groundShadow);
 
         // Recalculate formation
         this.recalculateFormation();
@@ -681,7 +770,7 @@ export default class GameScene extends Phaser.Scene {
         // Update squad count display
         this.updateSquadCount();
 
-        console.log(`✓ Squad member added (total: ${this.squadMembers.length})`);
+        console.log(`✓ Enhanced squad member added (total: ${this.squadMembers.length})`);
     }
 
     /**
@@ -703,6 +792,96 @@ export default class GameScene extends Phaser.Scene {
             duration: 150,
             yoyo: true,
             ease: 'Back.easeOut'
+        });
+    }
+
+    /**
+     * Update character animations (blinking, eye direction, rotation)
+     */
+    updateCharacterAnimations(time, movementDirection) {
+        this.squadMembers.forEach((character, index) => {
+            if (!character.active) return;
+
+            // 4. EYE BLINKING - Random blinks every 2-4 seconds
+            if (time >= character.nextBlinkTime && !character.isBlinking) {
+                character.isBlinking = true;
+
+                // Blink animation (squeeze eyes)
+                this.tweens.add({
+                    targets: [character.leftEye, character.rightEye],
+                    scaleY: 0.1,
+                    duration: 80,
+                    yoyo: true,
+                    onComplete: () => {
+                        character.isBlinking = false;
+                        character.nextBlinkTime = time + Phaser.Math.Between(2000, 4000);
+                    }
+                });
+            }
+
+            // 5. EYE DIRECTION - Eyes look toward movement direction
+            const eyeSpacing = character.baseRadius * 0.35;
+            const eyeY = -character.baseRadius * 0.1;
+            const eyeLookOffset = movementDirection * 2; // 2 pixels left/right
+
+            character.leftEye.x = -eyeSpacing + eyeLookOffset;
+            character.rightEye.x = eyeSpacing + eyeLookOffset;
+
+            // 2. CHARACTER ROTATION - Tilt in direction of movement
+            const maxTilt = 0.15; // Max 0.15 radians (~8.6 degrees)
+            const targetRotation = movementDirection * maxTilt;
+
+            // Smooth rotation interpolation
+            character.rotation = Phaser.Math.Linear(
+                character.rotation,
+                targetRotation,
+                0.1 // Smooth lerp
+            );
+        });
+    }
+
+    /**
+     * Set facial expression for character
+     * @param {Phaser.GameObjects.Container} character
+     * @param {string} emotion - 'happy', 'worried', or 'neutral'
+     */
+    setCharacterExpression(character, emotion) {
+        if (!character || !character.mouth) return;
+
+        character.currentEmotion = emotion;
+        const radius = character.baseRadius;
+
+        // Remove old mouth
+        character.remove(character.mouth);
+        character.mouth.destroy();
+
+        // Create new mouth based on emotion
+        let newMouth;
+
+        if (emotion === 'happy') {
+            // Happy smile (arc facing up)
+            newMouth = this.add.arc(0, radius * 0.2, radius * 0.2, 0, Math.PI, false, 0x000000, 0);
+            newMouth.setStrokeStyle(2, 0x000000, 0.8);
+        } else if (emotion === 'worried') {
+            // Worried frown (arc facing down)
+            newMouth = this.add.arc(0, radius * 0.25, radius * 0.15, Math.PI, 0, false, 0x000000, 0);
+            newMouth.setStrokeStyle(2, 0x000000, 0.8);
+        } else {
+            // Neutral (small line)
+            newMouth = this.add.arc(0, radius * 0.15, radius * 0.15, 0, Math.PI, false, 0x000000, 0);
+            newMouth.setStrokeStyle(2, 0x000000, 0.8);
+        }
+
+        character.add(newMouth);
+        character.mouth = newMouth;
+    }
+
+    /**
+     * Set all squad members to an expression
+     */
+    setSquadExpression(emotion) {
+        this.squadMembers.forEach(character => {
+            this.setCharacterExpression(character, emotion);
         });
     }
 
@@ -811,6 +990,15 @@ export default class GameScene extends Phaser.Scene {
             SQUAD.FORMATION_LERP
         );
 
+        // ========== CHARACTER ANIMATIONS ==========
+        // Calculate movement direction for character tilt and eye direction
+        const movementDelta = this.squadCenterX - this.previousSquadCenterX;
+        const movementDirection = Math.sign(movementDelta); // -1 (left), 0 (still), 1 (right)
+        this.previousSquadCenterX = this.squadCenterX;
+
+        // Update all character animations (blinking, eye direction, rotation)
+        this.updateCharacterAnimations(time, movementDirection);
+
         // ========== UPDATE SQUAD FORMATION ==========
         // Update all squad members to their formation positions
         this.squadMembers.forEach((member, index) => {
@@ -867,6 +1055,12 @@ export default class GameScene extends Phaser.Scene {
                 collectible.collected = true;
                 this.addSquadMember();
 
+                // 6. FACIAL EXPRESSIONS - Happy when collecting!
+                this.setSquadExpression('happy');
+                this.time.delayedCall(1000, () => {
+                    this.setSquadExpression('neutral');
+                });
+
                 // Visual feedback - green flash
                 this.cameras.main.flash(100, 0, 255, 0, false, (camera, progress) => {
                     if (progress === 1) {
@@ -901,6 +1095,12 @@ export default class GameScene extends Phaser.Scene {
             if (dist < SQUAD.CHARACTER_RADIUS + OBSTACLES.WIDTH / 2) {
                 obstacle.hit = true;
                 this.removeSquadMembers(OBSTACLES.DAMAGE);
+
+                // 6. FACIAL EXPRESSIONS - Worried when hit!
+                this.setSquadExpression('worried');
+                this.time.delayedCall(1000, () => {
+                    this.setSquadExpression('neutral');
+                });
 
                 // Camera shake
                 this.cameras.main.shake(200, 0.01);
