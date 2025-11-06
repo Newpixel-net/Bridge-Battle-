@@ -98,26 +98,29 @@ export default class GameScene extends Phaser.Scene {
         ).setDepth(-100);
 
         // Left grass
-        const grassLeft = this.add.rectangle(
+        this.grassLeft = this.add.rectangle(
             0,
             GAME.HEIGHT / 2,
             centerX - roadHalfWidth,
             GAME.HEIGHT,
             COLORS.GRASS_GREEN
         );
-        grassLeft.setOrigin(0, 0.5);
-        grassLeft.setDepth(-50);
+        this.grassLeft.setOrigin(0, 0.5);
+        this.grassLeft.setDepth(-50);
 
         // Right grass
-        const grassRight = this.add.rectangle(
+        this.grassRight = this.add.rectangle(
             centerX + roadHalfWidth,
             GAME.HEIGHT / 2,
             centerX - roadHalfWidth,
             GAME.HEIGHT,
             COLORS.GRASS_GREEN
         );
-        grassRight.setOrigin(0, 0.5);
-        grassRight.setDepth(-50);
+        this.grassRight.setOrigin(0, 0.5);
+        this.grassRight.setDepth(-50);
+
+        // ENVIRONMENT POLISH 2: Gentle grass swaying
+        this.createGrassSwaying();
 
         // Road (brown) with depth gradient
         this.add.rectangle(
@@ -145,6 +148,9 @@ export default class GameScene extends Phaser.Scene {
             ).setDepth(-9);
         }
 
+        // ENVIRONMENT POLISH 1: Asphalt grain/noise texture
+        this.createAsphaltTexture(centerX, WORLD.ROAD_WIDTH);
+
         // Road edges/barriers (dark lines on both sides)
         const edgeWidth = 8;
         const edgeColor = 0x4A4A4A;
@@ -167,7 +173,350 @@ export default class GameScene extends Phaser.Scene {
             edgeColor
         ).setDepth(-5);
 
-        console.log('✓ Environment: Road (400px) + Grass on sides + Barriers');
+        // ENVIRONMENT POLISH 3: Sky details (clouds/birds)
+        this.createSkyDetails();
+
+        // ENVIRONMENT POLISH 4: Volumetric light effect
+        this.createVolumetricLight(centerX);
+
+        // ENVIRONMENT POLISH 5: Animated grass shadows
+        this.createGrassShadows(centerX, roadHalfWidth);
+
+        // ENVIRONMENT POLISH 6: Road heat shimmer
+        this.createHeatShimmer(centerX, WORLD.ROAD_WIDTH);
+
+        // ENVIRONMENT POLISH 7: Parallax background layers
+        this.createParallaxLayers(centerX);
+
+        console.log('✓ Environment: Road + Grass + All Polish Effects Active');
+    }
+
+    /**
+     * ENVIRONMENT POLISH 1: Create asphalt grain texture
+     */
+    createAsphaltTexture(centerX, roadWidth) {
+        const graphics = this.add.graphics();
+        graphics.setDepth(-8);
+
+        // Generate random grain pattern (subtle noise)
+        const grainDensity = 300; // Number of grain particles
+        const grainSize = 1.5;
+
+        for (let i = 0; i < grainDensity; i++) {
+            const x = centerX - roadWidth / 2 + Math.random() * roadWidth;
+            const y = Math.random() * GAME.HEIGHT * 1.5;
+            const alpha = Math.random() * 0.15 + 0.05; // Very subtle (0.05-0.2)
+
+            // Mix of dark and light grains
+            const isDark = Math.random() > 0.5;
+            const color = isDark ? 0x000000 : 0xFFFFFF;
+
+            graphics.fillStyle(color, alpha);
+            graphics.fillCircle(x, y, grainSize);
+        }
+
+        console.log('✓ Asphalt texture grain added');
+    }
+
+    /**
+     * ENVIRONMENT POLISH 2: Gentle grass swaying
+     */
+    createGrassSwaying() {
+        // Gentle sway on left grass
+        this.tweens.add({
+            targets: this.grassLeft,
+            scaleX: 1.01, // Very subtle stretch
+            duration: 3000,
+            yoyo: true,
+            repeat: -1,
+            ease: 'Sine.easeInOut'
+        });
+
+        // Gentle sway on right grass (offset timing)
+        this.tweens.add({
+            targets: this.grassRight,
+            scaleX: 1.01,
+            duration: 3000,
+            yoyo: true,
+            repeat: -1,
+            ease: 'Sine.easeInOut',
+            delay: 1500 // Offset by half cycle
+        });
+
+        console.log('✓ Grass swaying animation active');
+    }
+
+    /**
+     * ENVIRONMENT POLISH 3: Add clouds or birds in sky
+     */
+    createSkyDetails() {
+        const clouds = [];
+        const numClouds = 4;
+
+        for (let i = 0; i < numClouds; i++) {
+            const cloud = this.add.container(
+                Math.random() * GAME.WIDTH,
+                Math.random() * GAME.HEIGHT * 0.3 // Top third of screen
+            );
+
+            // Create fluffy cloud shape (3 overlapping circles)
+            const cloudColor = 0xFFFFFF;
+            const cloudAlpha = 0.4;
+
+            const circle1 = this.add.circle(-15, 0, 25, cloudColor, cloudAlpha);
+            const circle2 = this.add.circle(0, -5, 30, cloudColor, cloudAlpha);
+            const circle3 = this.add.circle(15, 0, 25, cloudColor, cloudAlpha);
+
+            cloud.add([circle1, circle2, circle3]);
+            cloud.setDepth(-90);
+
+            clouds.push(cloud);
+
+            // Slow drift across sky
+            const driftSpeed = Phaser.Math.Between(8000, 15000);
+            this.tweens.add({
+                targets: cloud,
+                x: GAME.WIDTH + 100,
+                duration: driftSpeed,
+                repeat: -1,
+                onRepeat: () => {
+                    cloud.x = -100; // Reset to left side
+                    cloud.y = Math.random() * GAME.HEIGHT * 0.3;
+                }
+            });
+        }
+
+        console.log('✓ Sky details (clouds) added');
+    }
+
+    /**
+     * ENVIRONMENT POLISH 4: Volumetric light rays from top
+     */
+    createVolumetricLight(centerX) {
+        const numRays = 5;
+
+        for (let i = 0; i < numRays; i++) {
+            const rayX = centerX - 200 + (i * 100);
+            const rayWidth = 40;
+            const rayHeight = GAME.HEIGHT * 0.6;
+
+            // Create light ray (vertical gradient rectangle)
+            const ray = this.add.rectangle(
+                rayX,
+                0,
+                rayWidth,
+                rayHeight,
+                0xFFFFFF,
+                0.08 // Very subtle
+            );
+            ray.setOrigin(0.5, 0);
+            ray.setDepth(-85);
+            ray.setAlpha(0.05);
+
+            // Gentle pulsing animation
+            this.tweens.add({
+                targets: ray,
+                alpha: 0.12,
+                duration: 2500 + (i * 300),
+                yoyo: true,
+                repeat: -1,
+                ease: 'Sine.easeInOut'
+            });
+        }
+
+        console.log('✓ Volumetric light rays active');
+    }
+
+    /**
+     * ENVIRONMENT POLISH 5: Animated grass shadows (sway with wind)
+     */
+    createGrassShadows(centerX, roadHalfWidth) {
+        // Left grass shadow strips
+        this.grassShadowsLeft = [];
+        const numShadowStrips = 3;
+
+        for (let i = 0; i < numShadowStrips; i++) {
+            const shadowStrip = this.add.rectangle(
+                centerX - roadHalfWidth - 30 - (i * 40),
+                GAME.HEIGHT / 2,
+                15,
+                GAME.HEIGHT,
+                0x000000,
+                0.1 + (i * 0.03) // Varying darkness
+            );
+            shadowStrip.setDepth(-45);
+            this.grassShadowsLeft.push(shadowStrip);
+
+            // Sway animation (simulate wind)
+            this.tweens.add({
+                targets: shadowStrip,
+                scaleX: 1.2,
+                x: shadowStrip.x + 5,
+                duration: 2500 + (i * 400),
+                yoyo: true,
+                repeat: -1,
+                ease: 'Sine.easeInOut'
+            });
+        }
+
+        // Right grass shadow strips
+        this.grassShadowsRight = [];
+        for (let i = 0; i < numShadowStrips; i++) {
+            const shadowStrip = this.add.rectangle(
+                centerX + roadHalfWidth + 30 + (i * 40),
+                GAME.HEIGHT / 2,
+                15,
+                GAME.HEIGHT,
+                0x000000,
+                0.1 + (i * 0.03)
+            );
+            shadowStrip.setDepth(-45);
+            this.grassShadowsRight.push(shadowStrip);
+
+            // Sway animation (offset timing)
+            this.tweens.add({
+                targets: shadowStrip,
+                scaleX: 1.2,
+                x: shadowStrip.x - 5,
+                duration: 2500 + (i * 400),
+                yoyo: true,
+                repeat: -1,
+                ease: 'Sine.easeInOut',
+                delay: 1200
+            });
+        }
+
+        console.log('✓ Animated grass shadows active');
+    }
+
+    /**
+     * ENVIRONMENT POLISH 6: Road heat shimmer effect
+     */
+    createHeatShimmer(centerX, roadWidth) {
+        // Create multiple shimmer wave lines
+        this.heatShimmers = [];
+        const numShimmers = 4;
+
+        for (let i = 0; i < numShimmers; i++) {
+            const shimmer = this.add.rectangle(
+                centerX,
+                GAME.HEIGHT * 0.5 + (i * 100),
+                roadWidth * 0.9,
+                2, // Thin horizontal line
+                0xFFFFFF,
+                0.15
+            );
+            shimmer.setDepth(-7);
+            this.heatShimmers.push(shimmer);
+
+            // Subtle wave distortion effect
+            this.tweens.add({
+                targets: shimmer,
+                scaleX: 0.95,
+                alpha: 0.05,
+                duration: 1500 + (i * 200),
+                yoyo: true,
+                repeat: -1,
+                ease: 'Sine.easeInOut'
+            });
+
+            // Vertical drift (shimmer rises)
+            this.tweens.add({
+                targets: shimmer,
+                y: shimmer.y - 150,
+                duration: 3000,
+                repeat: -1,
+                onRepeat: () => {
+                    shimmer.y = GAME.HEIGHT;
+                }
+            });
+        }
+
+        console.log('✓ Heat shimmer effect active');
+    }
+
+    /**
+     * ENVIRONMENT POLISH 7: Parallax background layers (distant scenery)
+     */
+    createParallaxLayers(centerX) {
+        // Far background - distant mountains
+        this.parallaxMountains = [];
+        const numMountains = 5;
+
+        for (let i = 0; i < numMountains; i++) {
+            const mountainWidth = 200 + Math.random() * 150;
+            const mountainHeight = 100 + Math.random() * 80;
+            const mountainX = (i * 250) - 100;
+
+            // Simple triangle mountain shape
+            const mountain = this.add.triangle(
+                mountainX,
+                GAME.HEIGHT * 0.35,
+                0, 0,
+                mountainWidth / 2, mountainHeight,
+                -mountainWidth / 2, mountainHeight,
+                0x2C3E50,
+                0.3
+            );
+            mountain.setOrigin(0, 0);
+            mountain.setDepth(-95);
+            this.parallaxMountains.push(mountain);
+        }
+
+        // Mid-ground - distant buildings/trees
+        this.parallaxBuildings = [];
+        const numBuildings = 8;
+
+        for (let i = 0; i < numBuildings; i++) {
+            const buildingWidth = 40 + Math.random() * 60;
+            const buildingHeight = 80 + Math.random() * 120;
+            const buildingX = (i * 180) - 50;
+
+            const building = this.add.rectangle(
+                buildingX,
+                GAME.HEIGHT * 0.4,
+                buildingWidth,
+                buildingHeight,
+                0x34495E,
+                0.25
+            );
+            building.setOrigin(0.5, 1);
+            building.setDepth(-80);
+            this.parallaxBuildings.push(building);
+        }
+
+        console.log('✓ Parallax background layers created');
+    }
+
+    /**
+     * Update parallax layers in update loop
+     */
+    updateParallaxLayers(dt) {
+        // Scroll mountains slowly (0.1x speed)
+        if (this.parallaxMountains) {
+            this.parallaxMountains.forEach((mountain, index) => {
+                mountain.y += WORLD.SCROLL_SPEED * dt * 0.1;
+
+                // Wrap around when off-screen
+                if (mountain.y > GAME.HEIGHT + 100) {
+                    mountain.y = -100;
+                    mountain.x = Math.random() * GAME.WIDTH;
+                }
+            });
+        }
+
+        // Scroll buildings faster (0.3x speed)
+        if (this.parallaxBuildings) {
+            this.parallaxBuildings.forEach((building, index) => {
+                building.y += WORLD.SCROLL_SPEED * dt * 0.3;
+
+                // Wrap around when off-screen
+                if (building.y > GAME.HEIGHT + 100) {
+                    building.y = GAME.HEIGHT * 0.4;
+                    building.x = Math.random() * GAME.WIDTH;
+                }
+            });
+        }
     }
 
     /**
@@ -892,6 +1241,9 @@ export default class GameScene extends Phaser.Scene {
         if (this.gameState !== 'playing') return;
 
         const dt = delta / 1000;
+
+        // ========== ENVIRONMENT POLISH - PARALLAX ==========
+        this.updateParallaxLayers(dt);
 
         // ========== AUTO-SCROLL ==========
         const scrollAmount = WORLD.SCROLL_SPEED * dt;
