@@ -63,6 +63,9 @@ export default class GameScene extends Phaser.Scene {
     create() {
         console.log('🎮 Building Phase 1 - Step by step...');
 
+        // ANIMATION IMPROVEMENTS 1: Scene transition fade-in
+        this.cameras.main.fadeIn(800, 0, 0, 0);
+
         // STEP 2-3: Create environment (road + grass)
         this.createEnvironment();
 
@@ -84,8 +87,105 @@ export default class GameScene extends Phaser.Scene {
         // STEP 10: Setup input
         this.setupInput();
 
+        // ANIMATION IMPROVEMENTS 3: Countdown animation before game starts
+        this.startCountdown();
+
         console.log('✓ Phase 1 Foundation ready with gameplay!');
         console.log('✓ Auto-scroll, collectibles, obstacles, and gates active');
+    }
+
+    /**
+     * ANIMATION IMPROVEMENTS 3: Start countdown before game begins
+     */
+    startCountdown() {
+        // Pause game initially
+        this.gameState = 'countdown';
+
+        const countdownNumbers = ['3', '2', '1', 'GO!'];
+        let currentIndex = 0;
+
+        // Create countdown text
+        const countdownText = this.add.text(
+            GAME.WIDTH / 2,
+            GAME.HEIGHT / 2,
+            countdownNumbers[0],
+            {
+                fontSize: '120px',
+                fontFamily: 'Arial Black',
+                color: '#FFFF00',
+                stroke: '#000000',
+                strokeThickness: 12
+            }
+        );
+        countdownText.setOrigin(0.5);
+        countdownText.setDepth(200);
+        countdownText.setScrollFactor(0);
+        countdownText.setScale(0);
+
+        // Background overlay for countdown
+        const overlay = this.add.rectangle(
+            GAME.WIDTH / 2,
+            GAME.HEIGHT / 2,
+            GAME.WIDTH,
+            GAME.HEIGHT,
+            0x000000,
+            0.5
+        );
+        overlay.setDepth(199);
+        overlay.setScrollFactor(0);
+
+        const showNumber = () => {
+            if (currentIndex >= countdownNumbers.length) {
+                // Countdown complete - start game
+                this.tweens.add({
+                    targets: [countdownText, overlay],
+                    alpha: 0,
+                    duration: 300,
+                    onComplete: () => {
+                        countdownText.destroy();
+                        overlay.destroy();
+                        this.gameState = 'playing';
+                    }
+                });
+                return;
+            }
+
+            const number = countdownNumbers[currentIndex];
+            countdownText.setText(number);
+
+            // Zoom in animation
+            this.tweens.add({
+                targets: countdownText,
+                scale: 1.5,
+                alpha: 1,
+                duration: 300,
+                ease: 'Back.easeOut',
+                onComplete: () => {
+                    // Zoom out and fade
+                    this.tweens.add({
+                        targets: countdownText,
+                        scale: 0.5,
+                        alpha: 0,
+                        duration: 500,
+                        delay: 200,
+                        ease: 'Back.easeIn',
+                        onComplete: () => {
+                            currentIndex++;
+                            showNumber();
+                        }
+                    });
+                }
+            });
+
+            // Color change for "GO!"
+            if (number === 'GO!') {
+                countdownText.setColor('#00FF00');
+                countdownText.setStroke('#FFFFFF', 12);
+            }
+        };
+
+        // Start countdown
+        showNumber();
     }
 
     /**
@@ -1852,6 +1952,11 @@ export default class GameScene extends Phaser.Scene {
             this.resetCombo();
         }
 
+        // ANIMATION IMPROVEMENTS 5: Check victory condition (reach 5000m)
+        if (this.distance >= 5000 && this.gameState === 'playing') {
+            this.triggerVictory();
+        }
+
         // ========== SPAWN GAME OBJECTS ==========
         // Spawn collectibles
         if (this.distance >= this.nextCollectibleSpawn) {
@@ -2222,25 +2327,248 @@ export default class GameScene extends Phaser.Scene {
     }
 
     /**
-     * Trigger game over
+     * Trigger game over (ENHANCED with slow-motion)
      */
     triggerGameOver() {
         console.log('💀 GAME OVER!');
         this.gameState = 'gameOver';
 
-        // Camera shake
+        // ANIMATION IMPROVEMENTS 4: Slow-motion effect
+        this.physics.world.timeScale = 3.0; // Slow down physics
+        this.tweens.timeScale = 0.3; // Slow down tweens
+
+        // Camera shake (slower due to time scale)
         this.cameras.main.shake(500, 0.02);
 
         // Screen flash red
         this.cameras.main.flash(300, 255, 0, 0);
 
+        // Dramatic zoom
+        this.cameras.main.zoomTo(1.2, 1000, 'Quad.easeIn');
+
+        // "GAME OVER" text with dramatic entrance
+        const gameOverText = this.add.text(
+            GAME.WIDTH / 2,
+            GAME.HEIGHT / 2 - 100,
+            'GAME OVER',
+            {
+                fontSize: '80px',
+                fontFamily: 'Arial Black',
+                color: '#FF0000',
+                stroke: '#000000',
+                strokeThickness: 10
+            }
+        );
+        gameOverText.setOrigin(0.5);
+        gameOverText.setDepth(200);
+        gameOverText.setScrollFactor(0);
+        gameOverText.setScale(0);
+        gameOverText.setAlpha(0);
+
+        // Dramatic entrance animation
+        this.tweens.add({
+            targets: gameOverText,
+            scale: 1.5,
+            alpha: 1,
+            duration: 1000,
+            ease: 'Elastic.easeOut',
+            onComplete: () => {
+                // Shake text
+                this.tweens.add({
+                    targets: gameOverText,
+                    angle: -5,
+                    duration: 100,
+                    yoyo: true,
+                    repeat: 5
+                });
+            }
+        });
+
+        // ANIMATION IMPROVEMENTS 1: Scene transition fade-out
         // Delay before showing game over screen
-        this.time.delayedCall(800, () => {
+        this.time.delayedCall(2500, () => {
+            this.cameras.main.fadeOut(500, 0, 0, 0);
+        });
+
+        this.time.delayedCall(3000, () => {
+            // Reset time scales
+            this.physics.world.timeScale = 1.0;
+            this.tweens.timeScale = 1.0;
+
             this.scene.start(SCENES.GAME_OVER, {
                 distance: this.distance,
                 squadSize: 0
             });
         });
+    }
+
+    /**
+     * ANIMATION IMPROVEMENTS 5: Trigger victory screen
+     */
+    triggerVictory() {
+        console.log('🎉 VICTORY!');
+        this.gameState = 'victory';
+
+        // Stop scrolling
+        // Camera celebration zoom
+        this.cameras.main.zoomTo(0.9, 1000, 'Sine.easeInOut');
+
+        // Victory overlay
+        const victoryOverlay = this.add.rectangle(
+            GAME.WIDTH / 2,
+            GAME.HEIGHT / 2,
+            GAME.WIDTH,
+            GAME.HEIGHT,
+            0x000000,
+            0
+        );
+        victoryOverlay.setDepth(199);
+        victoryOverlay.setScrollFactor(0);
+
+        this.tweens.add({
+            targets: victoryOverlay,
+            alpha: 0.7,
+            duration: 1000
+        });
+
+        // Victory text
+        const victoryText = this.add.text(
+            GAME.WIDTH / 2,
+            GAME.HEIGHT / 2 - 100,
+            'VICTORY!',
+            {
+                fontSize: '100px',
+                fontFamily: 'Arial Black',
+                color: '#FFD700',
+                stroke: '#FFFFFF',
+                strokeThickness: 12
+            }
+        );
+        victoryText.setOrigin(0.5);
+        victoryText.setDepth(200);
+        victoryText.setScrollFactor(0);
+        victoryText.setScale(0);
+
+        // Victory entrance
+        this.tweens.add({
+            targets: victoryText,
+            scale: 1.3,
+            angle: 360,
+            duration: 1500,
+            ease: 'Elastic.easeOut'
+        });
+
+        // Pulsing glow
+        this.tweens.add({
+            targets: victoryText,
+            alpha: 0.7,
+            duration: 500,
+            yoyo: true,
+            repeat: -1
+        });
+
+        // Stats text
+        const statsText = this.add.text(
+            GAME.WIDTH / 2,
+            GAME.HEIGHT / 2 + 50,
+            `Distance: ${Math.floor(this.distance)}m\nSquad: ${this.squadMembers.length}`,
+            {
+                fontSize: '32px',
+                fontFamily: 'Arial',
+                color: '#FFFFFF',
+                stroke: '#000000',
+                strokeThickness: 6,
+                align: 'center'
+            }
+        );
+        statsText.setOrigin(0.5);
+        statsText.setDepth(200);
+        statsText.setScrollFactor(0);
+        statsText.setAlpha(0);
+
+        this.tweens.add({
+            targets: statsText,
+            alpha: 1,
+            y: statsText.y + 20,
+            duration: 800,
+            delay: 500,
+            ease: 'Back.easeOut'
+        });
+
+        // ANIMATION IMPROVEMENTS 5: Confetti particles!
+        this.createConfettiExplosion();
+
+        // Continue after delay
+        this.time.delayedCall(5000, () => {
+            this.cameras.main.fadeOut(500);
+        });
+
+        this.time.delayedCall(5500, () => {
+            this.scene.start(SCENES.GAME_OVER, {
+                distance: this.distance,
+                squadSize: this.squadMembers.length
+            });
+        });
+    }
+
+    /**
+     * ANIMATION IMPROVEMENTS 5: Create confetti explosion
+     */
+    createConfettiExplosion() {
+        const confettiCount = 100;
+        const colors = [0xFF0000, 0x00FF00, 0x0000FF, 0xFFFF00, 0xFF00FF, 0x00FFFF, 0xFFA500];
+
+        for (let i = 0; i < confettiCount; i++) {
+            const x = Phaser.Math.Between(0, GAME.WIDTH);
+            const y = -20;
+            const color = Phaser.Utils.Array.GetRandom(colors);
+
+            // Random confetti shape (rectangle or circle)
+            const isCircle = Math.random() > 0.5;
+            let confetti;
+
+            if (isCircle) {
+                confetti = this.add.circle(x, y, 5, color);
+            } else {
+                confetti = this.add.rectangle(x, y, 8, 8, color);
+            }
+
+            confetti.setDepth(201);
+            confetti.setScrollFactor(0);
+
+            // Random rotation
+            const rotation = Math.random() * Math.PI * 2;
+            confetti.setRotation(rotation);
+
+            // Fall animation with rotation
+            const fallDuration = Phaser.Math.Between(2000, 4000);
+            const endY = GAME.HEIGHT + 20;
+            const drift = Phaser.Math.Between(-100, 100);
+
+            this.tweens.add({
+                targets: confetti,
+                y: endY,
+                x: x + drift,
+                angle: rotation + (Math.random() > 0.5 ? 360 : -360) * 3,
+                alpha: 0,
+                duration: fallDuration,
+                ease: 'Cubic.easeIn',
+                delay: Math.random() * 500,
+                onComplete: () => confetti.destroy()
+            });
+
+            // Wiggle while falling
+            this.tweens.add({
+                targets: confetti,
+                x: `+=${Phaser.Math.Between(-30, 30)}`,
+                duration: 400,
+                yoyo: true,
+                repeat: Math.floor(fallDuration / 800),
+                ease: 'Sine.easeInOut'
+            });
+        }
+
+        console.log('🎊 Confetti explosion created!');
     }
 
     /**
