@@ -14,6 +14,8 @@
  * - isUnlocked: Whether player has unlocked this character
  */
 
+import { getAbility } from './AbilityConstants.js';
+
 export const RARITY = {
     COMMON: 'COMMON',
     RARE: 'RARE',
@@ -261,11 +263,14 @@ export function getCombinedAbilities(characters) {
         return [];
     }
 
-    const abilities = new Set();
+    const abilityIds = new Set();
 
     characters.forEach(char => {
-        char.abilities.forEach(ability => abilities.add(ability));
+        char.abilities.forEach(abilityId => abilityIds.add(abilityId));
     });
 
-    return Array.from(abilities);
+    // Convert ability IDs to actual ability objects
+    return Array.from(abilityIds)
+        .map(id => getAbility(id))
+        .filter(ability => ability !== null);
 }
