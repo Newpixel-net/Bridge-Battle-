@@ -279,6 +279,9 @@ export default class GameScene extends Phaser.Scene {
                         countdownText.destroy();
                         overlay.destroy();
                         this.gameState = 'playing';
+
+                        // CRITICAL: Setup camera for forward motion feel
+                        this.setupForwardMotionCamera();
                     }
                 });
                 return;
@@ -323,6 +326,155 @@ export default class GameScene extends Phaser.Scene {
 
         // Start countdown
         showNumber();
+    }
+
+    /**
+     * FORWARD MOTION FEEL: Setup camera for dynamic forward motion
+     * CRITICAL Priority 1 & 2 features from guide
+     */
+    setupForwardMotionCamera() {
+        const camera = this.cameras.main;
+
+        // PRIORITY 1: Camera look-ahead offset (-200px Y)
+        // Shows more of what's coming - CRITICAL for forward motion feel
+        const lookAheadY = -200;  // Show 200px ahead
+
+        // Create a virtual target point for camera to follow
+        // This allows us to smoothly pan ahead of the player
+        this.cameraTarget = {
+            x: this.squadCenterX,
+            y: this.squadCenterY + lookAheadY
+        };
+
+        // PRIORITY 1: Start following with smooth lerp
+        camera.startFollow(
+            this.cameraTarget,
+            true,              // Round pixels
+            0.08,              // Horizontal lerp (slower = smoother)
+            0.12,              // Vertical lerp (faster = more responsive)
+            0,                 // Offset X
+            0                  // Offset Y (already in target position)
+        );
+
+        // PRIORITY 2: Camera forward tilt (-2 degrees)
+        // Makes player feel like leaning into motion
+        camera.setRotation(-0.035);  // ~2 degrees in radians
+
+        // PRIORITY 2: Continuous subtle shake (simulates movement vibration)
+        // VERY subtle - mimics the "rumble" of running
+        camera.shake(
+            Number.MAX_SAFE_INTEGER,  // Duration (continuous)
+            0.0008,                    // Intensity (barely noticeable but effective)
+            false                      // Don't force
+        );
+
+        // Create progress bar UI
+        this.createProgressBar();
+
+        console.log('✓ Forward motion camera activated: Look-ahead=' + lookAheadY + ', Tilt=-2°, Shake=0.0008');
+    }
+
+    /**
+     * FORWARD MOTION FEEL: Update camera target position
+     * Call this in update() to keep camera following squad
+     */
+    updateCameraTarget() {
+        if (!this.cameraTarget) return;
+
+        // Update virtual target to stay ahead of squad
+        this.cameraTarget.x = this.squadCenterX;
+        this.cameraTarget.y = this.squadCenterY - 200;  // Always 200px ahead
+
+        // Dynamic look-ahead based on movement speed (optional enhancement)
+        // const speedMultiplier = this.difficultyMultiplier || 1.0;
+        // this.cameraTarget.y = this.squadCenterY - (200 * speedMultiplier);
+    }
+
+    /**
+     * PRIORITY 2: Create progress bar showing level completion
+     */
+    createProgressBar() {
+        const barWidth = 600;
+        const barHeight = 15;
+        const x = (GAME.WIDTH - barWidth) / 2;
+        const y = 110;  // Below distance counter
+
+        // Background
+        this.progressBarBg = this.add.rectangle(
+            x, y,
+            barWidth, barHeight,
+            0x333333,
+            0.7
+        );
+        this.progressBarBg.setOrigin(0);
+        this.progressBarBg.setScrollFactor(0);
+        this.progressBarBg.setDepth(99);
+
+        // Border
+        const border = this.add.rectangle(
+            x - 2, y - 2,
+            barWidth + 4, barHeight + 4
+        );
+        border.setOrigin(0);
+        border.setStrokeStyle(2, 0xFFFFFF, 0.5);
+        border.setFillStyle();
+        border.setScrollFactor(0);
+        border.setDepth(98);
+
+        // Fill (shows progress)
+        this.progressBarFill = this.add.rectangle(
+            x, y,
+            0, barHeight,  // Starts at 0 width
+            0x00FF00,
+            0.9
+        );
+        this.progressBarFill.setOrigin(0);
+        this.progressBarFill.setScrollFactor(0);
+        this.progressBarFill.setDepth(100);
+
+        // Progress text
+        this.progressText = this.add.text(
+            x + barWidth / 2, y - 5,
+            'PROGRESS',
+            {
+                fontSize: '12px',
+                fontFamily: 'Arial Bold',
+                color: '#FFFFFF',
+                stroke: '#000000',
+                strokeThickness: 3
+            }
+        );
+        this.progressText.setOrigin(0.5, 1);
+        this.progressText.setScrollFactor(0);
+        this.progressText.setDepth(101);
+        this.progressText.setResolution(2);
+
+        console.log('✓ Progress bar created at top of screen');
+    }
+
+    /**
+     * FORWARD MOTION FEEL: Update progress bar based on distance
+     */
+    updateProgressBar() {
+        if (!this.progressBarFill) return;
+
+        // Progress based on distance (5000m = 100%)
+        const targetDistance = 5000;
+        const progress = Math.min(1.0, this.distance / targetDistance);
+        const barWidth = 600;
+
+        this.progressBarFill.width = barWidth * progress;
+
+        // Change color based on progress
+        if (progress > 0.75) {
+            this.progressBarFill.setFillStyle(0xFFD700);  // Gold (near finish)
+        } else if (progress > 0.5) {
+            this.progressBarFill.setFillStyle(0xFFFF00);  // Yellow
+        } else if (progress > 0.25) {
+            this.progressBarFill.setFillStyle(0x00FFFF);  // Cyan
+        } else {
+            this.progressBarFill.setFillStyle(0x00FF00);  // Green
+        }
     }
 
     /**
@@ -2412,6 +2564,10 @@ export default class GameScene extends Phaser.Scene {
 
         // ========== ENVIRONMENT POLISH - PARALLAX ==========
         this.updateParallaxLayers(dt);
+
+        // ========== FORWARD MOTION CAMERA ==========
+        this.updateCameraTarget();
+        this.updateProgressBar();
 
         // ========== AUTO-SCROLL ==========
         const scrollAmount = WORLD.SCROLL_SPEED * dt;
