@@ -1,6 +1,24 @@
 import Phaser from 'phaser';
 import { GAME, WORLD, SQUAD, COLORS, SCENES, UI, COLLECTIBLES, OBSTACLES, GATES } from '../utils/GameConstants.js';
 
+// COMBAT SYSTEM - Priority 1 Implementation
+import BulletPool from '../systems/BulletPool.js';
+import AutoShootingSystem from '../systems/AutoShootingSystem.js';
+import EnemyManager from '../systems/EnemyManager.js';
+
+// ABILITY SYSTEM - Priority 2 Implementation
+import EnergySystem from '../systems/EnergySystem.js';
+import AbilityEffects from '../systems/AbilityEffects.js';
+import AbilityUIBar from '../ui/AbilityUIBar.js';
+import { getDefaultLoadout } from '../utils/AbilityConstants.js';
+
+// CHARACTER SELECTION - Priority 3 Implementation
+import { calculateCombinedStats, getCombinedAbilities } from '../utils/CharacterConstants.js';
+
+// BOSS BATTLE SYSTEM - Priority 4 Implementation
+import BossManager from '../systems/BossManager.js';
+import BossHealthBar from '../ui/BossHealthBar.js';
+
 /**
  * GameScene - Phase 1: Foundation COMPLETE REBUILD
  *
@@ -21,8 +39,29 @@ export default class GameScene extends Phaser.Scene {
         super({ key: SCENES.GAME });
     }
 
-    init() {
+    init(data) {
         console.log('🎮 GameScene - Phase 1: Gaming Functionality + Character Polish');
+
+        // CHARACTER SELECTION - Priority 3 Integration
+        this.selectedCharacters = data?.selectedCharacters || [];
+        this.stageNumber = data?.stageNumber || 1;
+        this.characterStats = null; // Will be calculated from selectedCharacters
+
+        // Calculate combined stats if characters selected
+        if (this.selectedCharacters.length > 0) {
+            this.characterStats = calculateCombinedStats(this.selectedCharacters);
+            console.log('🎭 Characters selected:', this.selectedCharacters.map(c => c.name).join(', '));
+            console.log('📊 Combined stats:', this.characterStats);
+        } else {
+            // Default stats if no selection (should not happen with character selection)
+            this.characterStats = {
+                damage: 1.0,
+                fireRate: 1.0,
+                hp: 100,
+                speed: 1.0
+            };
+            console.log('⚠️ No characters selected - using default stats');
+        }
 
         // Game state
         this.gameState = 'playing';
@@ -94,6 +133,24 @@ export default class GameScene extends Phaser.Scene {
         // Footstep timing
         this.footstepTimer = 0;
         this.footstepInterval = 150; // ms between footsteps
+
+        // COMBAT SYSTEM - Phase 1 Integration
+        this.bulletPool = null;
+        this.autoShootingSystem = null;
+        this.enemyManager = null;
+        this.score = 0;
+        this.enemiesKilled = 0;
+
+        // ABILITY SYSTEM - Priority 2 Integration
+        this.energySystem = null;
+        this.abilityEffects = null;
+        this.abilityUIBar = null;
+        this.abilities = [];
+
+        // BOSS BATTLE SYSTEM - Priority 4 Integration
+        this.bossManager = null;
+        this.bossHealthBar = null;
+        this.bossProjectiles = [];
     }
 
     create() {
@@ -104,6 +161,15 @@ export default class GameScene extends Phaser.Scene {
 
         // AUDIO SYSTEM: Initialize audio
         this.initializeAudio();
+
+        // COMBAT SYSTEM: Initialize combat (bullets, shooting, enemies)
+        this.initializeCombatSystem();
+
+        // ABILITY SYSTEM: Initialize abilities (energy, effects, UI)
+        this.initializeAbilitySystem();
+
+        // BOSS BATTLE SYSTEM: Initialize boss manager
+        this.initializeBossSystem();
 
         // STEP 2-3: Create environment (road + grass)
         this.createEnvironment();
@@ -2094,6 +2160,17 @@ export default class GameScene extends Phaser.Scene {
         this.updateUpcomingPreview();        // Upcoming obstacles preview
         this.updateMultiplierDisplay();      // Multiplier based on combo
 
+        // ========== ABILITY SYSTEM UPDATES ==========
+        // Update energy regeneration
+        if (this.energySystem) {
+            this.energySystem.update(time, delta);
+        }
+
+        // Update ability UI (cooldowns, etc.)
+        if (this.abilityUIBar) {
+            this.abilityUIBar.update(time, delta);
+        }
+
         // ========== AUDIO UPDATES ==========
         // AUDIO: Check for milestone (every 1000m)
         const currentMilestone = Math.floor(this.distance / 1000);
@@ -2157,6 +2234,38 @@ export default class GameScene extends Phaser.Scene {
             gate.left.y += scrollAmount;
             gate.right.y += scrollAmount;
         });
+
+        // ========== COMBAT SYSTEM UPDATES ==========
+        // Update squad manager proxy (shooting needs current position)
+        this.updateSquadManagerProxy();
+
+        // Update bullet pool (move bullets, cleanup off-screen)
+        if (this.bulletPool) {
+            this.bulletPool.update(time, delta);
+        }
+
+        // Update auto-shooting (fire bullets continuously)
+        if (this.autoShootingSystem) {
+            this.autoShootingSystem.update(time, delta);
+        }
+
+        // Update enemy manager (spawn waves, update enemies)
+        if (this.enemyManager) {
+            this.enemyManager.update(time, delta);
+        }
+
+        // Update boss manager (boss behavior, attacks, projectiles)
+        if (this.bossManager) {
+            this.bossManager.update(time, delta);
+        }
+
+        // Update boss health bar
+        if (this.bossHealthBar) {
+            this.bossHealthBar.update(time, delta);
+        }
+
+        // Check combat collisions (bullets vs enemies + boss)
+        this.checkCombatCollisions();
 
         // ========== COLLISION DETECTION ==========
         this.checkCollisions();
@@ -2718,9 +2827,14 @@ export default class GameScene extends Phaser.Scene {
         });
 
         this.time.delayedCall(5500, () => {
-            this.scene.start(SCENES.GAME_OVER, {
+            // Transition to victory screen
+            this.scene.start(SCENES.VICTORY, {
+                score: this.score,
                 distance: this.distance,
-                squadSize: this.squadMembers.length
+                enemiesKilled: this.enemiesKilled,
+                bossDefeated: false, // Distance victory, not boss victory
+                stageNumber: this.stageNumber,
+                timePlayed: this.time.now / 1000 // Convert to seconds
             });
         });
     }
@@ -2807,6 +2921,267 @@ export default class GameScene extends Phaser.Scene {
                 onComplete: () => particle.destroy()
             });
         }
+    }
+
+    // ========================================
+    // COMBAT SYSTEM 🔫
+    // ========================================
+
+    /**
+     * COMBAT: Initialize combat system
+     */
+    initializeCombatSystem() {
+        console.log('🔫 Initializing combat system...');
+
+        // Create bullet pool (50 bullets max)
+        this.bulletPool = new BulletPool(this, 50);
+
+        // Create squad manager reference (needed for shooting system)
+        const squadManagerProxy = {
+            squadCenterX: this.squadCenterX,
+            squadCenterY: this.squadCenterY,
+            squadMembers: this.squadMembers
+        };
+
+        // Create auto-shooting system
+        this.autoShootingSystem = new AutoShootingSystem(
+            this,
+            this.bulletPool,
+            squadManagerProxy
+        );
+
+        // Apply character stats to combat system
+        if (this.characterStats) {
+            this.autoShootingSystem.damageModifier = this.characterStats.damage;
+            this.autoShootingSystem.fireRateModifier = 1 / this.characterStats.fireRate; // Lower = faster
+            console.log(`⚔️ Combat stats applied: Damage ${(this.characterStats.damage * 100).toFixed(0)}%, Fire Rate ${(this.characterStats.fireRate * 100).toFixed(0)}%`);
+        }
+
+        // Create enemy manager
+        this.enemyManager = new EnemyManager(this);
+
+        // Start enemy spawning after countdown
+        this.time.delayedCall(3000, () => {
+            this.enemyManager.resumeSpawning(this.time.now);
+        });
+
+        console.log('✓ Combat system initialized');
+    }
+
+    /**
+     * COMBAT: Check bullet-enemy collisions + boss collisions
+     */
+    checkCombatCollisions() {
+        const bullets = this.bulletPool.getActiveBullets();
+        const enemies = this.enemyManager.getActiveEnemies();
+
+        // Check each bullet against each enemy
+        for (let bullet of bullets) {
+            if (!bullet.active) continue;
+
+            // Check bullet vs regular enemies
+            for (let enemy of enemies) {
+                if (!enemy.active) continue;
+
+                // Simple circle collision
+                const dist = Phaser.Math.Distance.Between(
+                    bullet.x,
+                    bullet.y,
+                    enemy.container.x,
+                    enemy.container.y
+                );
+
+                if (dist < (bullet.core.radius + enemy.getRadius())) {
+                    // Hit!
+                    const killed = enemy.takeDamage(bullet.damage);
+
+                    // Recycle bullet
+                    this.bulletPool.recycleBullet(bullet);
+
+                    // Update score if killed
+                    if (killed) {
+                        this.score += enemy.getScoreValue();
+                        this.enemiesKilled++;
+                    }
+
+                    // Play hit sound
+                    if (this.playBulletHitSound) {
+                        this.playBulletHitSound();
+                    }
+
+                    break; // Bullet hit, stop checking this bullet
+                }
+            }
+
+            // Check bullet vs boss (if boss active)
+            if (bullet.active && this.bossManager && this.bossManager.isBossAlive()) {
+                const boss = this.bossManager.getCurrentBoss();
+                if (boss && boss.active) {
+                    const dist = Phaser.Math.Distance.Between(
+                        bullet.x,
+                        bullet.y,
+                        boss.x,
+                        boss.y
+                    );
+
+                    if (dist < (bullet.core.radius + boss.size)) {
+                        // Hit boss!
+                        const killed = boss.takeDamage(bullet.damage);
+
+                        // Recycle bullet
+                        this.bulletPool.recycleBullet(bullet);
+
+                        // Play hit sound (louder for boss)
+                        if (this.playBulletHitSound) {
+                            this.playBulletHitSound();
+                        }
+
+                        // If boss defeated, handled by boss itself
+                    }
+                }
+            }
+        }
+
+        // Check boss projectiles vs player squad
+        if (this.bossManager && this.bossProjectiles) {
+            for (let i = this.bossProjectiles.length - 1; i >= 0; i--) {
+                const projectile = this.bossProjectiles[i];
+                if (!projectile || !projectile.active) continue;
+
+                // Check collision with squad
+                const dist = Phaser.Math.Distance.Between(
+                    projectile.x,
+                    projectile.y,
+                    this.squadCenterX,
+                    this.squadCenterY
+                );
+
+                // Squad hit radius (approx 30px)
+                if (dist < 40) {
+                    // Hit squad!
+                    this.takeDamage(projectile.damage || 10);
+
+                    // Destroy projectile
+                    projectile.active = false;
+                    if (projectile.destroy) {
+                        projectile.destroy();
+                    }
+                    this.bossProjectiles.splice(i, 1);
+                }
+            }
+        }
+    }
+
+    /**
+     * Player takes damage from boss attacks
+     */
+    takeDamage(damage) {
+        // Reduce squad size based on damage
+        const membersToLose = Math.floor(damage / 10); // 10 damage = 1 member
+
+        for (let i = 0; i < membersToLose && this.squadMembers.length > 0; i++) {
+            const member = this.squadMembers.pop();
+            if (member && member.destroy) {
+                member.destroy();
+            }
+
+            // Remove shadow
+            if (this.groundShadows.length > 0) {
+                const shadow = this.groundShadows.pop();
+                if (shadow && shadow.destroy) {
+                    shadow.destroy();
+                }
+            }
+        }
+
+        // Update squad display
+        if (this.squadBubbleText) {
+            this.squadBubbleText.setText(`${this.squadMembers.length}`);
+        }
+
+        // Screen shake on hit
+        this.cameras.main.shake(200, 0.005);
+
+        // Check game over
+        if (this.squadMembers.length === 0) {
+            this.gameOver();
+        }
+    }
+
+    /**
+     * COMBAT: Update squad manager proxy (for shooting system)
+     */
+    updateSquadManagerProxy() {
+        // The AutoShootingSystem needs current squad position
+        // Update the proxy with current values
+        if (this.autoShootingSystem && this.autoShootingSystem.squadManager) {
+            this.autoShootingSystem.squadManager.squadCenterX = this.squadCenterX;
+            this.autoShootingSystem.squadManager.squadCenterY = this.squadCenterY;
+            this.autoShootingSystem.squadManager.squadMembers = this.squadMembers;
+        }
+    }
+
+    // ========================================
+    // ABILITY SYSTEM 💪
+    // ========================================
+
+    /**
+     * ABILITY: Initialize ability system
+     */
+    initializeAbilitySystem() {
+        console.log('💪 Initializing ability system...');
+
+        // Create energy system (base HP from character stats)
+        const baseHP = this.characterStats?.hp || 100;
+        this.energySystem = new EnergySystem(this, baseHP, 10);
+
+        // Create ability effects executor
+        this.abilityEffects = new AbilityEffects(this);
+
+        // Get abilities from selected characters, or default loadout
+        if (this.selectedCharacters.length > 0) {
+            this.abilities = getCombinedAbilities(this.selectedCharacters);
+            console.log(`🎯 Character abilities loaded: ${this.abilities.map(a => a.name).join(', ')}`);
+        } else {
+            this.abilities = getDefaultLoadout();
+            console.log('⚠️ Using default ability loadout');
+        }
+
+        // Create ability UI bar (bottom center)
+        this.abilityUIBar = new AbilityUIBar(
+            this,
+            GAME.WIDTH / 2,    // Center X
+            550,                // Bottom Y
+            this.abilities,
+            this.energySystem,
+            (abilityData) => this.handleAbilityActivation(abilityData)
+        );
+
+        console.log('✓ Ability system initialized');
+    }
+
+    /**
+     * ABILITY: Handle ability activation
+     */
+    handleAbilityActivation(abilityData) {
+        console.log(`🎯 Activating ability: ${abilityData.name}`);
+
+        // Execute ability effect
+        if (this.abilityEffects) {
+            this.abilityEffects.executeAbility(abilityData);
+        }
+
+        // Visual feedback - screen effect based on ability
+        const flashColors = {
+            'FIREBALL': [255, 100, 0],
+            'SHIELD': [0, 200, 255],
+            'LIGHTNING': [255, 255, 100],
+            'MULTI_SHOT': [200, 0, 255],
+            'SPEED_BOOST': [0, 255, 100]
+        };
+
+        const color = flashColors[abilityData.id] || [255, 255, 255];
+        this.cameras.main.flash(150, ...color, false);
     }
 
     // ========================================
@@ -3251,6 +3626,188 @@ export default class GameScene extends Phaser.Scene {
         }
 
         console.log(`⏱ Countdown beep (${isGo ? 'GO!' : 'beep'})`);
+    }
+
+    /**
+     * COMBAT AUDIO: Shooting sound (subtle, continuous)
+     */
+    playShootingSound() {
+        if (!this.audioEnabled) return;
+
+        // Very subtle shooting sound (short, high frequency)
+        this.playMusicalNote(1200, 0.03 * this.sfxVolume, 0.03, 'square');
+    }
+
+    /**
+     * COMBAT AUDIO: Bullet hit enemy sound
+     */
+    playBulletHitSound() {
+        if (!this.audioEnabled) return;
+
+        // Impact sound (short, punchy)
+        this.playMusicalNote(200, 0.08 * this.sfxVolume, 0.05, 'square');
+        this.playWhiteNoise(0.05 * this.sfxVolume, 30);
+    }
+
+    /**
+     * COMBAT AUDIO: Enemy death explosion sound
+     */
+    playEnemyDeathSound() {
+        if (!this.audioEnabled) return;
+
+        // Explosion sound (sweep down + white noise)
+        this.playSweep(300, 100, 0.12 * this.sfxVolume, 0.2);
+        this.playWhiteNoise(0.1 * this.sfxVolume, 150);
+    }
+
+    /**
+     * BOSS AUDIO: Boss warning siren
+     */
+    playBossWarningSiren() {
+        if (!this.audioEnabled) return;
+
+        // Dramatic warning siren (sweep up and down)
+        this.playSweep(200, 600, 0.15 * this.sfxVolume, 1.0);
+        setTimeout(() => {
+            this.playSweep(600, 200, 0.15 * this.sfxVolume, 1.0);
+        }, 1000);
+    }
+
+    /**
+     * BOSS AUDIO: Boss attack sound
+     */
+    playBossAttackSound() {
+        if (!this.audioEnabled) return;
+
+        // Heavy attack sound (low frequency + noise)
+        this.playMusicalNote(150, 0.15 * this.sfxVolume, 0.3, 'sawtooth');
+        this.playWhiteNoise(0.08 * this.sfxVolume, 100);
+    }
+
+    /**
+     * BOSS AUDIO: Boss phase transition sound
+     */
+    playBossPhaseSound() {
+        if (!this.audioEnabled) return;
+
+        // Epic phase change sound (sweep up + dramatic note)
+        this.playSweep(100, 800, 0.2 * this.sfxVolume, 0.5);
+        setTimeout(() => {
+            this.playMusicalNote(400, 0.2 * this.sfxVolume, 0.5, 'square');
+        }, 300);
+    }
+
+    /**
+     * BOSS AUDIO: Boss defeated sound
+     */
+    playBossDefeatedSound() {
+        if (!this.audioEnabled) return;
+
+        // Epic death explosion (long sweep down + lots of noise)
+        this.playSweep(800, 50, 0.25 * this.sfxVolume, 1.5);
+        this.playWhiteNoise(0.2 * this.sfxVolume, 1000);
+
+        // Victory chime after explosion
+        setTimeout(() => {
+            this.playMusicalNote(523, 0.15 * this.sfxVolume, 0.3, 'sine'); // C5
+            setTimeout(() => {
+                this.playMusicalNote(659, 0.15 * this.sfxVolume, 0.3, 'sine'); // E5
+                setTimeout(() => {
+                    this.playMusicalNote(784, 0.2 * this.sfxVolume, 0.5, 'sine'); // G5
+                }, 150);
+            }, 150);
+        }, 1500);
+    }
+
+    /**
+     * BOSS AUDIO: Boss music (intense combat music)
+     */
+    playBossMusic() {
+        if (!this.audioEnabled) return;
+
+        // Stop regular music
+        this.stopAllMusic();
+
+        // Faster, more intense music loop
+        const bpm = 160; // Fast tempo for boss
+        const beatInterval = (60 / bpm) * 1000;
+
+        this.musicLoopTimer = setInterval(() => {
+            if (this.gameState === 'playing' || this.gameState === 'victory') {
+                // Intense bass line
+                this.playMusicalNote(65, 0.08 * this.musicVolume, 0.2, 'square');
+
+                // High energy notes
+                setTimeout(() => {
+                    this.playMusicalNote(330, 0.05 * this.musicVolume, 0.1, 'sawtooth');
+                }, beatInterval / 4);
+
+                setTimeout(() => {
+                    this.playMusicalNote(392, 0.05 * this.musicVolume, 0.1, 'sawtooth');
+                }, beatInterval / 2);
+
+                setTimeout(() => {
+                    this.playMusicalNote(440, 0.05 * this.musicVolume, 0.1, 'sawtooth');
+                }, (beatInterval * 3) / 4);
+            }
+        }, beatInterval);
+
+        console.log('🎵 Boss battle music started');
+    }
+
+    // ========================================
+    // BOSS BATTLE SYSTEM 👑
+    // ========================================
+
+    /**
+     * BOSS: Initialize boss system
+     */
+    initializeBossSystem() {
+        console.log('👑 Initializing boss battle system...');
+
+        // Create boss manager
+        this.bossManager = new BossManager(this);
+
+        // Set up boss health bar callback (created when boss spawns)
+        const originalSpawnBoss = this.bossManager.spawnBoss.bind(this.bossManager);
+        this.bossManager.spawnBoss = (bossType) => {
+            originalSpawnBoss(bossType);
+
+            // Create health bar after boss is spawned (3 second delay for warning)
+            this.time.delayedCall(3000, () => {
+                if (this.bossManager.currentBoss && !this.bossManager.currentBoss.isDestroyed) {
+                    this.bossHealthBar = new BossHealthBar(this, this.bossManager.currentBoss);
+                }
+            });
+        };
+
+        console.log('✓ Boss battle system initialized');
+    }
+
+    /**
+     * BOSS: Handle boss victory
+     */
+    handleBossVictory() {
+        console.log('🎉 Boss battle won!');
+
+        // Stop game state
+        this.gameState = 'victory';
+
+        // Camera effect
+        this.cameras.main.fadeOut(2000, 255, 215, 0); // Gold fade
+
+        // Transition to victory screen after fade
+        this.time.delayedCall(2000, () => {
+            // Go to victory screen
+            this.scene.start(SCENES.VICTORY, {
+                score: this.score,
+                distance: this.distance,
+                enemiesKilled: this.enemiesKilled,
+                bossDefeated: true,
+                stageNumber: this.stageNumber,
+                timePlayed: this.time.now / 1000 // Convert to seconds
+            });
+        });
     }
 
     shutdown() {
