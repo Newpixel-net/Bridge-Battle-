@@ -9,6 +9,7 @@ import AutoShootingSystem from '../systems/AutoShootingSystem.js';
 import EnemyManager from '../systems/EnemyManager.js';
 import WaveManager from '../systems/WaveManager.js';
 import Enemy from '../entities/Enemy.js';
+import Boss from '../entities/Boss.js';
 
 // ABILITY SYSTEM - Priority 2 Implementation
 import EnergySystem from '../systems/EnergySystem.js';
@@ -4071,8 +4072,7 @@ export default class GameScene extends Phaser.Scene {
      * WAVE SYSTEM: Spawn a wave enemy (called by WaveManager)
      */
     spawnWaveEnemy(type, x, y, speed) {
-        // Import Enemy class dynamically or use existing enemyManager
-        const Enemy = require('../entities/Enemy.js').default;
+        // Use the imported Enemy class
         const enemy = new Enemy(this, x, y, type, speed);
 
         // Add to enemy manager's list
@@ -4087,10 +4087,7 @@ export default class GameScene extends Phaser.Scene {
      * WAVE SYSTEM: Spawn boss (called by WaveManager)
      */
     spawnBoss(bossData, x, y) {
-        // Import Boss class
-        const Boss = require('../entities/Boss.js').default;
-        const BossHealthBar = require('../ui/BossHealthBar.js').default;
-
+        // Use the imported Boss and BossHealthBar classes
         // Create WAVE_BOSS
         const boss = new Boss(this, x, y, 'WAVE_BOSS');
 
