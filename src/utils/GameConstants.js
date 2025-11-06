@@ -40,27 +40,27 @@ export const SQUAD = {
     START_SIZE: 1,               // Start with 1 character
     MAX_SIZE: 200,               // Maximum squad size
 
-    // Formation (hexagonal close-packed)
-    FORMATION_SPACING: 45,       // Space between characters (tight blob)
+    // Formation (hexagonal close-packed) - ULTRA TIGHT from screenshots
+    FORMATION_SPACING: 28,       // Space between characters (VERY tight blob)
     SEPARATION_FORCE: 0.3,       // Force to prevent overlap
     FORMATION_LERP: 0.12,        // Smoothing factor for movement
 
     // Movement
     MOVE_SPEED: 8,               // Horizontal movement speed
-    HORIZONTAL_LIMIT: 250,       // Max distance from center (-250 to +250)
+    HORIZONTAL_LIMIT: 220,       // Max distance from center
 
-    // Character visuals
-    CHARACTER_SCALE: 0.8,        // Scale of character sprites
-    CHARACTER_SIZE: 64,          // Base size for collision
+    // Character visuals - LARGE and PROMINENT like screenshots
+    CHARACTER_RADIUS: 14,        // Radius of each character sphere (28px diameter)
+    CHARACTER_SIZE: 28,          // Base size for collision (diameter)
 };
 
 // ============================================================================
 // CAMERA
 // ============================================================================
 export const CAMERA = {
-    FOLLOW_OFFSET_Y: -200,       // Camera ahead of player (look forward)
+    FOLLOW_OFFSET_Y: -250,       // Camera ahead of player (look forward)
     FOLLOW_LERP: 0.08,           // Smooth following
-    ZOOM: 1.0,
+    ZOOM: 1.3,                   // Zoom in for better character visibility
 };
 
 // ============================================================================
@@ -77,14 +77,17 @@ export const COLORS = {
     BRIDGE_LINES: 0xFFFFFF,      // White lane markings
     BRIDGE_EDGE: 0xCC3333,       // Red railings
 
-    // Squad
+    // Squad (from reference screenshots)
     SQUAD_BLUE: 0x03A9F4,        // Bright blue (player color)
+    SQUAD_BLUE_DARK: 0x0277BD,   // Darker blue for shading
+    SQUAD_HIGHLIGHT: 0xFFFFFF,   // White highlight on top
 
     // UI
     UI_WHITE: 0xFFFFFF,
     UI_GOLD: 0xFFD700,
     UI_DANGER: 0xFF4444,
     UI_SUCCESS: 0x00FF00,
+    UI_SQUAD_BUBBLE: 0x1976D2,   // Dark blue for squad counter background
 };
 
 // ============================================================================
