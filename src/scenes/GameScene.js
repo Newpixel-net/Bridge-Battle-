@@ -6,6 +6,12 @@ import BulletPool from '../systems/BulletPool.js';
 import AutoShootingSystem from '../systems/AutoShootingSystem.js';
 import EnemyManager from '../systems/EnemyManager.js';
 
+// ABILITY SYSTEM - Priority 2 Implementation
+import EnergySystem from '../systems/EnergySystem.js';
+import AbilityEffects from '../systems/AbilityEffects.js';
+import AbilityUIBar from '../ui/AbilityUIBar.js';
+import { getDefaultLoadout } from '../utils/AbilityConstants.js';
+
 /**
  * GameScene - Phase 1: Foundation COMPLETE REBUILD
  *
@@ -106,6 +112,12 @@ export default class GameScene extends Phaser.Scene {
         this.enemyManager = null;
         this.score = 0;
         this.enemiesKilled = 0;
+
+        // ABILITY SYSTEM - Priority 2 Integration
+        this.energySystem = null;
+        this.abilityEffects = null;
+        this.abilityUIBar = null;
+        this.abilities = [];
     }
 
     create() {
@@ -119,6 +131,9 @@ export default class GameScene extends Phaser.Scene {
 
         // COMBAT SYSTEM: Initialize combat (bullets, shooting, enemies)
         this.initializeCombatSystem();
+
+        // ABILITY SYSTEM: Initialize abilities (energy, effects, UI)
+        this.initializeAbilitySystem();
 
         // STEP 2-3: Create environment (road + grass)
         this.createEnvironment();
@@ -2109,6 +2124,17 @@ export default class GameScene extends Phaser.Scene {
         this.updateUpcomingPreview();        // Upcoming obstacles preview
         this.updateMultiplierDisplay();      // Multiplier based on combo
 
+        // ========== ABILITY SYSTEM UPDATES ==========
+        // Update energy regeneration
+        if (this.energySystem) {
+            this.energySystem.update(time, delta);
+        }
+
+        // Update ability UI (cooldowns, etc.)
+        if (this.abilityUIBar) {
+            this.abilityUIBar.update(time, delta);
+        }
+
         // ========== AUDIO UPDATES ==========
         // AUDIO: Check for milestone (every 1000m)
         const currentMilestone = Math.floor(this.distance / 1000);
@@ -2941,6 +2967,62 @@ export default class GameScene extends Phaser.Scene {
             this.autoShootingSystem.squadManager.squadCenterY = this.squadCenterY;
             this.autoShootingSystem.squadManager.squadMembers = this.squadMembers;
         }
+    }
+
+    // ========================================
+    // ABILITY SYSTEM 💪
+    // ========================================
+
+    /**
+     * ABILITY: Initialize ability system
+     */
+    initializeAbilitySystem() {
+        console.log('💪 Initializing ability system...');
+
+        // Create energy system
+        this.energySystem = new EnergySystem(this, 100, 10);
+
+        // Create ability effects executor
+        this.abilityEffects = new AbilityEffects(this);
+
+        // Get default ability loadout
+        this.abilities = getDefaultLoadout();
+
+        // Create ability UI bar (bottom center)
+        this.abilityUIBar = new AbilityUIBar(
+            this,
+            GAME.WIDTH / 2,    // Center X
+            550,                // Bottom Y
+            this.abilities,
+            this.energySystem,
+            (abilityData) => this.handleAbilityActivation(abilityData)
+        );
+
+        console.log('✓ Ability system initialized');
+    }
+
+    /**
+     * ABILITY: Handle ability activation
+     */
+    handleAbilityActivation(abilityData) {
+        console.log(`🎯 Activating ability: ${abilityData.name}`);
+
+        // Execute ability effect
+        if (this.abilityEffects) {
+            this.abilityEffects.executeAbility(abilityData);
+        }
+
+        // Visual feedback - screen effect based on ability
+        const flashColors = {
+            'FIREBALL': [255, 100, 0],
+            'SHIELD': [0, 200, 255],
+            'LIGHTNING': [255, 255, 100],
+            'MULTI_SHOT': [200, 0, 255],
+            'SPEED_BOOST': [0, 255, 100]
+        };
+
+        const color = flashColors[abilityData.id] || [255, 255, 255];
+        this.cameras.main.flash(150, ...color, false);
     }
 
     // ========================================
