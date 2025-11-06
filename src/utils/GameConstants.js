@@ -1,26 +1,34 @@
 /**
  * Bridge Battle - Game Constants
- * PHASE 1 COMPLETE REBUILD - Matching Reference Screenshots EXACTLY
+ * RESPONSIVE DESIGN - Desktop landscape (1280x720) scales to mobile portrait
  *
  * Reference: screenshots-for-claude/the-required-results/Level1.png
  */
 
 // ============================================================================
-// GAME CONFIGURATION - PORTRAIT MOBILE RUNNER
+// RESPONSIVE GAME CONFIGURATION
 // ============================================================================
+
+// Desktop-first design: 1280x720 (16:9) scales properly to mobile
+// Phaser's FIT mode will adapt this to any screen size
 export const GAME = {
-    WIDTH: 540,                  // PORTRAIT width (mobile runner style)
-    HEIGHT: 960,                 // PORTRAIT height
+    WIDTH: 1280,                 // Wide desktop width
+    HEIGHT: 720,                 // Standard height (16:9)
     TARGET_FPS: 60,
     PHYSICS: 'arcade'
 };
 
 // ============================================================================
-// WORLD & ROAD SPECIFICATIONS
+// WORLD & ROAD SPECIFICATIONS - RESPONSIVE
 // ============================================================================
 export const WORLD = {
-    // Road dimensions (fills ~75% of viewport width)
-    ROAD_WIDTH: 400,             // 400/540 = 74% of screen width
+    // Road dimensions (fills ~75% of viewport width) - calculated dynamically
+    get ROAD_WIDTH() {
+        return Math.floor(GAME.WIDTH * 0.75); // 75% of screen width
+    },
+    get ROAD_WIDTH_RATIO() {
+        return 0.75; // Road takes 75% of screen width
+    },
     ROAD_LENGTH: 10000,          // Total level length
 
     // Movement
@@ -28,7 +36,7 @@ export const WORLD = {
 };
 
 // ============================================================================
-// PLAYER SQUAD SYSTEM
+// PLAYER SQUAD SYSTEM - RESPONSIVE
 // ============================================================================
 export const SQUAD = {
     // Starting configuration
@@ -39,16 +47,20 @@ export const SQUAD = {
     FORMATION_SPACING: 52,       // Space between character centers (tight!)
     FORMATION_LERP: 0.15,        // Smoothing factor for movement
 
-    // Movement
+    // Movement - responsive
     MOVE_SPEED: 300,             // Horizontal movement speed (pixels/sec)
-    HORIZONTAL_LIMIT: 150,       // Max distance from center
+    get HORIZONTAL_LIMIT() {
+        return Math.floor(WORLD.ROAD_WIDTH * 0.35); // 35% of road width from center
+    },
 
     // Character visuals - Matching reference screenshots
     CHARACTER_RADIUS: 25,        // Radius of each character sphere
     CHARACTER_SIZE: 50,          // Diameter for collision
 
-    // Character position
-    START_Y: 720,                // Y position (lower third of screen: 960 * 0.75)
+    // Character position - responsive (lower third)
+    get START_Y() {
+        return Math.floor(GAME.HEIGHT * 0.75); // 75% down screen
+    },
 };
 
 // ============================================================================
