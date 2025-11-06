@@ -19,6 +19,9 @@ import { calculateCombinedStats, getCombinedAbilities } from '../utils/Character
 import BossManager from '../systems/BossManager.js';
 import BossHealthBar from '../ui/BossHealthBar.js';
 
+// PROGRESSION SYSTEM - Gameplay Enhancements
+import { progressionManager } from '../systems/ProgressionManager.js';
+
 /**
  * GameScene - Phase 1: Foundation COMPLETE REBUILD
  *
@@ -141,6 +144,15 @@ export default class GameScene extends Phaser.Scene {
         this.score = 0;
         this.enemiesKilled = 0;
 
+        // PROGRESSION SYSTEM - Enhanced scoring and tracking
+        this.distanceScore = 0;           // Score from distance (1 point per 10m)
+        this.lastScoredDistance = 0;      // Track last distance scored
+        this.milestonesReached = [];      // Track which milestones we've passed
+        this.startTime = 0;                // Track game session time
+        this.initialSquadSize = 1;        // Track starting squad size for perfect run
+        this.noDeaths = true;              // Track if player hasn't lost squad members
+        this.difficultyMultiplier = 1.0;  // Increases over time for difficulty scaling
+
         // ABILITY SYSTEM - Priority 2 Integration
         this.energySystem = null;
         this.abilityEffects = null;
@@ -155,6 +167,9 @@ export default class GameScene extends Phaser.Scene {
 
     create() {
         console.log('🎮 Building Phase 1 - Step by step...');
+
+        // PROGRESSION SYSTEM: Track session start time
+        this.startTime = Date.now();
 
         // ANIMATION IMPROVEMENTS 1: Scene transition fade-in
         this.cameras.main.fadeIn(800, 0, 0, 0);
@@ -2155,6 +2170,21 @@ export default class GameScene extends Phaser.Scene {
         this.distance += scrollAmount;
         this.scrollOffset += scrollAmount;
 
+        // PROGRESSION: Award score for distance traveled (1 point per 10m)
+        const distanceToScore = Math.floor(this.distance / 10);
+        if (distanceToScore > this.lastScoredDistance) {
+            const pointsEarned = distanceToScore - this.lastScoredDistance;
+            this.score += pointsEarned;
+            this.distanceScore += pointsEarned;
+            this.lastScoredDistance = distanceToScore;
+        }
+
+        // PROGRESSION: Difficulty scaling (increase over time)
+        this.difficultyMultiplier = 1.0 + (this.distance / 5000); // +20% per 1000m
+
+        // PROGRESSION: Check for milestones and award bonuses
+        this.checkMilestones();
+
         // ========== UI/HUD POLISH UPDATES ==========
         this.updateDistanceDisplay();        // Rolling numbers + milestone
         this.updateUpcomingPreview();        // Upcoming obstacles preview
@@ -2206,10 +2236,12 @@ export default class GameScene extends Phaser.Scene {
             this.nextCollectibleSpawn = this.distance + COLLECTIBLES.SPAWN_INTERVAL;
         }
 
-        // Spawn obstacles
+        // Spawn obstacles (with difficulty scaling - spawn faster over time)
         if (this.distance >= this.nextObstacleSpawn) {
             this.spawnObstacle();
-            this.nextObstacleSpawn = this.distance + OBSTACLES.SPAWN_INTERVAL;
+            // Reduce spawn interval based on difficulty (faster spawning)
+            const scaledInterval = OBSTACLES.SPAWN_INTERVAL / Math.min(this.difficultyMultiplier, 2.0);
+            this.nextObstacleSpawn = this.distance + scaledInterval;
         }
 
         // Spawn gates
@@ -2388,6 +2420,10 @@ export default class GameScene extends Phaser.Scene {
                 collectible.collected = true;
                 this.addSquadMember();
 
+                // PROGRESSION: Award score for collectible (base 10 points, multiplied by combo)
+                const collectibleScore = 10 * this.currentMultiplier;
+                this.score += collectibleScore;
+
                 // UI/HUD POLISH 5: Track combo
                 this.comboCount++;
                 this.lastCollectibleTime = this.time.now;
@@ -2485,6 +2521,8 @@ export default class GameScene extends Phaser.Scene {
             const gateY = gate.left.y;
             if (centerY < gateY + GATES.HEIGHT / 2 && centerY > gateY - GATES.HEIGHT / 2) {
                 // Determine which side player is on
+                const chosenOperation = centerX < GAME.WIDTH / 2 ? gate.left.operation : gate.right.operation;
+
                 if (centerX < GAME.WIDTH / 2) {
                     // Left gate
                     this.applyGateOperation(gate.left.operation);
@@ -2500,6 +2538,10 @@ export default class GameScene extends Phaser.Scene {
 
                 // OBJECT POLISH 6: Bright flash when passing through
                 const isGoodGate = chosenGate.operation.mult || chosenGate.operation.add;
+
+                // PROGRESSION: Award score for passing gate (bonus for good choices)
+                const gateScore = isGoodGate ? 50 : 10; // Bonus for growth gates
+                this.score += gateScore;
 
                 // AUDIO: Gate pass sound (with operation-specific audio)
                 const isMultiplication = chosenGate.operation.mult ? true : false;
@@ -2594,6 +2636,11 @@ export default class GameScene extends Phaser.Scene {
      * Remove squad members (ENHANCED with death animation)
      */
     removeSquadMembers(count) {
+        // PROGRESSION: Track that player lost squad members (no perfect run)
+        if (count > 0) {
+            this.noDeaths = false;
+        }
+
         for (let i = 0; i < count && this.squadMembers.length > 0; i++) {
             const member = this.squadMembers.pop();
             const shadow = member.groundShadow;
@@ -2706,13 +2753,31 @@ export default class GameScene extends Phaser.Scene {
         });
 
         this.time.delayedCall(3000, () => {
+            // PROGRESSION: Update stats (game over = defeat)
+            const timePlayedSeconds = (Date.now() - this.startTime) / 1000;
+            const progressionResult = progressionManager.updateSessionStats({
+                score: this.score,
+                distance: this.distance,
+                enemiesKilled: this.enemiesKilled,
+                squadSize: 0,
+                bossDefeated: false,
+                victory: false, // Game over
+                timePlayedSeconds: timePlayedSeconds,
+                noDeaths: this.noDeaths
+            });
+
+            console.log('📊 Game Over - Progression updated:', progressionResult);
+
             // Reset time scales
             this.physics.world.timeScale = 1.0;
             this.tweens.timeScale = 1.0;
 
             this.scene.start(SCENES.GAME_OVER, {
                 distance: this.distance,
-                squadSize: 0
+                squadSize: 0,
+                score: this.score,
+                enemiesKilled: this.enemiesKilled,
+                highScore: progressionManager.getHighScore()
             });
         });
     }
@@ -2827,6 +2892,21 @@ export default class GameScene extends Phaser.Scene {
         });
 
         this.time.delayedCall(5500, () => {
+            // PROGRESSION: Update stats and check achievements
+            const timePlayedSeconds = (Date.now() - this.startTime) / 1000;
+            const progressionResult = progressionManager.updateSessionStats({
+                score: this.score,
+                distance: this.distance,
+                enemiesKilled: this.enemiesKilled,
+                squadSize: this.squadMembers.length,
+                bossDefeated: false, // Distance victory
+                victory: true,
+                timePlayedSeconds: timePlayedSeconds,
+                noDeaths: this.noDeaths
+            });
+
+            console.log('📊 Progression updated:', progressionResult);
+
             // Transition to victory screen
             this.scene.start(SCENES.VICTORY, {
                 score: this.score,
@@ -2834,7 +2914,10 @@ export default class GameScene extends Phaser.Scene {
                 enemiesKilled: this.enemiesKilled,
                 bossDefeated: false, // Distance victory, not boss victory
                 stageNumber: this.stageNumber,
-                timePlayed: this.time.now / 1000 // Convert to seconds
+                timePlayed: timePlayedSeconds,
+                isNewHighScore: progressionResult.isNewHighScore,
+                newAchievements: progressionResult.newAchievements,
+                highScore: progressionManager.getHighScore()
             });
         });
     }
@@ -2921,6 +3004,88 @@ export default class GameScene extends Phaser.Scene {
                 onComplete: () => particle.destroy()
             });
         }
+    }
+
+    // ========================================
+    // PROGRESSION SYSTEM 🏆
+    // ========================================
+
+    /**
+     * PROGRESSION: Check for distance milestones and award bonuses
+     */
+    checkMilestones() {
+        const milestones = [1000, 2000, 3000, 4000];
+
+        milestones.forEach(milestone => {
+            if (this.distance >= milestone && !this.milestonesReached.includes(milestone)) {
+                this.milestonesReached.push(milestone);
+                this.awardMilestoneBonus(milestone);
+            }
+        });
+    }
+
+    /**
+     * PROGRESSION: Award milestone bonus (collectibles, score, etc.)
+     */
+    awardMilestoneBonus(milestone) {
+        console.log(`🎯 Milestone reached: ${milestone}m`);
+
+        // Award bonus score
+        const bonusScore = milestone / 10; // 1000m = 100 points, 2000m = 200 points, etc.
+        this.score += bonusScore;
+
+        // Spawn bonus collectibles
+        const bonusCollectibles = Math.floor(milestone / 1000); // 1 per 1000m
+        for (let i = 0; i < bonusCollectibles; i++) {
+            const x = Phaser.Math.Between(GAME.WIDTH * 0.2, GAME.WIDTH * 0.8);
+            const y = this.squadCenterY - 200 - (i * 80); // Stagger them
+            this.spawnCollectible(x, y);
+        }
+
+        // Visual celebration
+        this.createMilestoneCelebration(milestone);
+    }
+
+    /**
+     * PROGRESSION: Create visual celebration for milestone
+     */
+    createMilestoneCelebration(milestone) {
+        // Flash screen gold
+        this.cameras.main.flash(500, 255, 215, 0);
+
+        // Show milestone text
+        const text = this.add.text(
+            GAME.WIDTH / 2,
+            GAME.HEIGHT / 2 - 100,
+            `${milestone}m MILESTONE!`,
+            {
+                fontSize: '48px',
+                fontFamily: 'Arial Black',
+                color: '#FFD700',
+                stroke: '#000000',
+                strokeThickness: 8
+            }
+        );
+        text.setOrigin(0.5);
+        text.setDepth(200);
+        text.setScrollFactor(0);
+        text.setAlpha(0);
+
+        // Animate in and out
+        this.tweens.add({
+            targets: text,
+            alpha: 1,
+            scaleX: 1.2,
+            scaleY: 1.2,
+            duration: 400,
+            ease: 'Back.easeOut',
+            yoyo: true,
+            hold: 1000,
+            onComplete: () => text.destroy()
+        });
+
+        // Particle burst
+        this.createParticleBurst(GAME.WIDTH / 2, GAME.HEIGHT / 2, 0xFFD700, 30);
     }
 
     // ========================================
@@ -3798,6 +3963,21 @@ export default class GameScene extends Phaser.Scene {
 
         // Transition to victory screen after fade
         this.time.delayedCall(2000, () => {
+            // PROGRESSION: Update stats and check achievements (boss defeated!)
+            const timePlayedSeconds = (Date.now() - this.startTime) / 1000;
+            const progressionResult = progressionManager.updateSessionStats({
+                score: this.score,
+                distance: this.distance,
+                enemiesKilled: this.enemiesKilled,
+                squadSize: this.squadMembers.length,
+                bossDefeated: true,
+                victory: true,
+                timePlayedSeconds: timePlayedSeconds,
+                noDeaths: this.noDeaths
+            });
+
+            console.log('📊 Boss Victory - Progression updated:', progressionResult);
+
             // Go to victory screen
             this.scene.start(SCENES.VICTORY, {
                 score: this.score,
@@ -3805,7 +3985,10 @@ export default class GameScene extends Phaser.Scene {
                 enemiesKilled: this.enemiesKilled,
                 bossDefeated: true,
                 stageNumber: this.stageNumber,
-                timePlayed: this.time.now / 1000 // Convert to seconds
+                timePlayed: timePlayedSeconds,
+                isNewHighScore: progressionResult.isNewHighScore,
+                newAchievements: progressionResult.newAchievements,
+                highScore: progressionManager.getHighScore()
             });
         });
     }
