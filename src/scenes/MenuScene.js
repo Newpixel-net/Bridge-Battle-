@@ -86,7 +86,7 @@ export default class MenuScene extends Phaser.Scene {
             this.cameras.main.flash(200, 255, 255, 255);
 
             this.time.delayedCall(200, () => {
-                this.scene.start(SCENES.GAME);
+                this.scene.start(SCENES.CHARACTER_SELECTION);
             });
         });
 
@@ -120,7 +120,7 @@ export default class MenuScene extends Phaser.Scene {
 
         // Keyboard shortcut
         this.input.keyboard.on('keydown-SPACE', () => {
-            this.scene.start(SCENES.GAME);
+            this.scene.start(SCENES.CHARACTER_SELECTION);
         });
 
         console.log('🎮 Menu Scene Ready');

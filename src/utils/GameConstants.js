@@ -140,6 +140,7 @@ export const SCENES = {
     BOOT: 'BootScene',
     PRELOAD: 'PreloadScene',
     MENU: 'MenuScene',
+    CHARACTER_SELECTION: 'CharacterSelectionScene',
     GAME: 'GameScene',
     GAME_OVER: 'GameOverScene',
 };

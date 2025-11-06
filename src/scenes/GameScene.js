@@ -12,6 +12,9 @@ import AbilityEffects from '../systems/AbilityEffects.js';
 import AbilityUIBar from '../ui/AbilityUIBar.js';
 import { getDefaultLoadout } from '../utils/AbilityConstants.js';
 
+// CHARACTER SELECTION - Priority 3 Implementation
+import { calculateCombinedStats, getCombinedAbilities } from '../utils/CharacterConstants.js';
+
 /**
  * GameScene - Phase 1: Foundation COMPLETE REBUILD
  *
@@ -32,8 +35,29 @@ export default class GameScene extends Phaser.Scene {
         super({ key: SCENES.GAME });
     }
 
-    init() {
+    init(data) {
         console.log('🎮 GameScene - Phase 1: Gaming Functionality + Character Polish');
+
+        // CHARACTER SELECTION - Priority 3 Integration
+        this.selectedCharacters = data?.selectedCharacters || [];
+        this.stageNumber = data?.stageNumber || 1;
+        this.characterStats = null; // Will be calculated from selectedCharacters
+
+        // Calculate combined stats if characters selected
+        if (this.selectedCharacters.length > 0) {
+            this.characterStats = calculateCombinedStats(this.selectedCharacters);
+            console.log('🎭 Characters selected:', this.selectedCharacters.map(c => c.name).join(', '));
+            console.log('📊 Combined stats:', this.characterStats);
+        } else {
+            // Default stats if no selection (should not happen with character selection)
+            this.characterStats = {
+                damage: 1.0,
+                fireRate: 1.0,
+                hp: 100,
+                speed: 1.0
+            };
+            console.log('⚠️ No characters selected - using default stats');
+        }
 
         // Game state
         this.gameState = 'playing';
@@ -2899,6 +2923,13 @@ export default class GameScene extends Phaser.Scene {
             squadManagerProxy
         );
 
+        // Apply character stats to combat system
+        if (this.characterStats) {
+            this.autoShootingSystem.damageModifier = this.characterStats.damage;
+            this.autoShootingSystem.fireRateModifier = 1 / this.characterStats.fireRate; // Lower = faster
+            console.log(`⚔️ Combat stats applied: Damage ${(this.characterStats.damage * 100).toFixed(0)}%, Fire Rate ${(this.characterStats.fireRate * 100).toFixed(0)}%`);
+        }
+
         // Create enemy manager
         this.enemyManager = new EnemyManager(this);
 
@@ -2979,14 +3010,21 @@ export default class GameScene extends Phaser.Scene {
     initializeAbilitySystem() {
         console.log('💪 Initializing ability system...');
 
-        // Create energy system
-        this.energySystem = new EnergySystem(this, 100, 10);
+        // Create energy system (base HP from character stats)
+        const baseHP = this.characterStats?.hp || 100;
+        this.energySystem = new EnergySystem(this, baseHP, 10);
 
         // Create ability effects executor
         this.abilityEffects = new AbilityEffects(this);
 
-        // Get default ability loadout
-        this.abilities = getDefaultLoadout();
+        // Get abilities from selected characters, or default loadout
+        if (this.selectedCharacters.length > 0) {
+            this.abilities = getCombinedAbilities(this.selectedCharacters);
+            console.log(`🎯 Character abilities loaded: ${this.abilities.map(a => a.name).join(', ')}`);
+        } else {
+            this.abilities = getDefaultLoadout();
+            console.log('⚠️ Using default ability loadout');
+        }
 
         // Create ability UI bar (bottom center)
         this.abilityUIBar = new AbilityUIBar(
