@@ -1659,7 +1659,7 @@ export default class GameScene extends Phaser.Scene {
     }
 
     /**
-     * Spawn a math gate (two options) - ENHANCED with polish
+     * Spawn a math gate (two options) - BALANCED RISK VS REWARD
      */
     spawnGate() {
         const centerX = GAME.WIDTH / 2;
@@ -1670,20 +1670,8 @@ export default class GameScene extends Phaser.Scene {
         const gateSpacing = 20; // Small visual gap between gates
         const gateWidth = (roadWidth - gateSpacing) / 2; // Each gate fills half the road
 
-        // Generate random math operations
-        const operations = [
-            { op: 'x2', mult: 2, color: COLORS.GATE_GOOD },
-            { op: 'x3', mult: 3, color: COLORS.GATE_GOOD },
-            { op: '+10', add: 10, color: COLORS.GATE_GOOD },
-            { op: '+20', add: 20, color: COLORS.GATE_GOOD },
-            { op: '/2', div: 2, color: COLORS.GATE_BAD },
-            { op: '-5', sub: 5, color: COLORS.GATE_BAD },
-            { op: '-10', sub: 10, color: COLORS.GATE_BAD },
-        ];
-
-        // Pick two random operations
-        const left = Phaser.Utils.Array.GetRandom(operations);
-        const right = Phaser.Utils.Array.GetRandom(operations.filter(o => o !== left));
+        // BALANCED GATE PAIRING: Create meaningful risk vs reward choices
+        const gatePair = this.generateBalancedGatePair();
 
         // Calculate road edges
         const roadLeft = centerX - roadWidth / 2;
@@ -1694,12 +1682,12 @@ export default class GameScene extends Phaser.Scene {
         const rightX = roadRight - gateWidth / 2;
 
         // Create left gate (with adaptive width)
-        const leftGate = this.createGateHalf(leftX, y, left.op, left.color, 'LEFT', gateWidth);
-        leftGate.operation = left;
+        const leftGate = this.createGateHalf(leftX, y, gatePair.left.op, gatePair.left.color, 'LEFT', gateWidth);
+        leftGate.operation = gatePair.left;
 
         // Create right gate (with adaptive width)
-        const rightGate = this.createGateHalf(rightX, y, right.op, right.color, 'RIGHT', gateWidth);
-        rightGate.operation = right;
+        const rightGate = this.createGateHalf(rightX, y, gatePair.right.op, gatePair.right.color, 'RIGHT', gateWidth);
+        rightGate.operation = gatePair.right;
 
         // OBJECT ANIMATION 3: Rise from ground with shake
         const targetYLeft = leftGate.y;
@@ -1722,6 +1710,96 @@ export default class GameScene extends Phaser.Scene {
         this.cameras.main.shake(100, 0.003);
 
         this.gates.push({ left: leftGate, right: rightGate, passed: false });
+    }
+
+    /**
+     * Generate balanced gate pair (risk vs reward)
+     */
+    generateBalancedGatePair() {
+        // Gate configuration library with proper balance
+        const gateConfigs = [
+            // TIER 1: Easy choices (70% - most common)
+            { negative: 5,  positive: 15, weight: 5 },  // Small risk, good reward
+            { negative: 5,  positive: 20, weight: 5 },  // Small risk, great reward
+            { negative: 10, positive: 20, weight: 5 },  // Medium risk, good reward
+            { negative: 10, positive: 25, weight: 4 },  // Medium risk, great reward
+            { negative: 7,  positive: 20, weight: 4 },  // Small-medium risk
+
+            // TIER 2: Multiplication gates (20%)
+            { negative: 10, multiply: 2, weight: 3 },   // Lose 10 or double
+            { negative: 5,  multiply: 2, weight: 3 },   // Lose 5 or double
+            { negative: 15, multiply: 3, weight: 2 },   // Lose 15 or triple
+            { negative: 10, multiply: 3, weight: 2 },   // Lose 10 or triple
+
+            // TIER 3: High risk/reward (8%)
+            { negative: 20, positive: 40, weight: 1 },  // Big gamble
+            { negative: 15, positive: 35, weight: 1 },  // Significant risk
+
+            // TIER 4: Evil choice - both negative (2% - very rare)
+            { negative1: 5,  negative2: 15, weight: 1 }, // Lesser of two evils
+        ];
+
+        // Weighted random selection
+        const totalWeight = gateConfigs.reduce((sum, config) => sum + config.weight, 0);
+        let random = Math.random() * totalWeight;
+
+        let selectedConfig = gateConfigs[0];
+        for (const config of gateConfigs) {
+            random -= config.weight;
+            if (random <= 0) {
+                selectedConfig = config;
+                break;
+            }
+        }
+
+        // Build gate operations based on selected config
+        let leftGate, rightGate;
+
+        if (selectedConfig.multiply) {
+            // Negative vs Multiply
+            leftGate = {
+                op: `-${selectedConfig.negative}`,
+                sub: selectedConfig.negative,
+                color: COLORS.GATE_BAD
+            };
+            rightGate = {
+                op: `×${selectedConfig.multiply}`,
+                mult: selectedConfig.multiply,
+                color: COLORS.GATE_GOOD
+            };
+        } else if (selectedConfig.negative2) {
+            // Both negative (evil choice)
+            leftGate = {
+                op: `-${selectedConfig.negative1}`,
+                sub: selectedConfig.negative1,
+                color: COLORS.GATE_BAD
+            };
+            rightGate = {
+                op: `-${selectedConfig.negative2}`,
+                sub: selectedConfig.negative2,
+                color: COLORS.GATE_BAD
+            };
+        } else {
+            // Standard: Negative vs Positive
+            leftGate = {
+                op: `-${selectedConfig.negative}`,
+                sub: selectedConfig.negative,
+                color: COLORS.GATE_BAD
+            };
+            rightGate = {
+                op: `+${selectedConfig.positive}`,
+                add: selectedConfig.positive,
+                color: COLORS.GATE_GOOD
+            };
+        }
+
+        // CRITICAL: Randomly swap sides (50% chance)
+        // This prevents players from learning patterns like "negative always on left"
+        if (Math.random() < 0.5) {
+            [leftGate, rightGate] = [rightGate, leftGate];
+        }
+
+        return { left: leftGate, right: rightGate };
     }
 
     /**
