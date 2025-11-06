@@ -788,14 +788,23 @@ export default class GameScene extends Phaser.Scene {
         });
 
         // ========== PLAYER INPUT ==========
-        // Handle keyboard input
+        // Handle keyboard input - GRADUAL MOVEMENT (smooth like mouse)
+        const KEYBOARD_SPEED = 8; // Pixels per frame (adjustable for feel)
+        const centerX = GAME.WIDTH / 2;
+        const minX = centerX - SQUAD.HORIZONTAL_LIMIT;
+        const maxX = centerX + SQUAD.HORIZONTAL_LIMIT;
+
         if (this.cursors.left.isDown) {
-            this.targetX = (GAME.WIDTH / 2) - SQUAD.HORIZONTAL_LIMIT;
+            // Move gradually left (like analog stick)
+            this.targetX -= KEYBOARD_SPEED;
+            this.targetX = Math.max(this.targetX, minX); // Clamp to left boundary
         } else if (this.cursors.right.isDown) {
-            this.targetX = (GAME.WIDTH / 2) + SQUAD.HORIZONTAL_LIMIT;
+            // Move gradually right (like analog stick)
+            this.targetX += KEYBOARD_SPEED;
+            this.targetX = Math.min(this.targetX, maxX); // Clamp to right boundary
         }
 
-        // Smooth movement toward target
+        // Smooth movement toward target (works with both keyboard and mouse)
         this.squadCenterX = Phaser.Math.Linear(
             this.squadCenterX,
             this.targetX,
