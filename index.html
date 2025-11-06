@@ -33,6 +33,26 @@
             display: flex;
             justify-content: center;
             align-items: center;
+
+            /* Animated water background for letterboxing areas */
+            background: linear-gradient(
+                180deg,
+                #0A4D68 0%,     /* Deep ocean blue */
+                #088395 30%,    /* Mid-deep teal */
+                #05668D 60%,    /* Ocean blue-green */
+                #0A4D68 100%    /* Back to deep blue */
+            );
+            background-size: 100% 200%;
+            animation: waterFlow 12s ease-in-out infinite;
+        }
+
+        @keyframes waterFlow {
+            0%, 100% {
+                background-position: 0% 0%;
+            }
+            50% {
+                background-position: 0% 100%;
+            }
         }
 
         canvas {
