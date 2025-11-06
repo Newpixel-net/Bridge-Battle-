@@ -59,43 +59,84 @@ export default class VictoryScene extends Phaser.Scene {
         // Celebration particles
         this.createCelebrationParticles();
 
-        // Victory title animation
-        this.createVictoryTitle();
-
-        // Stats panel (appears after title)
-        this.time.delayedCall(1000, () => {
-            this.createStatsPanel();
-        });
-
-        // Star rating (appears after stats)
-        this.time.delayedCall(2000, () => {
-            this.createStarRating();
-        });
-
-        // High score indicator (appears if new high score)
-        if (this.isNewHighScore) {
-            this.time.delayedCall(2500, () => {
-                this.createNewHighScoreIndicator();
-            });
-        }
-
-        // Achievement notifications (appear after stats)
-        if (this.newAchievements.length > 0) {
-            this.time.delayedCall(3500, () => {
-                this.createAchievementNotifications();
-            });
-        }
-
-        // Buttons (appear last, delayed more if there are achievements)
-        const buttonDelay = this.newAchievements.length > 0 ? 5000 : 3000;
-        this.time.delayedCall(buttonDelay, () => {
-            this.createButtons();
-        });
+        // Use complete victory panel (Option B - pre-made panel asset)
+        this.createCompleteVictoryPanel();
 
         // Victory music
         this.playVictoryMusic();
 
-        console.log('✓ Victory scene ready');
+        console.log('✓ Victory scene ready with complete UI panel');
+    }
+
+    /**
+     * Create complete victory panel using pre-made asset
+     * Option B: Uses the beautiful pre-composed panel PNG
+     */
+    createCompleteVictoryPanel() {
+        const centerX = GAME.WIDTH / 2;
+        const centerY = GAME.HEIGHT / 2;
+
+        // Add the complete victory panel image
+        const panel = this.add.image(centerX, centerY, 'ui_panel_win');
+        panel.setScale(0);
+        panel.setDepth(10);
+
+        // Scale in animation
+        this.tweens.add({
+            targets: panel,
+            scaleX: 0.5,  // Adjust scale to fit screen (350px width → 600px game width)
+            scaleY: 0.5,
+            duration: 600,
+            ease: 'Back.easeOut',
+            delay: 500
+        });
+
+        // Add interactive continue button overlay (invisible clickable area)
+        const continueButton = this.add.rectangle(
+            centerX,
+            centerY + 140,
+            200,
+            50,
+            0x000000,
+            0
+        );
+        continueButton.setInteractive({ useHandCursor: true });
+        continueButton.setDepth(11);
+
+        // Hover effect on button area
+        continueButton.on('pointerover', () => {
+            this.tweens.add({
+                targets: panel,
+                scaleX: 0.52,
+                scaleY: 0.52,
+                duration: 150,
+                ease: 'Quad.easeOut'
+            });
+        });
+
+        continueButton.on('pointerout', () => {
+            this.tweens.add({
+                targets: panel,
+                scaleX: 0.5,
+                scaleY: 0.5,
+                duration: 150
+            });
+        });
+
+        // Click to continue
+        continueButton.on('pointerdown', () => {
+            this.handleContinue();
+        });
+
+        // Also allow spacebar to continue
+        this.input.keyboard.once('keydown-SPACE', () => {
+            this.handleContinue();
+        });
+
+        // Add menu button (ESC or click outside)
+        this.input.keyboard.once('keydown-ESC', () => {
+            this.handleMenu();
+        });
     }
 
     /**

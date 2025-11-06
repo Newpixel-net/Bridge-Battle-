@@ -26,134 +26,64 @@ export default class GameOverScene extends Phaser.Scene {
         // Dark overlay background
         this.add.rectangle(centerX, centerY, GAME.WIDTH, GAME.HEIGHT, 0x000000, 0.8);
 
-        // Game Over title
-        const title = this.add.text(centerX, centerY - 200, 'GAME OVER', {
-            fontSize: '64px',
-            fontFamily: 'Arial Black',
-            color: '#FF0000',
-            stroke: '#000000',
-            strokeThickness: 8
-        });
-        title.setOrigin(0.5);
+        // Use complete defeat panel (Option B - pre-made panel asset)
+        const panel = this.add.image(centerX, centerY, 'ui_panel_lose');
+        panel.setScale(0);
+        panel.setDepth(10);
 
-        // Pulse animation
+        // Scale in animation
         this.tweens.add({
-            targets: title,
-            scale: 1.1,
-            duration: 800,
-            yoyo: true,
-            repeat: -1,
-            ease: 'Sine.easeInOut'
+            targets: panel,
+            scaleX: 0.5,  // Adjust scale to fit screen
+            scaleY: 0.5,
+            duration: 600,
+            ease: 'Back.easeOut',
+            delay: 300
         });
 
-        // Stats container
-        const statsY = centerY - 100;
+        // Add interactive continue button overlay (invisible clickable area)
+        const continueButton = this.add.rectangle(
+            centerX,
+            centerY + 140,
+            200,
+            50,
+            0x000000,
+            0
+        );
+        continueButton.setInteractive({ useHandCursor: true });
+        continueButton.setDepth(11);
 
-        // Score
-        this.add.text(centerX, statsY, `Score: ${this.score}`, {
-            fontSize: '32px',
-            fontFamily: 'Arial',
-            color: '#FFD700',
-            stroke: '#000000',
-            strokeThickness: 4
-        }).setOrigin(0.5);
-
-        // High Score
-        this.add.text(centerX, statsY + 45, `High Score: ${this.highScore}`, {
-            fontSize: '24px',
-            fontFamily: 'Arial',
-            color: '#AAAAAA',
-            stroke: '#000000',
-            strokeThickness: 3
-        }).setOrigin(0.5);
-
-        // Distance traveled
-        this.add.text(centerX, statsY + 90, `Distance: ${Math.floor(this.finalDistance)}m`, {
-            fontSize: '28px',
-            fontFamily: 'Arial',
-            color: '#FFFFFF',
-            stroke: '#000000',
-            strokeThickness: 4
-        }).setOrigin(0.5);
-
-        // Enemies killed
-        this.add.text(centerX, statsY + 130, `Enemies: ${this.enemiesKilled}`, {
-            fontSize: '28px',
-            fontFamily: 'Arial',
-            color: '#FFFFFF',
-            stroke: '#000000',
-            strokeThickness: 4
-        }).setOrigin(0.5);
-
-        // Final squad size
-        this.add.text(centerX, statsY + 170, `Final Squad: ${this.finalSquadSize}`, {
-            fontSize: '28px',
-            fontFamily: 'Arial',
-            color: '#FFFFFF',
-            stroke: '#000000',
-            strokeThickness: 4
-        }).setOrigin(0.5);
-
-        // Restart button
-        const restartButton = this.add.rectangle(centerX, centerY + 150, 300, 80, COLORS.GATE_GOOD);
-        restartButton.setStrokeStyle(4, 0xFFFFFF);
-        restartButton.setInteractive({ useHandCursor: true });
-
-        const restartText = this.add.text(centerX, centerY + 150, 'RESTART', {
-            fontSize: '36px',
-            fontFamily: 'Arial Black',
-            color: '#FFFFFF'
-        });
-        restartText.setOrigin(0.5);
-
-        // Button hover effect
-        restartButton.on('pointerover', () => {
-            restartButton.setFillStyle(COLORS.GATE_GOOD, 0.8);
-            restartButton.setScale(1.05);
+        // Hover effect
+        continueButton.on('pointerover', () => {
+            this.tweens.add({
+                targets: panel,
+                scaleX: 0.52,
+                scaleY: 0.52,
+                duration: 150,
+                ease: 'Quad.easeOut'
+            });
         });
 
-        restartButton.on('pointerout', () => {
-            restartButton.setFillStyle(COLORS.GATE_GOOD, 1);
-            restartButton.setScale(1);
+        continueButton.on('pointerout', () => {
+            this.tweens.add({
+                targets: panel,
+                scaleX: 0.5,
+                scaleY: 0.5,
+                duration: 150
+            });
         });
 
-        restartButton.on('pointerdown', () => {
+        // Click to restart
+        continueButton.on('pointerdown', () => {
             this.scene.start(SCENES.GAME);
-        });
-
-        // Menu button
-        const menuButton = this.add.rectangle(centerX, centerY + 250, 300, 80, 0x666666);
-        menuButton.setStrokeStyle(4, 0xFFFFFF);
-        menuButton.setInteractive({ useHandCursor: true });
-
-        const menuText = this.add.text(centerX, centerY + 250, 'MENU', {
-            fontSize: '36px',
-            fontFamily: 'Arial Black',
-            color: '#FFFFFF'
-        });
-        menuText.setOrigin(0.5);
-
-        // Button hover effect
-        menuButton.on('pointerover', () => {
-            menuButton.setFillStyle(0x666666, 0.8);
-            menuButton.setScale(1.05);
-        });
-
-        menuButton.on('pointerout', () => {
-            menuButton.setFillStyle(0x666666, 1);
-            menuButton.setScale(1);
-        });
-
-        menuButton.on('pointerdown', () => {
-            this.scene.start(SCENES.MENU);
         });
 
         // Keyboard shortcuts
-        this.input.keyboard.on('keydown-SPACE', () => {
+        this.input.keyboard.once('keydown-SPACE', () => {
             this.scene.start(SCENES.GAME);
         });
 
-        this.input.keyboard.on('keydown-ESC', () => {
+        this.input.keyboard.once('keydown-ESC', () => {
             this.scene.start(SCENES.MENU);
         });
 
