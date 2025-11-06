@@ -40,27 +40,27 @@ export const SQUAD = {
     START_SIZE: 1,               // Start with 1 character
     MAX_SIZE: 200,               // Maximum squad size
 
-    // Formation (hexagonal close-packed) - ULTRA TIGHT from screenshots
-    FORMATION_SPACING: 28,       // Space between characters (VERY tight blob)
+    // Formation (hexagonal close-packed) - ULTRA TIGHT
+    FORMATION_SPACING: 70,       // Space between characters (tight blob, scaled for new size)
     SEPARATION_FORCE: 0.3,       // Force to prevent overlap
     FORMATION_LERP: 0.12,        // Smoothing factor for movement
 
     // Movement
     MOVE_SPEED: 8,               // Horizontal movement speed
-    HORIZONTAL_LIMIT: 220,       // Max distance from center
+    HORIZONTAL_LIMIT: 180,       // Max distance from center (adjusted for zoom)
 
-    // Character visuals - LARGE and PROMINENT like screenshots
-    CHARACTER_RADIUS: 14,        // Radius of each character sphere (28px diameter)
-    CHARACTER_SIZE: 28,          // Base size for collision (diameter)
+    // Character visuals - LARGE and PROMINENT matching reference screenshots
+    CHARACTER_RADIUS: 35,        // Radius of each character sphere (70px diameter)
+    CHARACTER_SIZE: 70,          // Base size for collision (diameter)
 };
 
 // ============================================================================
-// CAMERA
+// CAMERA - CRITICAL: 3D Runner View (like Temple Run/Subway Surfers)
 // ============================================================================
 export const CAMERA = {
-    FOLLOW_OFFSET_Y: -250,       // Camera ahead of player (look forward)
+    FOLLOW_OFFSET_Y: -300,       // Camera ahead of player (look forward)
     FOLLOW_LERP: 0.08,           // Smooth following
-    ZOOM: 1.3,                   // Zoom in for better character visibility
+    ZOOM: 4.0,                   // CRITICAL: High zoom creates tight runner view (road fills screen)
 };
 
 // ============================================================================
