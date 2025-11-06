@@ -1,0 +1,252 @@
+{
+  "manifest_version": "1.0",
+  "game_assets": {
+    "panels": {
+      "panel_win_complete": {
+        "file": "panel_win_complete.png",
+        "width": 350,
+        "height": 420,
+        "description": "Level completion panel with 'GREAT!' message, stars, scores",
+        "usage": "Display when player wins a level"
+      },
+      "panel_lose_complete": {
+        "file": "panel_lose_complete.png",
+        "width": 350,
+        "height": 420,
+        "description": "Level completion panel with 'YOU LOSE' message",
+        "usage": "Display when player loses a level"
+      }
+    },
+    "stars": {
+      "filled": [
+        {
+          "file": "star_filled_01.png",
+          "width": 75,
+          "height": 75,
+          "state": "filled"
+        },
+        {
+          "file": "star_filled_02.png",
+          "width": 75,
+          "height": 75,
+          "state": "filled"
+        },
+        {
+          "file": "star_filled_03.png",
+          "width": 70,
+          "height": 70,
+          "state": "filled"
+        },
+        {
+          "file": "star_filled_04.png",
+          "width": 70,
+          "height": 70,
+          "state": "filled"
+        },
+        {
+          "file": "star_filled_05.png",
+          "width": 75,
+          "height": 70,
+          "state": "filled"
+        },
+        {
+          "file": "star_filled_06.png",
+          "width": 70,
+          "height": 70,
+          "state": "filled"
+        }
+      ],
+      "empty": [
+        {
+          "file": "star_empty_01.png",
+          "width": 70,
+          "height": 70,
+          "state": "empty"
+        },
+        {
+          "file": "star_empty_02.png",
+          "width": 75,
+          "height": 70,
+          "state": "empty"
+        },
+        {
+          "file": "star_empty_03.png",
+          "width": 75,
+          "height": 70,
+          "state": "empty"
+        },
+        {
+          "file": "star_empty_04.png",
+          "width": 75,
+          "height": 70,
+          "state": "empty"
+        },
+        {
+          "file": "star_empty_05.png",
+          "width": 70,
+          "height": 70,
+          "state": "empty"
+        },
+        {
+          "file": "star_empty_06.png",
+          "width": 75,
+          "height": 70,
+          "state": "empty"
+        },
+        {
+          "file": "star_empty_07.png",
+          "width": 75,
+          "height": 70,
+          "state": "empty"
+        }
+      ]
+    },
+    "counters": {
+      "counter_hearts_time": {
+        "file": "counter_hearts_time.png",
+        "width": 220,
+        "height": 65,
+        "description": "Hearts/lives counter with timer (16:26)",
+        "type": "lives_timer"
+      },
+      "counter_coins": {
+        "file": "counter_coins.png",
+        "width": 220,
+        "height": 65,
+        "description": "Coin counter showing 2655",
+        "type": "currency"
+      },
+      "counter_gems": {
+        "file": "counter_gems.png",
+        "width": 220,
+        "height": 65,
+        "description": "Gem counter showing 89",
+        "type": "premium_currency"
+      }
+    },
+    "icons": {
+      "icon_gem_large": {
+        "file": "icon_gem_large.png",
+        "width": 70,
+        "height": 70,
+        "type": "premium_currency"
+      },
+      "icon_coin_01": {
+        "file": "icon_coin_01.png",
+        "width": 60,
+        "height": 60,
+        "type": "currency"
+      },
+      "icon_coin_02": {
+        "file": "icon_coin_02.png",
+        "width": 65,
+        "height": 65,
+        "type": "currency"
+      },
+      "icon_coin_03": {
+        "file": "icon_coin_03.png",
+        "width": 65,
+        "height": 65,
+        "type": "currency"
+      },
+      "icon_heart": {
+        "file": "icon_heart.png",
+        "width": 60,
+        "height": 60,
+        "type": "lives"
+      }
+    },
+    "level_badges": {
+      "badge_level_24": {
+        "file": "badge_level_24.png",
+        "width": 85,
+        "height": 100,
+        "level": 24,
+        "state": "completed"
+      },
+      "badge_level_25": {
+        "file": "badge_level_25.png",
+        "width": 85,
+        "height": 100,
+        "level": 25,
+        "state": "current"
+      },
+      "badge_level_26": {
+        "file": "badge_level_26.png",
+        "width": 85,
+        "height": 100,
+        "level": 26,
+        "state": "locked"
+      }
+    },
+    "buttons": {
+      "menu": {
+        "button_new_game": {
+          "file": "button_new_game.png",
+          "width": 230,
+          "height": 80,
+          "text": "NEW GAME",
+          "action": "start_new_game"
+        },
+        "button_resume": {
+          "file": "button_resume.png",
+          "width": 230,
+          "height": 80,
+          "text": "RESUME",
+          "action": "resume_game"
+        },
+        "button_settings": {
+          "file": "button_settings.png",
+          "width": 230,
+          "height": 80,
+          "text": "SETTINGS",
+          "action": "open_settings"
+        },
+        "button_shop": {
+          "file": "button_shop.png",
+          "width": 230,
+          "height": 80,
+          "text": "SHOP",
+          "action": "open_shop"
+        },
+        "button_exit": {
+          "file": "button_exit.png",
+          "width": 230,
+          "height": 80,
+          "text": "EXIT",
+          "action": "exit_game"
+        }
+      },
+      "continue": {
+        "button_continue_win": {
+          "file": "button_continue_win.png",
+          "width": 240,
+          "height": 60,
+          "text": "CONTINUE",
+          "context": "win_screen"
+        },
+        "button_continue_lose": {
+          "file": "button_continue_lose.png",
+          "width": 240,
+          "height": 60,
+          "text": "CONTINUE",
+          "context": "lose_screen"
+        }
+      }
+    },
+    "decorations": {
+      "decoration_grass_left": {
+        "file": "decoration_grass_left.png",
+        "width": 90,
+        "height": 50,
+        "description": "Grass decoration (left side)"
+      },
+      "decoration_grass_right": {
+        "file": "decoration_grass_right.png",
+        "width": 90,
+        "height": 50,
+        "description": "Grass decoration (right side)"
+      }
+    }
+  }
+}
