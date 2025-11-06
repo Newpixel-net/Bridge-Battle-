@@ -1,6 +1,11 @@
 import Phaser from 'phaser';
 import { GAME, WORLD, SQUAD, COLORS, SCENES, UI, COLLECTIBLES, OBSTACLES, GATES } from '../utils/GameConstants.js';
 
+// COMBAT SYSTEM - Priority 1 Implementation
+import BulletPool from '../systems/BulletPool.js';
+import AutoShootingSystem from '../systems/AutoShootingSystem.js';
+import EnemyManager from '../systems/EnemyManager.js';
+
 /**
  * GameScene - Phase 1: Foundation COMPLETE REBUILD
  *
@@ -94,6 +99,13 @@ export default class GameScene extends Phaser.Scene {
         // Footstep timing
         this.footstepTimer = 0;
         this.footstepInterval = 150; // ms between footsteps
+
+        // COMBAT SYSTEM - Phase 1 Integration
+        this.bulletPool = null;
+        this.autoShootingSystem = null;
+        this.enemyManager = null;
+        this.score = 0;
+        this.enemiesKilled = 0;
     }
 
     create() {
@@ -104,6 +116,9 @@ export default class GameScene extends Phaser.Scene {
 
         // AUDIO SYSTEM: Initialize audio
         this.initializeAudio();
+
+        // COMBAT SYSTEM: Initialize combat (bullets, shooting, enemies)
+        this.initializeCombatSystem();
 
         // STEP 2-3: Create environment (road + grass)
         this.createEnvironment();
@@ -2158,6 +2173,28 @@ export default class GameScene extends Phaser.Scene {
             gate.right.y += scrollAmount;
         });
 
+        // ========== COMBAT SYSTEM UPDATES ==========
+        // Update squad manager proxy (shooting needs current position)
+        this.updateSquadManagerProxy();
+
+        // Update bullet pool (move bullets, cleanup off-screen)
+        if (this.bulletPool) {
+            this.bulletPool.update(time, delta);
+        }
+
+        // Update auto-shooting (fire bullets continuously)
+        if (this.autoShootingSystem) {
+            this.autoShootingSystem.update(time, delta);
+        }
+
+        // Update enemy manager (spawn waves, update enemies)
+        if (this.enemyManager) {
+            this.enemyManager.update(time, delta);
+        }
+
+        // Check combat collisions (bullets vs enemies)
+        this.checkCombatCollisions();
+
         // ========== COLLISION DETECTION ==========
         this.checkCollisions();
 
@@ -2810,6 +2847,103 @@ export default class GameScene extends Phaser.Scene {
     }
 
     // ========================================
+    // COMBAT SYSTEM 🔫
+    // ========================================
+
+    /**
+     * COMBAT: Initialize combat system
+     */
+    initializeCombatSystem() {
+        console.log('🔫 Initializing combat system...');
+
+        // Create bullet pool (50 bullets max)
+        this.bulletPool = new BulletPool(this, 50);
+
+        // Create squad manager reference (needed for shooting system)
+        const squadManagerProxy = {
+            squadCenterX: this.squadCenterX,
+            squadCenterY: this.squadCenterY,
+            squadMembers: this.squadMembers
+        };
+
+        // Create auto-shooting system
+        this.autoShootingSystem = new AutoShootingSystem(
+            this,
+            this.bulletPool,
+            squadManagerProxy
+        );
+
+        // Create enemy manager
+        this.enemyManager = new EnemyManager(this);
+
+        // Start enemy spawning after countdown
+        this.time.delayedCall(3000, () => {
+            this.enemyManager.resumeSpawning(this.time.now);
+        });
+
+        console.log('✓ Combat system initialized');
+    }
+
+    /**
+     * COMBAT: Check bullet-enemy collisions
+     */
+    checkCombatCollisions() {
+        const bullets = this.bulletPool.getActiveBullets();
+        const enemies = this.enemyManager.getActiveEnemies();
+
+        // Check each bullet against each enemy
+        for (let bullet of bullets) {
+            if (!bullet.active) continue;
+
+            for (let enemy of enemies) {
+                if (!enemy.active) continue;
+
+                // Simple circle collision
+                const dist = Phaser.Math.Distance.Between(
+                    bullet.x,
+                    bullet.y,
+                    enemy.container.x,
+                    enemy.container.y
+                );
+
+                if (dist < (bullet.core.radius + enemy.getRadius())) {
+                    // Hit!
+                    const killed = enemy.takeDamage(bullet.damage);
+
+                    // Recycle bullet
+                    this.bulletPool.recycleBullet(bullet);
+
+                    // Update score if killed
+                    if (killed) {
+                        this.score += enemy.getScoreValue();
+                        this.enemiesKilled++;
+                    }
+
+                    // Play hit sound
+                    if (this.playBulletHitSound) {
+                        this.playBulletHitSound();
+                    }
+
+                    break; // Bullet hit, stop checking this bullet
+                }
+            }
+        }
+    }
+
+    /**
+     * COMBAT: Update squad manager proxy (for shooting system)
+     */
+    updateSquadManagerProxy() {
+        // The AutoShootingSystem needs current squad position
+        // Update the proxy with current values
+        if (this.autoShootingSystem && this.autoShootingSystem.squadManager) {
+            this.autoShootingSystem.squadManager.squadCenterX = this.squadCenterX;
+            this.autoShootingSystem.squadManager.squadCenterY = this.squadCenterY;
+            this.autoShootingSystem.squadManager.squadMembers = this.squadMembers;
+        }
+    }
+
+    // ========================================
     // AUDIO SYSTEM 🔊
     // ========================================
 
@@ -3251,6 +3385,38 @@ export default class GameScene extends Phaser.Scene {
         }
 
         console.log(`⏱ Countdown beep (${isGo ? 'GO!' : 'beep'})`);
+    }
+
+    /**
+     * COMBAT AUDIO: Shooting sound (subtle, continuous)
+     */
+    playShootingSound() {
+        if (!this.audioEnabled) return;
+
+        // Very subtle shooting sound (short, high frequency)
+        this.playMusicalNote(1200, 0.03 * this.sfxVolume, 0.03, 'square');
+    }
+
+    /**
+     * COMBAT AUDIO: Bullet hit enemy sound
+     */
+    playBulletHitSound() {
+        if (!this.audioEnabled) return;
+
+        // Impact sound (short, punchy)
+        this.playMusicalNote(200, 0.08 * this.sfxVolume, 0.05, 'square');
+        this.playWhiteNoise(0.05 * this.sfxVolume, 30);
+    }
+
+    /**
+     * COMBAT AUDIO: Enemy death explosion sound
+     */
+    playEnemyDeathSound() {
+        if (!this.audioEnabled) return;
+
+        // Explosion sound (sweep down + white noise)
+        this.playSweep(300, 100, 0.12 * this.sfxVolume, 0.2);
+        this.playWhiteNoise(0.1 * this.sfxVolume, 150);
     }
 
     shutdown() {
