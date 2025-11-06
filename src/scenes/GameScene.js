@@ -85,7 +85,6 @@ export default class GameScene extends Phaser.Scene {
         this.obstacles = [];
         this.gates = [];
         this.powerups = [];              // VARIETY: Power-ups array
-        this.gateEnemies = [];           // VARIETY: Enemies spawned by gates
 
         // Spawn tracking
         this.nextCollectibleSpawn = COLLECTIBLES.SPAWN_INTERVAL;
@@ -1666,14 +1665,6 @@ export default class GameScene extends Phaser.Scene {
         const centerX = GAME.WIDTH / 2;
         const y = -GATES.HEIGHT; // Spawn above screen
 
-        // Determine if this is a special gate (10% chance)
-        const isSpecialGate = Math.random() < 0.10;
-        let gateType = 'normal';
-
-        if (isSpecialGate) {
-            gateType = Math.random() < 0.5 ? 'random' : 'duplicate';
-        }
-
         // Generate random math operations
         const operations = [
             { op: 'x2', mult: 2, color: COLORS.GATE_GOOD },
@@ -1685,20 +1676,9 @@ export default class GameScene extends Phaser.Scene {
             { op: '-10', sub: 10, color: COLORS.GATE_BAD },
         ];
 
-        let left, right;
-
-        // Handle special gate types
-        if (gateType === 'random') {
-            left = { op: SPECIAL_GATES.RANDOM.label, special: 'random', color: SPECIAL_GATES.RANDOM.color };
-            right = Phaser.Utils.Array.GetRandom(operations);
-        } else if (gateType === 'duplicate') {
-            left = Phaser.Utils.Array.GetRandom(operations);
-            right = { op: SPECIAL_GATES.DUPLICATE.label, special: 'duplicate', color: SPECIAL_GATES.DUPLICATE.color };
-        } else {
-            // Normal gates - pick two random operations
-            left = Phaser.Utils.Array.GetRandom(operations);
-            right = Phaser.Utils.Array.GetRandom(operations.filter(o => o !== left));
-        }
+        // Pick two random operations
+        const left = Phaser.Utils.Array.GetRandom(operations);
+        const right = Phaser.Utils.Array.GetRandom(operations.filter(o => o !== left));
 
         // Create left gate
         const leftX = centerX - GATES.GAP / 2 - GATES.WIDTH / 2;
@@ -1710,22 +1690,17 @@ export default class GameScene extends Phaser.Scene {
         const rightGate = this.createGateHalf(rightX, y, right.op, right.color, 'RIGHT');
         rightGate.operation = right;
 
-        // CRITICAL: Create blocking wall in center to force choice
-        const blockingWall = this.createGateBlockingWall(centerX, y);
-
         // OBJECT ANIMATION 3: Rise from ground with shake
         const targetYLeft = leftGate.y;
         const targetYRight = rightGate.y;
         leftGate.y = targetYLeft + 300; // Start below
         rightGate.y = targetYRight + 300;
-        blockingWall.y = y + 300;
         leftGate.setAlpha(0);
         rightGate.setAlpha(0);
-        blockingWall.setAlpha(0);
 
         // Rise animation
         this.tweens.add({
-            targets: [leftGate, rightGate, blockingWall],
+            targets: [leftGate, rightGate],
             y: targetYLeft,
             alpha: 1,
             duration: 800,
@@ -1735,21 +1710,7 @@ export default class GameScene extends Phaser.Scene {
         // Camera shake when gates appear
         this.cameras.main.shake(100, 0.003);
 
-        // Create danger zone indicators (red warning lines on sides)
-        const dangerZoneHeight = 300; // Height of danger zone
-        this.createGateDangerZone(y, dangerZoneHeight);
-
-        this.gates.push({
-            left: leftGate,
-            right: rightGate,
-            blockingWall: blockingWall,
-            passed: false,
-            gateType: gateType,
-            y: y,
-            dangerZoneActive: false,
-            enemySpawnTimer: 0,
-            enemiesSpawned: 0
-        });
+        this.gates.push({ left: leftGate, right: rightGate, passed: false });
     }
 
     /**
@@ -1863,196 +1824,6 @@ export default class GameScene extends Phaser.Scene {
         });
 
         return gate;
-    }
-
-    /**
-     * Create blocking wall in center of gate (forces player to choose)
-     */
-    createGateBlockingWall(x, y) {
-        const wall = this.add.container(x, y);
-
-        // Wall dimensions - tall enough to block path, spans the gap
-        const wallWidth = GATES.GAP + 40; // Extends beyond gap to ensure blocking
-        const wallHeight = GATES.HEIGHT + 40; // Taller than gates
-
-        // Dark solid barrier (impassable)
-        const barrier = this.add.rectangle(0, 0, wallWidth, wallHeight, 0x222222, 1.0);
-        barrier.setStrokeStyle(6, 0xFF0000, 0.8);
-
-        // Danger stripes (diagonal yellow/black pattern)
-        const stripeCount = 8;
-        for (let i = 0; i < stripeCount; i++) {
-            const stripe = this.add.rectangle(
-                -wallWidth / 2 + (i * wallWidth / stripeCount) + wallWidth / (stripeCount * 2),
-                0,
-                wallWidth / stripeCount,
-                wallHeight,
-                i % 2 === 0 ? 0xFFFF00 : 0x000000,
-                0.7
-            );
-            stripe.setAngle(15); // Diagonal stripes
-            wall.add(stripe);
-        }
-
-        // Add barrier on top
-        wall.add(barrier);
-
-        // Warning text
-        const warningText = this.add.text(0, 0, 'CHOOSE!', {
-            fontSize: '24px',
-            fontFamily: 'Arial Black',
-            color: '#FF0000',
-            stroke: '#FFFFFF',
-            strokeThickness: 4
-        });
-        warningText.setOrigin(0.5);
-
-        // Pulsing warning animation
-        this.tweens.add({
-            targets: warningText,
-            scaleX: 1.2,
-            scaleY: 1.2,
-            duration: 500,
-            yoyo: true,
-            repeat: -1,
-            ease: 'Sine.easeInOut'
-        });
-
-        wall.add(warningText);
-        wall.setDepth(7); // Behind gates but in front of road
-        wall.type = 'blocking_wall';
-
-        return wall;
-    }
-
-    /**
-     * Create danger zone indicators for gate (warning areas on sides)
-     */
-    createGateDangerZone(y, height) {
-        // Left danger zone (red warning area)
-        const leftZone = this.add.rectangle(
-            30, // Left side of screen
-            y + height / 2,
-            60,
-            height,
-            0xFF0000,
-            0.3
-        );
-        leftZone.setDepth(5);
-
-        // Right danger zone (red warning area)
-        const rightZone = this.add.rectangle(
-            GAME.WIDTH - 30, // Right side of screen
-            y + height / 2,
-            60,
-            height,
-            0xFF0000,
-            0.3
-        );
-        rightZone.setDepth(5);
-
-        // Pulsing animation for danger zones
-        this.tweens.add({
-            targets: [leftZone, rightZone],
-            alpha: 0.6,
-            duration: 500,
-            yoyo: true,
-            repeat: -1,
-            ease: 'Sine.easeInOut'
-        });
-
-        // Warning arrows pointing inward
-        const leftArrow = this.add.text(30, y, '>>>', {
-            fontSize: '32px',
-            fontFamily: 'Arial Black',
-            color: '#FF0000',
-            stroke: '#FFFFFF',
-            strokeThickness: 4
-        });
-        leftArrow.setOrigin(0.5);
-        leftArrow.setDepth(6);
-
-        const rightArrow = this.add.text(GAME.WIDTH - 30, y, '<<<', {
-            fontSize: '32px',
-            fontFamily: 'Arial Black',
-            color: '#FF0000',
-            stroke: '#FFFFFF',
-            strokeThickness: 4
-        });
-        rightArrow.setOrigin(0.5);
-        rightArrow.setDepth(6);
-
-        // Store references for cleanup
-        const dangerZone = { leftZone, rightZone, leftArrow, rightArrow };
-
-        // Auto-cleanup after passing
-        this.time.delayedCall(8000, () => {
-            [leftZone, rightZone, leftArrow, rightArrow].forEach(obj => {
-                if (obj && obj.scene) {
-                    obj.destroy();
-                }
-            });
-        });
-
-        return dangerZone;
-    }
-
-    /**
-     * Spawn gate enemy from side (attacks from left or right)
-     */
-    spawnGateEnemy(side, gateY) {
-        const x = side === 'left' ? -50 : GAME.WIDTH + 50;
-        const y = gateY + Phaser.Math.Between(-100, 100);
-
-        // Create enemy container
-        const enemy = this.add.container(x, y);
-
-        // Enemy body (red hostile)
-        const body = this.add.circle(0, 0, 15, 0xFF0000, 1.0);
-        body.setStrokeStyle(2, 0xFFFFFF, 1.0);
-
-        // Angry face
-        const leftEye = this.add.circle(-5, -3, 2, 0xFFFFFF);
-        const rightEye = this.add.circle(5, -3, 2, 0xFFFFFF);
-        const mouth = this.add.rectangle(0, 5, 10, 3, 0xFFFFFF);
-
-        enemy.add([body, leftEye, rightEye, mouth]);
-        enemy.setDepth(20);
-        enemy.type = 'gate_enemy';
-        enemy.side = side;
-        enemy.health = 20; // Takes 20 damage to kill
-        enemy.damage = 3; // Deals 3 damage on contact
-
-        // Move toward center of screen
-        const targetX = GAME.WIDTH / 2;
-        const duration = 3000; // 3 seconds to reach center
-
-        this.tweens.add({
-            targets: enemy,
-            x: targetX,
-            duration: duration,
-            ease: 'Linear',
-            onComplete: () => {
-                // If enemy reaches center without being killed, it disappears
-                if (enemy && enemy.scene) {
-                    enemy.destroy();
-                }
-            }
-        });
-
-        // Pulsing animation
-        this.tweens.add({
-            targets: body,
-            scaleX: 1.2,
-            scaleY: 1.2,
-            duration: 400,
-            yoyo: true,
-            repeat: -1,
-            ease: 'Sine.easeInOut'
-        });
-
-        this.gateEnemies.push(enemy);
-        return enemy;
     }
 
     /**
@@ -2502,13 +2273,10 @@ export default class GameScene extends Phaser.Scene {
             obstacle.y += scrollAmount;
         });
 
-        // Move gates (including blocking wall)
+        // Move gates
         this.gates.forEach(gate => {
             gate.left.y += scrollAmount;
             gate.right.y += scrollAmount;
-            if (gate.blockingWall) {
-                gate.blockingWall.y += scrollAmount;
-            }
         });
 
         // ========== COMBAT SYSTEM UPDATES ==========
@@ -2567,9 +2335,6 @@ export default class GameScene extends Phaser.Scene {
             if (g.left.y > GAME.HEIGHT + 200) {
                 g.left.destroy();
                 g.right.destroy();
-                if (g.blockingWall) {
-                    g.blockingWall.destroy();
-                }
                 return false;
             }
             return true;
@@ -2760,60 +2525,6 @@ export default class GameScene extends Phaser.Scene {
             }
         });
 
-        // GATE DANGER ZONES: Spawn enemies from sides when player approaches
-        this.gates.forEach(gate => {
-            if (gate.passed) return;
-
-            const gateY = gate.left.y;
-            const dangerZoneStart = gateY - 300; // 300px before gate
-            const dangerZoneEnd = gateY + 100; // 100px after gate
-
-            // Check if player is in danger zone
-            if (centerY > dangerZoneStart && centerY < dangerZoneEnd && !gate.dangerZoneActive) {
-                gate.dangerZoneActive = true;
-                console.log('🚨 Entered gate danger zone!');
-            }
-
-            // Spawn enemies from sides if in danger zone
-            if (gate.dangerZoneActive && !gate.passed) {
-                gate.enemySpawnTimer += delta;
-
-                // Spawn an enemy every 800ms (alternating sides)
-                if (gate.enemySpawnTimer >= 800 && gate.enemiesSpawned < 6) {
-                    const side = gate.enemiesSpawned % 2 === 0 ? 'left' : 'right';
-                    this.spawnGateEnemy(side, gateY);
-                    gate.enemiesSpawned++;
-                    gate.enemySpawnTimer = 0;
-                }
-            }
-        });
-
-        // Check gate enemies collision with squad
-        this.gateEnemies = this.gateEnemies.filter(enemy => {
-            if (!enemy || !enemy.scene) return false;
-
-            const dist = Phaser.Math.Distance.Between(
-                centerX, centerY,
-                enemy.x, enemy.y
-            );
-
-            if (dist < SQUAD.CHARACTER_RADIUS + 15) {
-                // Hit enemy - remove it and damage squad
-                this.removeSquadMembers(enemy.damage);
-                this.createParticleBurst(enemy.x, enemy.y, 0xFF0000, 10);
-                enemy.destroy();
-                return false;
-            }
-
-            // Remove if off-screen
-            if (enemy.y > GAME.HEIGHT + 100 || enemy.y < -100) {
-                enemy.destroy();
-                return false;
-            }
-
-            return true;
-        });
-
         // Check gates
         this.gates.forEach(gate => {
             if (gate.passed) return;
@@ -2891,23 +2602,6 @@ export default class GameScene extends Phaser.Scene {
                     alpha: 0,
                     duration: 300
                 });
-
-                // Blocking wall - fade and shrink out
-                if (gate.blockingWall) {
-                    this.tweens.add({
-                        targets: gate.blockingWall,
-                        alpha: 0,
-                        scaleX: 0,
-                        duration: 300,
-                        ease: 'Back.easeIn',
-                        onComplete: () => {
-                            if (gate.blockingWall) {
-                                gate.blockingWall.destroy();
-                                gate.blockingWall = null;
-                            }
-                        }
-                    });
-                }
             }
         });
     }
@@ -2919,92 +2613,6 @@ export default class GameScene extends Phaser.Scene {
         let currentSize = this.squadMembers.length;
         let newSize = currentSize;
 
-        // Handle special gate types
-        if (operation.special === 'random') {
-            // RANDOM GATE: Apply a random effect
-            const effects = [
-                { mult: 2 },
-                { mult: 3 },
-                { add: 10 },
-                { add: 20 },
-                { div: 2 },
-                { sub: 5 }
-            ];
-            const randomEffect = Phaser.Utils.Array.GetRandom(effects);
-
-            // Show mystery reveal animation
-            const text = this.add.text(
-                GAME.WIDTH / 2,
-                this.squadCenterY - 100,
-                '???',
-                {
-                    fontSize: '64px',
-                    fontFamily: 'Arial Black',
-                    color: '#9370DB',
-                    stroke: '#FFFFFF',
-                    strokeThickness: 8
-                }
-            );
-            text.setOrigin(0.5);
-            text.setScrollFactor(0);
-            text.setDepth(200);
-
-            // Reveal after 1 second
-            this.time.delayedCall(1000, () => {
-                const effectLabel = randomEffect.mult ? `x${randomEffect.mult}` :
-                                  randomEffect.add ? `+${randomEffect.add}` :
-                                  randomEffect.div ? `÷${randomEffect.div}` :
-                                  `-${randomEffect.sub}`;
-
-                text.setText(effectLabel);
-                this.time.delayedCall(1000, () => text.destroy());
-            });
-
-            // Apply the random effect
-            operation = randomEffect;
-        } else if (operation.special === 'duplicate') {
-            // DUPLICATE GATE: Instantly double squad
-            newSize = currentSize * 2;
-            const diff = newSize - currentSize;
-
-            // Show duplicate animation
-            const text = this.add.text(
-                GAME.WIDTH / 2,
-                this.squadCenterY - 100,
-                'DUPLICATE!',
-                {
-                    fontSize: '48px',
-                    fontFamily: 'Arial Black',
-                    color: '#FFD700',
-                    stroke: '#000000',
-                    strokeThickness: 6
-                }
-            );
-            text.setOrigin(0.5);
-            text.setScrollFactor(0);
-            text.setDepth(200);
-
-            this.tweens.add({
-                targets: text,
-                scaleX: 1.5,
-                scaleY: 1.5,
-                alpha: 0,
-                y: text.y - 50,
-                duration: 1500,
-                ease: 'Cubic.easeOut',
-                onComplete: () => text.destroy()
-            });
-
-            // Add members instantly
-            for (let i = 0; i < diff; i++) {
-                this.time.delayedCall(i * 20, () => this.addSquadMember());
-            }
-
-            console.log(`DUPLICATE Gate: ${currentSize} → ${newSize}`);
-            return;
-        }
-
-        // Normal gate operations
         if (operation.mult) {
             newSize = Math.floor(currentSize * operation.mult);
         } else if (operation.add) {
