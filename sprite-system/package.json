@@ -1,0 +1,46 @@
+{
+  "name": "sprite-system",
+  "version": "1.0.0",
+  "description": "Game-agnostic sprite rendering and animation system for 2D sprites in 3D space",
+  "main": "src/index.js",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.js",
+    "./BillboardSprite": "./src/BillboardSprite.js",
+    "./SpriteAnimationController": "./src/SpriteAnimationController.js",
+    "./SpriteTextureManager": "./src/SpriteTextureManager.js",
+    "./CanvasSpriteRenderer": "./src/CanvasSpriteRenderer.js",
+    "./SpriteConfig": "./src/SpriteConfig.js"
+  },
+  "keywords": [
+    "sprite",
+    "animation",
+    "billboard",
+    "3d",
+    "threejs",
+    "game",
+    "canvas",
+    "texture",
+    "sprite-sheet"
+  ],
+  "author": "Bridge Battle Contributors",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Newpixel-net/Bridge-Battle-.git",
+    "directory": "sprite-system"
+  },
+  "bugs": {
+    "url": "https://github.com/Newpixel-net/Bridge-Battle-/issues"
+  },
+  "engines": {
+    "node": ">=14.0.0"
+  },
+  "peerDependencies": {
+    "three": ">=0.150.0"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"No tests yet\" && exit 0"
+  }
+}
