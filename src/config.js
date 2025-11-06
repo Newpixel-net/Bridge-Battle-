@@ -3,17 +3,16 @@ import { GAME } from './utils/GameConstants.js';
 import BootScene from './scenes/BootScene.js';
 import PreloadScene from './scenes/PreloadScene.js';
 import GameScene from './scenes/GameScene.js';
-import UIScene from './scenes/UIScene.js';
 
 /**
  * Phaser 3 Game Configuration
- * Phase 1: Foundation
+ * Phase 1: Foundation REBUILD - Portrait 540x960
  */
 const config = {
     type: Phaser.AUTO,
     parent: 'game-container',
-    width: GAME.WIDTH,
-    height: GAME.HEIGHT,
+    width: GAME.WIDTH,   // 540 (portrait)
+    height: GAME.HEIGHT,  // 960 (portrait)
 
     // Scale settings for mobile + desktop
     scale: {
@@ -45,12 +44,11 @@ const config = {
         forceSetTimeOut: false
     },
 
-    // Scene order
+    // Scene order - Only Boot, Preload, Game for Phase 1
     scene: [
         BootScene,
         PreloadScene,
-        GameScene,
-        UIScene
+        GameScene
     ]
 };
 

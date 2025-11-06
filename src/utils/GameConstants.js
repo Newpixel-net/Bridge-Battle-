@@ -1,35 +1,30 @@
 /**
  * Bridge Battle - Game Constants
- * All configuration values in one place for easy tuning
+ * PHASE 1 COMPLETE REBUILD - Matching Reference Screenshots EXACTLY
  *
- * CRITICAL: These values define the core game feel
- * Never use magic numbers in code - always reference these constants
+ * Reference: screenshots-for-claude/the-required-results/Level1.png
  */
 
 // ============================================================================
-// GAME CONFIGURATION
+// GAME CONFIGURATION - PORTRAIT MOBILE RUNNER
 // ============================================================================
 export const GAME = {
-    WIDTH: 1920,
-    HEIGHT: 1080,
+    WIDTH: 540,                  // PORTRAIT width (mobile runner style)
+    HEIGHT: 960,                 // PORTRAIT height
     TARGET_FPS: 60,
     PHYSICS: 'arcade'
 };
 
 // ============================================================================
-// WORLD & BRIDGE SPECIFICATIONS
+// WORLD & ROAD SPECIFICATIONS
 // ============================================================================
 export const WORLD = {
-    // CRITICAL: Bridge must be wide enough for squad movement
-    BRIDGE_WIDTH: 600,           // 31% of screen width (1920)
-    BRIDGE_LENGTH: 10000,        // Total level length
+    // Road dimensions (fills ~75% of viewport width)
+    ROAD_WIDTH: 400,             // 400/540 = 74% of screen width
+    ROAD_LENGTH: 10000,          // Total level length
 
     // Movement
-    GAME_SPEED: 300,             // Forward scroll speed (units/sec)
-
-    // Visual
-    LANE_WIDTH: 200,             // Width of each lane
-    NUM_LANES: 3,                // Number of lanes on bridge
+    SCROLL_SPEED: 0,             // No auto-scroll yet (Phase 1)
 };
 
 // ============================================================================
@@ -40,67 +35,60 @@ export const SQUAD = {
     START_SIZE: 1,               // Start with 1 character
     MAX_SIZE: 200,               // Maximum squad size
 
-    // Formation (hexagonal close-packed) - ULTRA TIGHT
-    FORMATION_SPACING: 70,       // Space between characters (tight blob, scaled for new size)
-    SEPARATION_FORCE: 0.3,       // Force to prevent overlap
-    FORMATION_LERP: 0.12,        // Smoothing factor for movement
+    // Formation
+    FORMATION_SPACING: 50,       // Space between characters
+    FORMATION_LERP: 0.15,        // Smoothing factor for movement
 
     // Movement
-    MOVE_SPEED: 8,               // Horizontal movement speed
-    HORIZONTAL_LIMIT: 180,       // Max distance from center (adjusted for zoom)
+    MOVE_SPEED: 300,             // Horizontal movement speed (pixels/sec)
+    HORIZONTAL_LIMIT: 150,       // Max distance from center
 
-    // Character visuals - LARGE and PROMINENT matching reference screenshots
-    CHARACTER_RADIUS: 35,        // Radius of each character sphere (70px diameter)
-    CHARACTER_SIZE: 70,          // Base size for collision (diameter)
+    // Character visuals - Matching reference screenshots
+    CHARACTER_RADIUS: 25,        // Radius of each character sphere
+    CHARACTER_SIZE: 50,          // Diameter for collision
+
+    // Character position
+    START_Y: 650,                // Y position (lower third of screen: 960 * 0.68)
 };
 
 // ============================================================================
-// CAMERA - CRITICAL: 3D Runner View (like Temple Run/Subway Surfers)
+// CAMERA - Fixed orthographic view (no zoom needed)
 // ============================================================================
 export const CAMERA = {
-    FOLLOW_OFFSET_Y: -300,       // Camera ahead of player (look forward)
-    FOLLOW_LERP: 0.08,           // Smooth following
-    ZOOM: 4.0,                   // CRITICAL: High zoom creates tight runner view (road fills screen)
+    FIXED_Y: 0,                  // Camera doesn't move yet (Phase 1)
+    ZOOM: 1.0,                   // No zoom - 1:1 pixel ratio
 };
 
 // ============================================================================
-// COLORS (From Reference Screenshots)
+// COLORS - From Reference Screenshots
 // ============================================================================
 export const COLORS = {
     // Environment
-    SKY_TOP: 0x87CEEB,
-    SKY_BOTTOM: 0xE0F6FF,
-    GRASS_SIDE: 0x7CB342,
+    SKY_BLUE: 0x87CEEB,
+    GRASS_GREEN: 0x7CB342,       // Green grass on sides
 
-    // Bridge
-    BRIDGE_ROAD: 0x8B7355,       // Brown asphalt
-    BRIDGE_LINES: 0xFFFFFF,      // White lane markings
-    BRIDGE_EDGE: 0xCC3333,       // Red railings
+    // Road
+    ROAD_BROWN: 0x8B7355,        // Brown asphalt
+    ROAD_LINE_WHITE: 0xFFFFFF,   // White center line
 
-    // Squad (from reference screenshots)
-    SQUAD_BLUE: 0x03A9F4,        // Bright blue (player color)
+    // Squad
+    SQUAD_BLUE: 0x03A9F4,        // Bright blue characters
     SQUAD_BLUE_DARK: 0x0277BD,   // Darker blue for shading
-    SQUAD_HIGHLIGHT: 0xFFFFFF,   // White highlight on top
+    SQUAD_HIGHLIGHT: 0xFFFFFF,   // White highlight
 
     // UI
-    UI_WHITE: 0xFFFFFF,
-    UI_GOLD: 0xFFD700,
-    UI_DANGER: 0xFF4444,
-    UI_SUCCESS: 0x00FF00,
-    UI_SQUAD_BUBBLE: 0x1976D2,   // Dark blue for squad counter background
+    BUBBLE_BG: 0x1976D2,         // Blue bubble background
+    BUBBLE_BORDER: 0xFFFFFF,     // White bubble border
+    TEXT_WHITE: 0xFFFFFF,
 };
 
 // ============================================================================
-// UI LAYOUT
+// UI LAYOUT - Squad bubble ABOVE character (not bottom of screen!)
 // ============================================================================
 export const UI = {
-    // Squad counter (bottom center - HUGE)
-    SQUAD_COUNTER_SIZE: '120px',
-    SQUAD_COUNTER_BOTTOM: 100,
-    SQUAD_LABEL_SIZE: '32px',
-
-    // Padding
-    PADDING: 40,
+    BUBBLE_RADIUS: 30,           // Size of squad counter bubble
+    BUBBLE_OFFSET_Y: -60,        // Above character (negative = up)
+    BUBBLE_FONT_SIZE: '48px',
 };
 
 // ============================================================================
@@ -110,12 +98,11 @@ export const SCENES = {
     BOOT: 'BootScene',
     PRELOAD: 'PreloadScene',
     GAME: 'GameScene',
-    UI: 'UIScene',
 };
 
 // ============================================================================
 // PERFORMANCE
 // ============================================================================
 export const PERFORMANCE = {
-    ENABLE_DEBUG: false,         // Show FPS and debug info
+    ENABLE_DEBUG: true,          // Show FPS during development
 };

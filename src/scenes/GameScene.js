@@ -1,20 +1,20 @@
 import Phaser from 'phaser';
-import { GAME, WORLD, SQUAD, CAMERA, COLORS, SCENES } from '../utils/GameConstants.js';
-import SquadManager from '../systems/SquadManager.js';
+import { GAME, WORLD, SQUAD, COLORS, SCENES } from '../utils/GameConstants.js';
 
 /**
- * GameScene - Phase 1: Foundation
+ * GameScene - Phase 1: Foundation COMPLETE REBUILD
  *
- * Implements core gameplay loop:
- * - Squad movement with hexagonal formation
- * - Player input (touch/mouse drag)
- * - Camera following
- * - Simple bridge environment
+ * Building step-by-step to match reference screenshots EXACTLY
+ * Reference: screenshots-for-claude/the-required-results/Level1.png Frame 1
  *
- * SUCCESS CRITERIA:
- * - Squad stays in tight blob formation ✓
- * - Smooth horizontal movement ✓
- * - No performance issues with 50 characters ✓
+ * Steps implemented:
+ * 1. Portrait dimensions (540x960) ✓
+ * 2. Brown road filling 75% width ✓
+ * 3. Green grass on sides ✓
+ * 4. White dashed center line ✓
+ * 5. Single blue sphere character ✓
+ * 6. Character positioned in lower third ✓
+ * 7. Squad bubble ABOVE character (not at screen bottom) ✓
  */
 export default class GameScene extends Phaser.Scene {
     constructor() {
@@ -22,213 +22,187 @@ export default class GameScene extends Phaser.Scene {
     }
 
     init() {
-        console.log('🎮 GameScene initializing...');
+        console.log('🎮 GameScene - Phase 1 Rebuild');
 
         // Game state
         this.gameState = 'playing';
 
-        // Systems
-        this.squadManager = null;
+        // Squad
+        this.squadMembers = [];
+        this.squadCenterX = GAME.WIDTH / 2;  // Center horizontally
+        this.squadCenterY = SQUAD.START_Y;    // Lower third vertically
 
-        // Input tracking
+        // Input
         this.isDragging = false;
-        this.pointerX = 0;
+        this.targetX = this.squadCenterX;
     }
 
     create() {
-        console.log('🎮 GameScene created - Building Phase 1...');
+        console.log('🎮 Building Phase 1 - Step by step...');
 
-        // 1. Create environment
+        // STEP 2-3: Create environment (road + grass)
         this.createEnvironment();
 
-        // 2. Initialize squad system
-        this.squadManager = new SquadManager(this);
-        this.squadManager.init(SQUAD.START_SIZE);
+        // STEP 4: Add center line
+        this.createCenterLine();
 
-        // 3. Setup camera
-        this.setupCamera();
+        // STEP 5-6: Add single character
+        this.createCharacter();
 
-        // 4. Setup input
+        // STEP 7: Add squad bubble above character
+        this.createSquadBubble();
+
+        // STEP 10: Setup input
         this.setupInput();
 
-        // 5. Launch UI scene
-        this.scene.launch(SCENES.UI);
-        this.updateUI();
-
         console.log('✓ Phase 1 Foundation ready!');
-        console.log(`✓ Squad initialized with ${this.squadManager.getCount()} members`);
+        console.log('✓ Compare with: screenshots-for-claude/the-required-results/Level1.png Frame 1');
     }
 
     /**
-     * Create game environment
-     * - Sky background
-     * - Grass on sides
-     * - Brown bridge/road
-     * - Lane markings
+     * STEP 2-3: Create environment (road + grass)
      */
     createEnvironment() {
-        const centerX = 0;
+        const centerX = GAME.WIDTH / 2;
+        const roadHalfWidth = WORLD.ROAD_WIDTH / 2;
 
-        // Sky background (parallax effect)
-        const sky = this.add.rectangle(
+        // Sky background
+        this.add.rectangle(
             centerX,
-            0,
-            GAME.WIDTH * 3,
-            GAME.HEIGHT * 3,
-            COLORS.SKY_TOP
-        );
-        sky.setOrigin(0.5, 0);
-        sky.setDepth(-100);
-        sky.setScrollFactor(0.3, 0.1); // Parallax
+            GAME.HEIGHT / 2,
+            GAME.WIDTH,
+            GAME.HEIGHT,
+            COLORS.SKY_BLUE
+        ).setDepth(-100);
 
-        // Grass on sides (outside bridge) - Positioned for 4x zoom view
-        const grassWidth = 400; // Width of grass visible on each side
-
+        // Left grass
         const grassLeft = this.add.rectangle(
-            centerX - (WORLD.BRIDGE_WIDTH / 2),
             0,
-            grassWidth,
-            WORLD.BRIDGE_LENGTH + 2000,
-            COLORS.GRASS_SIDE
+            GAME.HEIGHT / 2,
+            centerX - roadHalfWidth,
+            GAME.HEIGHT,
+            COLORS.GRASS_GREEN
         );
-        grassLeft.setOrigin(1, 0);
+        grassLeft.setOrigin(0, 0.5);
         grassLeft.setDepth(-50);
 
+        // Right grass
         const grassRight = this.add.rectangle(
-            centerX + (WORLD.BRIDGE_WIDTH / 2),
-            0,
-            grassWidth,
-            WORLD.BRIDGE_LENGTH + 2000,
-            COLORS.GRASS_SIDE
+            centerX + roadHalfWidth,
+            GAME.HEIGHT / 2,
+            centerX - roadHalfWidth,
+            GAME.HEIGHT,
+            COLORS.GRASS_GREEN
         );
-        grassRight.setOrigin(0, 0);
+        grassRight.setOrigin(0, 0.5);
         grassRight.setDepth(-50);
 
-        // Bridge road (brown asphalt)
-        const bridge = this.add.rectangle(
+        // Road (brown)
+        this.add.rectangle(
             centerX,
-            0,
-            WORLD.BRIDGE_WIDTH,
-            WORLD.BRIDGE_LENGTH + 1000,
-            COLORS.BRIDGE_ROAD
-        );
-        bridge.setOrigin(0.5, 0);
-        bridge.setDepth(-10);
+            GAME.HEIGHT / 2,
+            WORLD.ROAD_WIDTH,
+            GAME.HEIGHT * 2,
+            COLORS.ROAD_BROWN
+        ).setDepth(-10);
 
-        // Bridge edges (red railings)
-        const edgeWidth = 20;
-        const leftEdge = this.add.rectangle(
-            centerX - WORLD.BRIDGE_WIDTH / 2,
-            0,
-            edgeWidth,
-            WORLD.BRIDGE_LENGTH + 1000,
-            COLORS.BRIDGE_EDGE
-        );
-        leftEdge.setOrigin(0.5, 0);
-        leftEdge.setDepth(-5);
-
-        const rightEdge = this.add.rectangle(
-            centerX + WORLD.BRIDGE_WIDTH / 2,
-            0,
-            edgeWidth,
-            WORLD.BRIDGE_LENGTH + 1000,
-            COLORS.BRIDGE_EDGE
-        );
-        rightEdge.setOrigin(0.5, 0);
-        rightEdge.setDepth(-5);
-
-        // Lane markings (white dashed lines)
-        this.createLaneMarkings(centerX);
-
-        // Zebra crossings (white stripes across road)
-        this.createZebraCrossings(centerX);
-
-        console.log('✓ Environment created');
+        console.log('✓ Environment: Road (400px) + Grass on sides');
     }
 
     /**
-     * Create white dashed lane markings
+     * STEP 4: Add white dashed center line
      */
-    createLaneMarkings(centerX) {
+    createCenterLine() {
+        const centerX = GAME.WIDTH / 2;
         const graphics = this.add.graphics();
-        graphics.setDepth(-8);
-        graphics.lineStyle(6, COLORS.BRIDGE_LINES, 0.6);
+        graphics.lineStyle(4, COLORS.ROAD_LINE_WHITE, 1);
+        graphics.setDepth(0);
 
-        // Center line
-        for (let y = -200; y < WORLD.BRIDGE_LENGTH + 200; y += 100) {
-            graphics.lineBetween(centerX, y, centerX, y + 50);
+        // Draw dashed line down the center
+        for (let y = 0; y < GAME.HEIGHT * 2; y += 60) {
+            graphics.lineBetween(centerX, y, centerX, y + 30);
         }
 
         graphics.strokePath();
+        console.log('✓ Center line added');
     }
 
     /**
-     * Create zebra crossings (crosswalk stripes) - matching screenshots
+     * STEP 5-6: Create single character (blue sphere with 3D effect)
      */
-    createZebraCrossings(centerX) {
-        const graphics = this.add.graphics();
-        graphics.setDepth(-8);
+    createCharacter() {
+        const x = this.squadCenterX;
+        const y = this.squadCenterY;
+        const radius = SQUAD.CHARACTER_RADIUS;
 
-        // Create zebra crossings every 400-600 units
-        for (let y = 400; y < WORLD.BRIDGE_LENGTH; y += 550) {
-            this.drawZebraCrossing(graphics, centerX, y);
-        }
+        // Container for character
+        const character = this.add.container(x, y);
+
+        // Main body (bright blue)
+        const body = this.add.circle(0, 0, radius, COLORS.SQUAD_BLUE);
+
+        // Shadow (darker blue, bottom-right)
+        const shadow = this.add.circle(3, 3, radius * 0.7, COLORS.SQUAD_BLUE_DARK, 0.4);
+
+        // Highlight (white, top-left)
+        const highlight = this.add.circle(-5, -5, radius * 0.35, COLORS.SQUAD_HIGHLIGHT, 0.9);
+
+        // Add to container
+        character.add([body, shadow, highlight]);
+        character.setDepth(10);
+
+        this.squadMembers.push(character);
+        console.log(`✓ Character created at (${x}, ${y}) - radius ${radius}px`);
     }
 
     /**
-     * Draw a single zebra crossing at position
+     * STEP 7: Create squad bubble ABOVE character (not at screen bottom!)
      */
-    drawZebraCrossing(graphics, centerX, y) {
-        const stripeWidth = 40;
-        const stripeHeight = 12;
-        const roadWidth = WORLD.BRIDGE_WIDTH;
-        const numStripes = 12;
+    createSquadBubble() {
+        const x = this.squadCenterX;
+        const y = this.squadCenterY - 60; // Above character
 
-        graphics.fillStyle(COLORS.BRIDGE_LINES, 0.9);
+        // Blue bubble background
+        this.squadBubble = this.add.circle(x, y, 30, COLORS.BUBBLE_BG, 0.9);
+        this.squadBubble.setStrokeStyle(3, COLORS.BUBBLE_BORDER);
+        this.squadBubble.setDepth(20);
 
-        for (let i = 0; i < numStripes; i++) {
-            const x = centerX - roadWidth / 2 + (i * (roadWidth / numStripes));
-            graphics.fillRect(x, y, stripeWidth, stripeHeight);
-        }
+        // Squad count text
+        this.squadText = this.add.text(x, y, '1', {
+            fontSize: '48px',
+            fontFamily: 'Arial Black',
+            color: '#FFFFFF',
+            stroke: '#000000',
+            strokeThickness: 4
+        });
+        this.squadText.setOrigin(0.5);
+        this.squadText.setDepth(21);
+
+        console.log(`✓ Squad bubble created ABOVE character at (${x}, ${y})`);
     }
 
     /**
-     * Setup camera to follow squad
-     */
-    setupCamera() {
-        // Set camera bounds
-        this.cameras.main.setBounds(
-            -GAME.WIDTH,
-            -500,
-            GAME.WIDTH * 2,
-            WORLD.BRIDGE_LENGTH + 2000
-        );
-
-        // Set camera zoom for better character visibility
-        this.cameras.main.setZoom(CAMERA.ZOOM);
-
-        // Start at squad position
-        const squadPos = this.squadManager.getCenter();
-        this.cameras.main.scrollY = squadPos.y + CAMERA.FOLLOW_OFFSET_Y;
-        this.cameras.main.scrollX = 0; // Center horizontally
-
-        console.log('✓ Camera setup complete');
-        console.log(`  Zoom: ${CAMERA.ZOOM}x`);
-    }
-
-    /**
-     * Setup player input (touch/mouse drag + keyboard fallback)
+     * STEP 10: Setup input (drag left/right)
      */
     setupInput() {
-        // Touch/Mouse input for horizontal movement
+        // Touch/Mouse
         this.input.on('pointerdown', (pointer) => {
             this.isDragging = true;
-            this.pointerX = pointer.x;
         });
 
         this.input.on('pointermove', (pointer) => {
             if (this.isDragging) {
-                this.pointerX = pointer.x;
+                // Calculate target X from pointer position
+                const centerX = GAME.WIDTH / 2;
+                const roadHalfWidth = WORLD.ROAD_WIDTH / 2;
+                const offsetX = pointer.x - centerX;
+
+                // Clamp to road bounds
+                this.targetX = centerX + Phaser.Math.Clamp(
+                    offsetX,
+                    -SQUAD.HORIZONTAL_LIMIT,
+                    SQUAD.HORIZONTAL_LIMIT
+                );
             }
         });
 
@@ -236,100 +210,48 @@ export default class GameScene extends Phaser.Scene {
             this.isDragging = false;
         });
 
-        // Keyboard fallback (for testing)
+        // Keyboard (for testing)
         this.cursors = this.input.keyboard.createCursorKeys();
 
-        // Debug keys
-        this.input.keyboard.on('keydown-PLUS', () => {
-            this.squadManager.addMembers(5);
-            this.updateUI();
-        });
-
-        this.input.keyboard.on('keydown-MINUS', () => {
-            this.squadManager.removeMembers(5);
-            this.updateUI();
-        });
-
-        console.log('✓ Input system ready');
-        console.log('  - Drag/Touch for movement');
-        console.log('  - Arrow keys for testing');
-        console.log('  - +/- keys to add/remove squad members');
+        console.log('✓ Input ready - Drag to move left/right');
     }
 
     /**
-     * Main update loop
+     * Update loop
      */
     update(time, delta) {
         if (this.gameState !== 'playing') return;
 
-        // 1. Handle input
-        this.handleInput(delta);
+        const dt = delta / 1000;
 
-        // 2. Update squad
-        this.squadManager.update(delta);
-
-        // 3. Update camera
-        this.updateCamera(delta);
-
-        // 4. Update UI
-        this.updateUI();
-    }
-
-    /**
-     * Handle player input
-     */
-    handleInput(delta) {
-        let targetX = 0;
-
-        if (this.isDragging) {
-            // Convert screen X to world X (-250 to +250)
-            const normalizedX = (this.pointerX / GAME.WIDTH) - 0.5;
-            targetX = normalizedX * WORLD.BRIDGE_WIDTH * 0.8; // 80% of bridge width
-        } else if (this.cursors) {
-            // Keyboard fallback
-            if (this.cursors.left.isDown) {
-                targetX = -SQUAD.HORIZONTAL_LIMIT;
-            } else if (this.cursors.right.isDown) {
-                targetX = SQUAD.HORIZONTAL_LIMIT;
-            }
+        // Handle keyboard input
+        if (this.cursors.left.isDown) {
+            this.targetX = (GAME.WIDTH / 2) - SQUAD.HORIZONTAL_LIMIT;
+        } else if (this.cursors.right.isDown) {
+            this.targetX = (GAME.WIDTH / 2) + SQUAD.HORIZONTAL_LIMIT;
         }
 
-        this.squadManager.setTargetX(targetX);
+        // Smooth movement toward target
+        this.squadCenterX = Phaser.Math.Linear(
+            this.squadCenterX,
+            this.targetX,
+            SQUAD.FORMATION_LERP
+        );
+
+        // Update character position
+        if (this.squadMembers[0]) {
+            this.squadMembers[0].x = this.squadCenterX;
+        }
+
+        // Update bubble position
+        if (this.squadBubble) {
+            this.squadBubble.x = this.squadCenterX;
+            this.squadText.x = this.squadCenterX;
+        }
     }
 
-    /**
-     * Update camera to smoothly follow squad
-     */
-    updateCamera(delta) {
-        const squadCenter = this.squadManager.getCenter();
-        const targetY = squadCenter.y + CAMERA.FOLLOW_OFFSET_Y;
-
-        // Smooth camera follow using lerp
-        const currentY = this.cameras.main.scrollY;
-        const newY = Phaser.Math.Linear(currentY, targetY, CAMERA.FOLLOW_LERP);
-
-        this.cameras.main.scrollY = newY;
-    }
-
-    /**
-     * Update UI with current squad count
-     */
-    updateUI() {
-        const count = this.squadManager.getCount();
-        this.events.emit('updateSquad', count);
-    }
-
-    /**
-     * Cleanup when scene shuts down
-     */
     shutdown() {
-        console.log('🛑 GameScene shutting down');
-
-        if (this.squadManager) {
-            this.squadManager.destroy();
-        }
-
-        // Remove input listeners
+        console.log('🛑 GameScene shutdown');
         this.input.off('pointerdown');
         this.input.off('pointermove');
         this.input.off('pointerup');
