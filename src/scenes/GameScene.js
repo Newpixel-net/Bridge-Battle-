@@ -2754,6 +2754,11 @@ export default class GameScene extends Phaser.Scene {
             this.waveManager.update();
         }
 
+        // WAVE SYSTEM: Update wave boss (attacks, movement, phase transitions)
+        if (this.currentWaveBoss && this.currentWaveBoss.active) {
+            this.currentWaveBoss.update(time, delta);
+        }
+
         // FORWARD MOTION FEEL: Update warning indicators for off-screen enemies
         this.updateWarningIndicators();
 
@@ -4082,21 +4087,29 @@ export default class GameScene extends Phaser.Scene {
      * WAVE SYSTEM: Spawn boss (called by WaveManager)
      */
     spawnBoss(bossData, x, y) {
-        // For now, spawn a large TANK enemy as placeholder
-        // TODO: Create dedicated Boss class in Session 3
-        const Enemy = require('../entities/Enemy.js').default;
-        const boss = new Enemy(this, x, y, 'TANK', bossData.speed);
+        // Import Boss class
+        const Boss = require('../entities/Boss.js').default;
+        const BossHealthBar = require('../ui/BossHealthBar.js').default;
 
-        // Scale up to indicate boss
-        boss.container.setScale(2.5);
+        // Create WAVE_BOSS
+        const boss = new Boss(this, x, y, 'WAVE_BOSS');
 
-        // TODO: Add HP bar, abilities, etc. in Session 3
-
+        // Add to enemy manager for collision detection
         if (this.enemyManager) {
             this.enemyManager.enemies.push(boss);
         }
 
-        console.log('⚠️ BOSS SPAWNED (placeholder) - Full boss system in Session 3');
+        // Store boss reference
+        this.currentWaveBoss = boss;
+
+        // Create HP bar after short delay for dramatic effect
+        this.time.delayedCall(1000, () => {
+            if (boss && !boss.isDestroyed) {
+                this.bossHealthBar = new BossHealthBar(this, boss);
+            }
+        });
+
+        console.log('👑 WAVE BOSS SPAWNED - HP: 200, Phase System Active');
 
         return boss;
     }

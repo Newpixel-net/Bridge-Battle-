@@ -97,19 +97,35 @@ export default class BossHealthBar {
         );
         this.barBorder.setStrokeStyle(3, 0xFFFFFF, 1.0);
 
-        // HP text (current/max)
+        // HP text - large numerical display (e.g., "67")
         this.hpText = this.scene.add.text(
             0, 0,
-            `${this.currentHP} / ${this.maxHP}`,
+            `${Math.floor(this.currentHP)}`,
             {
-                fontSize: '18px',
+                fontSize: '32px',
                 fontFamily: 'Arial Black',
                 color: '#FFFFFF',
                 stroke: '#000000',
-                strokeThickness: 3
+                strokeThickness: 4
             }
         );
         this.hpText.setOrigin(0.5);
+        this.hpText.setResolution(2); // High resolution
+
+        // Max HP text (smaller, below main number)
+        this.maxHpText = this.scene.add.text(
+            0, 20,
+            `/ ${this.maxHP}`,
+            {
+                fontSize: '14px',
+                fontFamily: 'Arial',
+                color: '#AAAAAA',
+                stroke: '#000000',
+                strokeThickness: 2
+            }
+        );
+        this.maxHpText.setOrigin(0.5);
+        this.maxHpText.setResolution(2);
 
         // Phase indicator (bottom right of bar)
         this.phaseText = this.scene.add.text(
@@ -143,6 +159,7 @@ export default class BossHealthBar {
             this.barFill,
             this.barBorder,
             this.hpText,
+            this.maxHpText,
             this.phaseText,
             this.warningIcon
         ]);
@@ -225,7 +242,7 @@ export default class BossHealthBar {
             duration: 100,
             yoyo: true,
             onComplete: () => {
-                this.hpText.setText(`${Math.max(0, Math.floor(this.currentHP))} / ${this.maxHP}`);
+                this.hpText.setText(`${Math.max(0, Math.floor(this.currentHP))}`);
             }
         });
 
