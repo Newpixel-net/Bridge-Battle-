@@ -1678,17 +1678,22 @@ export default class GameScene extends Phaser.Scene {
         const rightGate = this.createGateHalf(rightX, y, right.op, right.color, 'RIGHT');
         rightGate.operation = right;
 
+        // CRITICAL: Create blocking wall in center to force choice
+        const blockingWall = this.createGateBlockingWall(centerX, y);
+
         // OBJECT ANIMATION 3: Rise from ground with shake
         const targetYLeft = leftGate.y;
         const targetYRight = rightGate.y;
         leftGate.y = targetYLeft + 300; // Start below
         rightGate.y = targetYRight + 300;
+        blockingWall.y = y + 300;
         leftGate.setAlpha(0);
         rightGate.setAlpha(0);
+        blockingWall.setAlpha(0);
 
         // Rise animation
         this.tweens.add({
-            targets: [leftGate, rightGate],
+            targets: [leftGate, rightGate, blockingWall],
             y: targetYLeft,
             alpha: 1,
             duration: 800,
@@ -1698,7 +1703,12 @@ export default class GameScene extends Phaser.Scene {
         // Camera shake when gates appear
         this.cameras.main.shake(100, 0.003);
 
-        this.gates.push({ left: leftGate, right: rightGate, passed: false });
+        this.gates.push({
+            left: leftGate,
+            right: rightGate,
+            blockingWall: blockingWall,
+            passed: false
+        });
     }
 
     /**
@@ -1812,6 +1822,66 @@ export default class GameScene extends Phaser.Scene {
         });
 
         return gate;
+    }
+
+    /**
+     * Create blocking wall in center of gate (forces player to choose)
+     */
+    createGateBlockingWall(x, y) {
+        const wall = this.add.container(x, y);
+
+        // Wall dimensions - tall enough to block path, spans the gap
+        const wallWidth = GATES.GAP + 40; // Extends beyond gap to ensure blocking
+        const wallHeight = GATES.HEIGHT + 40; // Taller than gates
+
+        // Dark solid barrier (impassable)
+        const barrier = this.add.rectangle(0, 0, wallWidth, wallHeight, 0x222222, 1.0);
+        barrier.setStrokeStyle(6, 0xFF0000, 0.8);
+
+        // Danger stripes (diagonal yellow/black pattern)
+        const stripeCount = 8;
+        for (let i = 0; i < stripeCount; i++) {
+            const stripe = this.add.rectangle(
+                -wallWidth / 2 + (i * wallWidth / stripeCount) + wallWidth / (stripeCount * 2),
+                0,
+                wallWidth / stripeCount,
+                wallHeight,
+                i % 2 === 0 ? 0xFFFF00 : 0x000000,
+                0.7
+            );
+            stripe.setAngle(15); // Diagonal stripes
+            wall.add(stripe);
+        }
+
+        // Add barrier on top
+        wall.add(barrier);
+
+        // Warning text
+        const warningText = this.add.text(0, 0, 'CHOOSE!', {
+            fontSize: '24px',
+            fontFamily: 'Arial Black',
+            color: '#FF0000',
+            stroke: '#FFFFFF',
+            strokeThickness: 4
+        });
+        warningText.setOrigin(0.5);
+
+        // Pulsing warning animation
+        this.tweens.add({
+            targets: warningText,
+            scaleX: 1.2,
+            scaleY: 1.2,
+            duration: 500,
+            yoyo: true,
+            repeat: -1,
+            ease: 'Sine.easeInOut'
+        });
+
+        wall.add(warningText);
+        wall.setDepth(7); // Behind gates but in front of road
+        wall.type = 'blocking_wall';
+
+        return wall;
     }
 
     /**
@@ -2261,10 +2331,13 @@ export default class GameScene extends Phaser.Scene {
             obstacle.y += scrollAmount;
         });
 
-        // Move gates
+        // Move gates (including blocking wall)
         this.gates.forEach(gate => {
             gate.left.y += scrollAmount;
             gate.right.y += scrollAmount;
+            if (gate.blockingWall) {
+                gate.blockingWall.y += scrollAmount;
+            }
         });
 
         // ========== COMBAT SYSTEM UPDATES ==========
@@ -2323,6 +2396,9 @@ export default class GameScene extends Phaser.Scene {
             if (g.left.y > GAME.HEIGHT + 200) {
                 g.left.destroy();
                 g.right.destroy();
+                if (g.blockingWall) {
+                    g.blockingWall.destroy();
+                }
                 return false;
             }
             return true;
@@ -2590,6 +2666,23 @@ export default class GameScene extends Phaser.Scene {
                     alpha: 0,
                     duration: 300
                 });
+
+                // Blocking wall - fade and shrink out
+                if (gate.blockingWall) {
+                    this.tweens.add({
+                        targets: gate.blockingWall,
+                        alpha: 0,
+                        scaleX: 0,
+                        duration: 300,
+                        ease: 'Back.easeIn',
+                        onComplete: () => {
+                            if (gate.blockingWall) {
+                                gate.blockingWall.destroy();
+                                gate.blockingWall = null;
+                            }
+                        }
+                    });
+                }
             }
         });
     }
