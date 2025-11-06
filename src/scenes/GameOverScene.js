@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import { GAME, COLORS, SCENES } from '../utils/GameConstants.js';
+import { GAME, COLORS, SCENES, UI_SCALE } from '../utils/GameConstants.js';
 import { progressionManager } from '../systems/ProgressionManager.js';
 
 /**
@@ -32,10 +32,11 @@ export default class GameOverScene extends Phaser.Scene {
         panel.setDepth(10);
 
         // Scale in animation
+        // FIXED: Scale using UI_SCALE.PANEL constant (1640x1800 → 623x684)
         this.tweens.add({
             targets: panel,
-            scaleX: 0.5,  // Adjust scale to fit screen
-            scaleY: 0.5,
+            scaleX: UI_SCALE.PANEL,
+            scaleY: UI_SCALE.PANEL,
             duration: 600,
             ease: 'Back.easeOut',
             delay: 300
@@ -54,11 +55,12 @@ export default class GameOverScene extends Phaser.Scene {
         continueButton.setDepth(11);
 
         // Hover effect
+        const hoverScale = UI_SCALE.PANEL * 1.05;
         continueButton.on('pointerover', () => {
             this.tweens.add({
                 targets: panel,
-                scaleX: 0.52,
-                scaleY: 0.52,
+                scaleX: hoverScale,
+                scaleY: hoverScale,
                 duration: 150,
                 ease: 'Quad.easeOut'
             });
@@ -67,8 +69,8 @@ export default class GameOverScene extends Phaser.Scene {
         continueButton.on('pointerout', () => {
             this.tweens.add({
                 targets: panel,
-                scaleX: 0.5,
-                scaleY: 0.5,
+                scaleX: UI_SCALE.PANEL,
+                scaleY: UI_SCALE.PANEL,
                 duration: 150
             });
         });
