@@ -1,5 +1,6 @@
 import Phaser from 'phaser';
 import { GAME, COLORS, SCENES } from '../utils/GameConstants.js';
+import { progressionManager } from '../systems/ProgressionManager.js';
 
 /**
  * GameOverScene - Phase 2
@@ -13,6 +14,9 @@ export default class GameOverScene extends Phaser.Scene {
     init(data) {
         this.finalDistance = data.distance || 0;
         this.finalSquadSize = data.squadSize || 0;
+        this.score = data.score || 0;
+        this.enemiesKilled = data.enemiesKilled || 0;
+        this.highScore = data.highScore || progressionManager.getHighScore();
     }
 
     create() {
@@ -43,11 +47,38 @@ export default class GameOverScene extends Phaser.Scene {
         });
 
         // Stats container
-        const statsY = centerY - 50;
+        const statsY = centerY - 100;
+
+        // Score
+        this.add.text(centerX, statsY, `Score: ${this.score}`, {
+            fontSize: '32px',
+            fontFamily: 'Arial',
+            color: '#FFD700',
+            stroke: '#000000',
+            strokeThickness: 4
+        }).setOrigin(0.5);
+
+        // High Score
+        this.add.text(centerX, statsY + 45, `High Score: ${this.highScore}`, {
+            fontSize: '24px',
+            fontFamily: 'Arial',
+            color: '#AAAAAA',
+            stroke: '#000000',
+            strokeThickness: 3
+        }).setOrigin(0.5);
 
         // Distance traveled
-        this.add.text(centerX, statsY, `Distance: ${Math.floor(this.finalDistance)}m`, {
-            fontSize: '32px',
+        this.add.text(centerX, statsY + 90, `Distance: ${Math.floor(this.finalDistance)}m`, {
+            fontSize: '28px',
+            fontFamily: 'Arial',
+            color: '#FFFFFF',
+            stroke: '#000000',
+            strokeThickness: 4
+        }).setOrigin(0.5);
+
+        // Enemies killed
+        this.add.text(centerX, statsY + 130, `Enemies: ${this.enemiesKilled}`, {
+            fontSize: '28px',
             fontFamily: 'Arial',
             color: '#FFFFFF',
             stroke: '#000000',
@@ -55,8 +86,8 @@ export default class GameOverScene extends Phaser.Scene {
         }).setOrigin(0.5);
 
         // Final squad size
-        this.add.text(centerX, statsY + 50, `Final Squad: ${this.finalSquadSize}`, {
-            fontSize: '32px',
+        this.add.text(centerX, statsY + 170, `Final Squad: ${this.finalSquadSize}`, {
+            fontSize: '28px',
             fontFamily: 'Arial',
             color: '#FFFFFF',
             stroke: '#000000',

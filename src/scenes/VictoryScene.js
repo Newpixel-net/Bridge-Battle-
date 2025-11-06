@@ -1,5 +1,6 @@
 import Phaser from 'phaser';
 import { GAME, COLORS, SCENES } from '../utils/GameConstants.js';
+import { progressionManager } from '../systems/ProgressionManager.js';
 
 /**
  * VictoryScene - Professional victory screen with stats and rewards
@@ -33,6 +34,11 @@ export default class VictoryScene extends Phaser.Scene {
         this.stageNumber = data?.stageNumber || 1;
         this.timePlayed = data?.timePlayed || 0;
 
+        // PROGRESSION: High score and achievements data
+        this.highScore = data?.highScore || progressionManager.getHighScore();
+        this.isNewHighScore = data?.isNewHighScore || false;
+        this.newAchievements = data?.newAchievements || [];
+
         // Calculate performance metrics
         this.starRating = this.calculateStarRating();
         this.bonusScore = this.calculateBonusScore();
@@ -41,6 +47,9 @@ export default class VictoryScene extends Phaser.Scene {
         // Animation state
         this.animationStep = 0;
         this.statsRevealed = false;
+
+        console.log(`📊 High Score: ${this.highScore} | New High Score: ${this.isNewHighScore}`);
+        console.log(`🏆 New Achievements: ${this.newAchievements.length}`);
     }
 
     create() {
@@ -63,8 +72,23 @@ export default class VictoryScene extends Phaser.Scene {
             this.createStarRating();
         });
 
-        // Buttons (appear last)
-        this.time.delayedCall(3000, () => {
+        // High score indicator (appears if new high score)
+        if (this.isNewHighScore) {
+            this.time.delayedCall(2500, () => {
+                this.createNewHighScoreIndicator();
+            });
+        }
+
+        // Achievement notifications (appear after stats)
+        if (this.newAchievements.length > 0) {
+            this.time.delayedCall(3500, () => {
+                this.createAchievementNotifications();
+            });
+        }
+
+        // Buttons (appear last, delayed more if there are achievements)
+        const buttonDelay = this.newAchievements.length > 0 ? 5000 : 3000;
+        this.time.delayedCall(buttonDelay, () => {
             this.createButtons();
         });
 
@@ -481,6 +505,131 @@ export default class VictoryScene extends Phaser.Scene {
                 }
             });
         }
+    }
+
+    /**
+     * PROGRESSION: Create new high score indicator
+     */
+    createNewHighScoreIndicator() {
+        const text = this.add.text(
+            GAME.WIDTH / 2,
+            200,
+            'NEW HIGH SCORE!',
+            {
+                fontSize: '36px',
+                fontFamily: 'Arial Black',
+                color: '#FFD700',
+                stroke: '#FF0000',
+                strokeThickness: 6
+            }
+        );
+        text.setOrigin(0.5);
+        text.setAlpha(0);
+
+        // Pulsing glow effect
+        this.tweens.add({
+            targets: text,
+            alpha: 1,
+            scaleX: 1.2,
+            scaleY: 1.2,
+            duration: 500,
+            ease: 'Bounce.easeOut'
+        });
+
+        this.tweens.add({
+            targets: text,
+            scaleX: 1.3,
+            scaleY: 1.3,
+            duration: 800,
+            yoyo: true,
+            repeat: -1,
+            ease: 'Sine.easeInOut'
+        });
+
+        // Sparkle particles
+        this.createSparkle(GAME.WIDTH / 2, 200);
+    }
+
+    /**
+     * PROGRESSION: Create achievement notification panels
+     */
+    createAchievementNotifications() {
+        console.log(`🏆 Showing ${this.newAchievements.length} new achievements`);
+
+        const startY = 300;
+        const spacing = 80;
+
+        // Get achievement details from progression manager
+        const allAchievements = progressionManager.getAchievementProgress();
+
+        this.newAchievements.forEach((achievementId, index) => {
+            const achievementData = allAchievements.find(a => a.id === achievementId);
+            if (!achievementData) return;
+
+            const y = startY + (index * spacing);
+
+            // Create achievement panel
+            const panel = this.add.rectangle(
+                GAME.WIDTH / 2, y,
+                450, 70,
+                0x000000, 0.8
+            );
+            panel.setStrokeStyle(3, 0xFFD700, 1.0);
+            panel.setAlpha(0);
+
+            // Achievement icon
+            const icon = this.add.text(
+                GAME.WIDTH / 2 - 200, y,
+                achievementData.icon || '🏆',
+                {
+                    fontSize: '40px'
+                }
+            );
+            icon.setOrigin(0.5);
+            icon.setAlpha(0);
+
+            // Achievement text
+            const titleText = this.add.text(
+                GAME.WIDTH / 2 - 150, y - 15,
+                achievementData.name || 'Achievement',
+                {
+                    fontSize: '20px',
+                    fontFamily: 'Arial Black',
+                    color: '#FFD700'
+                }
+            );
+            titleText.setOrigin(0, 0.5);
+            titleText.setAlpha(0);
+
+            const descText = this.add.text(
+                GAME.WIDTH / 2 - 150, y + 10,
+                achievementData.description || '',
+                {
+                    fontSize: '14px',
+                    fontFamily: 'Arial',
+                    color: '#FFFFFF'
+                }
+            );
+            descText.setOrigin(0, 0.5);
+            descText.setAlpha(0);
+
+            // Animate in with delay based on index
+            const delay = index * 400;
+
+            this.tweens.add({
+                targets: [panel, icon, titleText, descText],
+                alpha: 1,
+                x: '+=10',
+                duration: 400,
+                delay: delay,
+                ease: 'Back.easeOut'
+            });
+
+            // Flash effect on appearance
+            this.time.delayedCall(delay, () => {
+                this.cameras.main.flash(200, 255, 215, 0);
+            });
+        });
     }
 
     /**
