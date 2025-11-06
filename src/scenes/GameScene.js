@@ -81,11 +81,13 @@ export default class GameScene extends Phaser.Scene {
         sky.setDepth(-100);
         sky.setScrollFactor(0.3, 0.1); // Parallax
 
-        // Grass on sides (outside bridge)
+        // Grass on sides (outside bridge) - Positioned for 4x zoom view
+        const grassWidth = 400; // Width of grass visible on each side
+
         const grassLeft = this.add.rectangle(
-            centerX - WORLD.BRIDGE_WIDTH,
+            centerX - (WORLD.BRIDGE_WIDTH / 2),
             0,
-            GAME.WIDTH * 2,
+            grassWidth,
             WORLD.BRIDGE_LENGTH + 2000,
             COLORS.GRASS_SIDE
         );
@@ -93,9 +95,9 @@ export default class GameScene extends Phaser.Scene {
         grassLeft.setDepth(-50);
 
         const grassRight = this.add.rectangle(
-            centerX + WORLD.BRIDGE_WIDTH,
+            centerX + (WORLD.BRIDGE_WIDTH / 2),
             0,
-            GAME.WIDTH * 2,
+            grassWidth,
             WORLD.BRIDGE_LENGTH + 2000,
             COLORS.GRASS_SIDE
         );
