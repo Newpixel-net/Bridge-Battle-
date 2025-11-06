@@ -36,11 +36,24 @@ const config = {
         }
     },
 
-    // Rendering
+    // Rendering - High quality desktop settings
     render: {
         pixelArt: false,
         antialias: true,
-        roundPixels: false
+        roundPixels: false,
+        transparent: false,
+        clearBeforeRender: true,
+        preserveDrawingBuffer: false,
+        premultipliedAlpha: true,
+        failIfMajorPerformanceCaveat: false,
+        powerPreference: 'high-performance',
+        batchSize: 4096,          // Higher batch size for better performance
+    },
+
+    // Enhanced canvas quality for crisp text and graphics
+    canvas: {
+        alpha: false,
+        desynchronized: true      // Better performance on modern browsers
     },
 
     // FPS target

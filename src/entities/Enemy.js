@@ -276,8 +276,35 @@ export default class Enemy {
     update(time, delta) {
         if (!this.active || this.isDestroyed) return;
 
-        // Could add enemy AI here (movement, attacks, etc.)
-        // For now, enemies are static
+        // FORWARD MOTION FEEL: Rotate enemy to face player
+        this.rotateTowardPlayer();
+    }
+
+    /**
+     * Rotate enemy to face the player (forward motion feel)
+     */
+    rotateTowardPlayer() {
+        if (!this.scene.squadCenterX || !this.scene.squadCenterY) return;
+
+        // Calculate angle from enemy to player
+        const playerX = this.scene.squadCenterX;
+        const playerY = this.scene.squadCenterY;
+        const enemyX = this.container.x;
+        const enemyY = this.container.y;
+
+        // Calculate angle in radians
+        const angle = Phaser.Math.Angle.Between(enemyX, enemyY, playerX, playerY);
+
+        // Smoothly rotate container to face player
+        // Add 90 degrees (PI/2) because sprites face right by default
+        const targetRotation = angle + Math.PI / 2;
+
+        // Smooth rotation (lerp for natural feel)
+        const rotationSpeed = 0.1; // 10% per frame for smooth transition
+        const currentRotation = this.container.rotation;
+        const newRotation = Phaser.Math.Angle.RotateTo(currentRotation, targetRotation, rotationSpeed);
+
+        this.container.setRotation(newRotation);
     }
 
     /**
