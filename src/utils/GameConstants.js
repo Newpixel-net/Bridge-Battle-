@@ -24,7 +24,7 @@ export const WORLD = {
     ROAD_LENGTH: 10000,          // Total level length
 
     // Movement
-    SCROLL_SPEED: 0,             // No auto-scroll yet (Phase 1)
+    SCROLL_SPEED: 200,           // Auto-scroll speed (pixels/sec)
 };
 
 // ============================================================================
@@ -60,6 +60,29 @@ export const CAMERA = {
 };
 
 // ============================================================================
+// GAMEPLAY MECHANICS
+// ============================================================================
+export const COLLECTIBLES = {
+    SPAWN_INTERVAL: 600,         // Distance between collectible spawns
+    SIZE: 20,                    // Radius of collectible
+    VALUE: 1,                    // How many squad members to add
+};
+
+export const OBSTACLES = {
+    SPAWN_INTERVAL: 800,         // Distance between obstacle spawns
+    WIDTH: 80,                   // Width of obstacle
+    HEIGHT: 40,                  // Height of obstacle
+    DAMAGE: 5,                   // How many squad members to remove
+};
+
+export const GATES = {
+    SPAWN_INTERVAL: 1200,        // Distance between gate spawns
+    WIDTH: 120,                  // Width of each gate half
+    HEIGHT: 100,                 // Height of gate
+    GAP: 80,                     // Gap between left and right options
+};
+
+// ============================================================================
 // COLORS - From Reference Screenshots
 // ============================================================================
 export const COLORS = {
@@ -76,10 +99,17 @@ export const COLORS = {
     SQUAD_BLUE_DARK: 0x0277BD,   // Darker blue for shading
     SQUAD_HIGHLIGHT: 0xFFFFFF,   // White highlight
 
+    // Collectibles & Obstacles
+    COLLECTIBLE: 0x00FF00,       // Green collectibles (+)
+    OBSTACLE: 0xFF0000,          // Red obstacles (-)
+    GATE_GOOD: 0x4CAF50,         // Green gate (good math)
+    GATE_BAD: 0xF44336,          // Red gate (bad math)
+
     // UI
     BUBBLE_BG: 0x1976D2,         // Blue bubble background
     BUBBLE_BORDER: 0xFFFFFF,     // White bubble border
     TEXT_WHITE: 0xFFFFFF,
+    TEXT_BLACK: 0x000000,
 };
 
 // ============================================================================

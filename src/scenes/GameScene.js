@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import { GAME, WORLD, SQUAD, COLORS, SCENES, UI } from '../utils/GameConstants.js';
+import { GAME, WORLD, SQUAD, COLORS, SCENES, UI, COLLECTIBLES, OBSTACLES, GATES } from '../utils/GameConstants.js';
 
 /**
  * GameScene - Phase 1: Foundation COMPLETE REBUILD
@@ -22,10 +22,12 @@ export default class GameScene extends Phaser.Scene {
     }
 
     init() {
-        console.log('🎮 GameScene - Phase 1 Rebuild');
+        console.log('🎮 GameScene - Phase 1: Gaming Functionality');
 
         // Game state
         this.gameState = 'playing';
+        this.distance = 0;              // Total distance traveled
+        this.scrollOffset = 0;          // Current scroll offset for objects
 
         // Squad
         this.squadMembers = [];
@@ -33,6 +35,16 @@ export default class GameScene extends Phaser.Scene {
         this.formationPositions = [];
         this.squadCenterX = GAME.WIDTH / 2;  // Center horizontally
         this.squadCenterY = SQUAD.START_Y;    // Lower third vertically
+
+        // Game objects
+        this.collectibles = [];
+        this.obstacles = [];
+        this.gates = [];
+
+        // Spawn tracking
+        this.nextCollectibleSpawn = COLLECTIBLES.SPAWN_INTERVAL;
+        this.nextObstacleSpawn = OBSTACLES.SPAWN_INTERVAL;
+        this.nextGateSpawn = GATES.SPAWN_INTERVAL;
 
         // Input
         this.isDragging = false;
@@ -57,11 +69,14 @@ export default class GameScene extends Phaser.Scene {
         // STEP 7: Add squad bubble above character
         this.createSquadBubble();
 
+        // Add distance counter UI
+        this.createDistanceUI();
+
         // STEP 10: Setup input
         this.setupInput();
 
-        console.log('✓ Phase 1 Foundation ready!');
-        console.log('✓ Compare with: screenshots-for-claude/the-required-results/Level1.png Frame 1');
+        console.log('✓ Phase 1 Foundation ready with gameplay!');
+        console.log('✓ Auto-scroll, collectibles, obstacles, and gates active');
     }
 
     /**
@@ -172,7 +187,7 @@ export default class GameScene extends Phaser.Scene {
     }
 
     /**
-     * Add zebra crossings (white striped crosswalks)
+     * Add zebra crossings (white striped crosswalks) - REDUCED
      */
     createZebraCrossings() {
         const centerX = GAME.WIDTH / 2;
@@ -184,10 +199,10 @@ export default class GameScene extends Phaser.Scene {
         const stripeWidth = WORLD.ROAD_WIDTH * 0.9; // 90% of road width
         const stripeHeight = 15;
         const stripeGap = 12;
-        const stripesPerCrossing = 8;
+        const stripesPerCrossing = 6; // Reduced from 8
 
-        // Add crossings at intervals
-        const crossingPositions = [200, 500, 900, 1300, 1700];
+        // Fewer crossings - only 2 visible at start
+        const crossingPositions = [400, 1200];
 
         crossingPositions.forEach(startY => {
             graphics.fillStyle(COLORS.ROAD_LINE_WHITE, 1);
@@ -203,7 +218,7 @@ export default class GameScene extends Phaser.Scene {
             }
         });
 
-        console.log('✓ Zebra crossings added');
+        console.log('✓ Zebra crossings added (reduced)');
     }
 
     /**
@@ -282,6 +297,169 @@ export default class GameScene extends Phaser.Scene {
         this.squadText.setDepth(21);
 
         console.log(`✓ Squad bubble created ABOVE character at (${x}, ${y})`);
+    }
+
+    /**
+     * Create distance/score UI
+     */
+    createDistanceUI() {
+        this.distanceText = this.add.text(20, 20, 'Distance: 0m', {
+            fontSize: '24px',
+            fontFamily: 'Arial Black',
+            color: '#FFFFFF',
+            stroke: '#000000',
+            strokeThickness: 4
+        });
+        this.distanceText.setDepth(100);
+        this.distanceText.setScrollFactor(0);
+
+        console.log('✓ Distance UI created');
+    }
+
+    /**
+     * Spawn a collectible item
+     */
+    spawnCollectible() {
+        const centerX = GAME.WIDTH / 2;
+        const roadHalfWidth = WORLD.ROAD_WIDTH / 2;
+
+        // Random X position on road
+        const x = Phaser.Math.Between(
+            centerX - roadHalfWidth + COLLECTIBLES.SIZE * 2,
+            centerX + roadHalfWidth - COLLECTIBLES.SIZE * 2
+        );
+        const y = -COLLECTIBLES.SIZE; // Spawn above screen
+
+        // Create collectible container
+        const collectible = this.add.container(x, y);
+
+        // Green circle
+        const circle = this.add.circle(0, 0, COLLECTIBLES.SIZE, COLORS.COLLECTIBLE);
+
+        // Highlight
+        const highlight = this.add.circle(-5, -5, COLLECTIBLES.SIZE * 0.4, 0xFFFFFF, 0.6);
+
+        // +1 text
+        const text = this.add.text(0, 0, '+1', {
+            fontSize: '16px',
+            fontFamily: 'Arial Black',
+            color: '#FFFFFF'
+        });
+        text.setOrigin(0.5);
+
+        collectible.add([circle, highlight, text]);
+        collectible.setDepth(8);
+        collectible.type = 'collectible';
+        collectible.collected = false;
+
+        this.collectibles.push(collectible);
+    }
+
+    /**
+     * Spawn an obstacle
+     */
+    spawnObstacle() {
+        const centerX = GAME.WIDTH / 2;
+        const roadHalfWidth = WORLD.ROAD_WIDTH / 2;
+
+        // Random X position on road
+        const x = Phaser.Math.Between(
+            centerX - roadHalfWidth + OBSTACLES.WIDTH / 2,
+            centerX + roadHalfWidth - OBSTACLES.WIDTH / 2
+        );
+        const y = -OBSTACLES.HEIGHT; // Spawn above screen
+
+        // Create obstacle container
+        const obstacle = this.add.container(x, y);
+
+        // Red rectangle
+        const rect = this.add.rectangle(0, 0, OBSTACLES.WIDTH, OBSTACLES.HEIGHT, COLORS.OBSTACLE);
+
+        // Dark border
+        const border = this.add.rectangle(0, 0, OBSTACLES.WIDTH, OBSTACLES.HEIGHT);
+        border.setStrokeStyle(4, 0x8B0000);
+        border.setFillStyle();
+
+        // -5 text
+        const text = this.add.text(0, 0, `-${OBSTACLES.DAMAGE}`, {
+            fontSize: '20px',
+            fontFamily: 'Arial Black',
+            color: '#FFFFFF'
+        });
+        text.setOrigin(0.5);
+
+        obstacle.add([rect, border, text]);
+        obstacle.setDepth(8);
+        obstacle.type = 'obstacle';
+        obstacle.hit = false;
+
+        this.obstacles.push(obstacle);
+    }
+
+    /**
+     * Spawn a math gate (two options)
+     */
+    spawnGate() {
+        const centerX = GAME.WIDTH / 2;
+        const y = -GATES.HEIGHT; // Spawn above screen
+
+        // Generate random math operations
+        const operations = [
+            { op: 'x2', mult: 2, color: COLORS.GATE_GOOD },
+            { op: 'x3', mult: 3, color: COLORS.GATE_GOOD },
+            { op: '+10', add: 10, color: COLORS.GATE_GOOD },
+            { op: '+20', add: 20, color: COLORS.GATE_GOOD },
+            { op: '/2', div: 2, color: COLORS.GATE_BAD },
+            { op: '-5', sub: 5, color: COLORS.GATE_BAD },
+            { op: '-10', sub: 10, color: COLORS.GATE_BAD },
+        ];
+
+        // Pick two random operations
+        const left = Phaser.Utils.Array.GetRandom(operations);
+        const right = Phaser.Utils.Array.GetRandom(operations.filter(o => o !== left));
+
+        // Create left gate
+        const leftX = centerX - GATES.GAP / 2 - GATES.WIDTH / 2;
+        const leftGate = this.createGateHalf(leftX, y, left.op, left.color);
+        leftGate.operation = left;
+
+        // Create right gate
+        const rightX = centerX + GATES.GAP / 2 + GATES.WIDTH / 2;
+        const rightGate = this.createGateHalf(rightX, y, right.op, right.color);
+        rightGate.operation = right;
+
+        this.gates.push({ left: leftGate, right: rightGate, passed: false });
+    }
+
+    /**
+     * Create one half of a gate
+     */
+    createGateHalf(x, y, label, color) {
+        const gate = this.add.container(x, y);
+
+        // Background rectangle
+        const bg = this.add.rectangle(0, 0, GATES.WIDTH, GATES.HEIGHT, color, 0.7);
+
+        // Border
+        const border = this.add.rectangle(0, 0, GATES.WIDTH, GATES.HEIGHT);
+        border.setStrokeStyle(6, 0xFFFFFF);
+        border.setFillStyle();
+
+        // Operation text
+        const text = this.add.text(0, 0, label, {
+            fontSize: '32px',
+            fontFamily: 'Arial Black',
+            color: '#FFFFFF',
+            stroke: '#000000',
+            strokeThickness: 4
+        });
+        text.setOrigin(0.5);
+
+        gate.add([bg, border, text]);
+        gate.setDepth(8);
+        gate.type = 'gate';
+
+        return gate;
     }
 
     /**
@@ -479,13 +657,87 @@ export default class GameScene extends Phaser.Scene {
     }
 
     /**
-     * Update loop
+     * Update loop - with gameplay mechanics!
      */
     update(time, delta) {
         if (this.gameState !== 'playing') return;
 
         const dt = delta / 1000;
 
+        // ========== AUTO-SCROLL ==========
+        const scrollAmount = WORLD.SCROLL_SPEED * dt;
+        this.distance += scrollAmount;
+        this.scrollOffset += scrollAmount;
+
+        // Update distance UI
+        this.distanceText.setText(`Distance: ${Math.floor(this.distance)}m`);
+
+        // ========== SPAWN GAME OBJECTS ==========
+        // Spawn collectibles
+        if (this.distance >= this.nextCollectibleSpawn) {
+            this.spawnCollectible();
+            this.nextCollectibleSpawn = this.distance + COLLECTIBLES.SPAWN_INTERVAL;
+        }
+
+        // Spawn obstacles
+        if (this.distance >= this.nextObstacleSpawn) {
+            this.spawnObstacle();
+            this.nextObstacleSpawn = this.distance + OBSTACLES.SPAWN_INTERVAL;
+        }
+
+        // Spawn gates
+        if (this.distance >= this.nextGateSpawn) {
+            this.spawnGate();
+            this.nextGateSpawn = this.distance + GATES.SPAWN_INTERVAL;
+        }
+
+        // ========== MOVE GAME OBJECTS ==========
+        // Move collectibles
+        this.collectibles.forEach(collectible => {
+            collectible.y += scrollAmount;
+        });
+
+        // Move obstacles
+        this.obstacles.forEach(obstacle => {
+            obstacle.y += scrollAmount;
+        });
+
+        // Move gates
+        this.gates.forEach(gate => {
+            gate.left.y += scrollAmount;
+            gate.right.y += scrollAmount;
+        });
+
+        // ========== COLLISION DETECTION ==========
+        this.checkCollisions();
+
+        // ========== CLEANUP OFFSCREEN OBJECTS ==========
+        this.collectibles = this.collectibles.filter(c => {
+            if (c.y > GAME.HEIGHT + 100) {
+                c.destroy();
+                return false;
+            }
+            return true;
+        });
+
+        this.obstacles = this.obstacles.filter(o => {
+            if (o.y > GAME.HEIGHT + 100) {
+                o.destroy();
+                return false;
+            }
+            return true;
+        });
+
+        this.gates = this.gates.filter(g => {
+            if (g.left.y > GAME.HEIGHT + 200) {
+                g.left.destroy();
+                g.right.destroy();
+                return false;
+            }
+            return true;
+        });
+
+        // ========== PLAYER INPUT ==========
         // Handle keyboard input
         if (this.cursors.left.isDown) {
             this.targetX = (GAME.WIDTH / 2) - SQUAD.HORIZONTAL_LIMIT;
@@ -500,6 +752,7 @@ export default class GameScene extends Phaser.Scene {
             SQUAD.FORMATION_LERP
         );
 
+        // ========== UPDATE SQUAD FORMATION ==========
         // Update all squad members to their formation positions
         this.squadMembers.forEach((member, index) => {
             if (!member.active) return;
@@ -533,6 +786,153 @@ export default class GameScene extends Phaser.Scene {
             this.squadBubble.x = this.squadCenterX;
             this.squadText.x = this.squadCenterX;
         }
+    }
+
+    /**
+     * Check collisions with game objects
+     */
+    checkCollisions() {
+        const centerX = this.squadCenterX;
+        const centerY = this.squadCenterY;
+
+        // Check collectibles
+        this.collectibles.forEach(collectible => {
+            if (collectible.collected) return;
+
+            const dist = Phaser.Math.Distance.Between(
+                centerX, centerY,
+                collectible.x, collectible.y
+            );
+
+            if (dist < SQUAD.CHARACTER_RADIUS + COLLECTIBLES.SIZE) {
+                collectible.collected = true;
+                this.addSquadMember();
+
+                // Visual feedback
+                this.tweens.add({
+                    targets: collectible,
+                    scale: 0,
+                    alpha: 0,
+                    duration: 200,
+                    onComplete: () => collectible.destroy()
+                });
+            }
+        });
+
+        // Check obstacles
+        this.obstacles.forEach(obstacle => {
+            if (obstacle.hit) return;
+
+            const dist = Phaser.Math.Distance.Between(
+                centerX, centerY,
+                obstacle.x, obstacle.y
+            );
+
+            if (dist < SQUAD.CHARACTER_RADIUS + OBSTACLES.WIDTH / 2) {
+                obstacle.hit = true;
+                this.removeSquadMembers(OBSTACLES.DAMAGE);
+
+                // Visual feedback - flash red
+                this.tweens.add({
+                    targets: obstacle,
+                    alpha: 0,
+                    duration: 300,
+                    onComplete: () => obstacle.destroy()
+                });
+            }
+        });
+
+        // Check gates
+        this.gates.forEach(gate => {
+            if (gate.passed) return;
+
+            // Check if squad passed through gate area
+            const gateY = gate.left.y;
+            if (centerY < gateY + GATES.HEIGHT / 2 && centerY > gateY - GATES.HEIGHT / 2) {
+                // Determine which side player is on
+                if (centerX < GAME.WIDTH / 2) {
+                    // Left gate
+                    this.applyGateOperation(gate.left.operation);
+                } else {
+                    // Right gate
+                    this.applyGateOperation(gate.right.operation);
+                }
+                gate.passed = true;
+
+                // Visual feedback
+                this.tweens.add({
+                    targets: [gate.left, gate.right],
+                    alpha: 0,
+                    duration: 300
+                });
+            }
+        });
+    }
+
+    /**
+     * Apply gate math operation
+     */
+    applyGateOperation(operation) {
+        let currentSize = this.squadMembers.length;
+        let newSize = currentSize;
+
+        if (operation.mult) {
+            newSize = Math.floor(currentSize * operation.mult);
+        } else if (operation.add) {
+            newSize = currentSize + operation.add;
+        } else if (operation.div) {
+            newSize = Math.floor(currentSize / operation.div);
+        } else if (operation.sub) {
+            newSize = Math.max(1, currentSize - operation.sub);
+        }
+
+        // Ensure at least 1 member
+        newSize = Math.max(1, newSize);
+
+        const diff = newSize - currentSize;
+
+        if (diff > 0) {
+            // Add members
+            for (let i = 0; i < diff; i++) {
+                this.time.delayedCall(i * 30, () => this.addSquadMember());
+            }
+        } else if (diff < 0) {
+            // Remove members
+            this.removeSquadMembers(Math.abs(diff));
+        }
+
+        console.log(`Gate ${operation.op}: ${currentSize} → ${newSize}`);
+    }
+
+    /**
+     * Remove squad members
+     */
+    removeSquadMembers(count) {
+        for (let i = 0; i < count && this.squadMembers.length > 1; i++) {
+            const member = this.squadMembers.pop();
+            const shadow = member.groundShadow;
+
+            this.tweens.add({
+                targets: member,
+                scale: 0,
+                alpha: 0,
+                duration: 200,
+                onComplete: () => member.destroy()
+            });
+
+            if (shadow) {
+                this.tweens.add({
+                    targets: shadow,
+                    scale: 0,
+                    alpha: 0,
+                    duration: 200,
+                    onComplete: () => shadow.destroy()
+                });
+            }
+        }
+
+        this.recalculateFormation();
+        this.updateSquadCount();
     }
 
     shutdown() {
