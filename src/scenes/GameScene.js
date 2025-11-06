@@ -62,6 +62,38 @@ export default class GameScene extends Phaser.Scene {
         // Camera Animation tracking
         this.targetCameraZoom = 1.0;  // Dynamic zoom target
         this.cameraOffsetX = 0;       // Movement anticipation offset
+
+        // AUDIO SYSTEM 🔊
+        this.audioEnabled = true;
+        this.musicVolume = 0.5;
+        this.sfxVolume = 0.7;
+        this.ambientVolume = 0.3;
+
+        // Audio context for Web Audio API (procedural sounds)
+        if (!window.audioContext) {
+            window.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        }
+        this.audioContext = window.audioContext;
+
+        // Music layers (for dynamic music)
+        this.musicLayers = {
+            base: null,
+            drums: null,
+            melody: null,
+            intensity: null
+        };
+        this.currentMusicState = 'menu'; // 'menu', 'game', 'gameOver', 'victory'
+
+        // Ambient audio loops
+        this.ambientLoops = {
+            background: null,
+            water: null,
+            crowd: null
+        };
+
+        // Footstep timing
+        this.footstepTimer = 0;
+        this.footstepInterval = 150; // ms between footsteps
     }
 
     create() {
@@ -69,6 +101,9 @@ export default class GameScene extends Phaser.Scene {
 
         // ANIMATION IMPROVEMENTS 1: Scene transition fade-in
         this.cameras.main.fadeIn(800, 0, 0, 0);
+
+        // AUDIO SYSTEM: Initialize audio
+        this.initializeAudio();
 
         // STEP 2-3: Create environment (road + grass)
         this.createEnvironment();
@@ -156,6 +191,9 @@ export default class GameScene extends Phaser.Scene {
 
             const number = countdownNumbers[currentIndex];
             countdownText.setText(number);
+
+            // AUDIO: Countdown beep
+            this.playCountdownBeep(number === 'GO!');
 
             // Zoom in animation
             this.tweens.add({
@@ -1810,6 +1848,9 @@ export default class GameScene extends Phaser.Scene {
         // Create enhanced character with all polish features
         const character = this.createEnhancedCharacter(x, y);
 
+        // AUDIO: Character join sound
+        this.playCharacterJoinSound();
+
         // Spawn animation (overrides bobbing temporarily)
         character.setScale(0);
         this.tweens.add({
@@ -1852,6 +1893,11 @@ export default class GameScene extends Phaser.Scene {
         if (count > this.previousSquadSize) {
             // Growing - GREEN
             textColor = '#00FF00';
+
+            // AUDIO: Crowd cheer when squad grows significantly
+            if (count > this.previousSquadSize + 5 || count % 10 === 0) {
+                this.playCrowdCheerSound();
+            }
         } else if (count < this.previousSquadSize) {
             // Shrinking - RED
             textColor = '#FF0000';
@@ -2048,6 +2094,24 @@ export default class GameScene extends Phaser.Scene {
         this.updateUpcomingPreview();        // Upcoming obstacles preview
         this.updateMultiplierDisplay();      // Multiplier based on combo
 
+        // ========== AUDIO UPDATES ==========
+        // AUDIO: Check for milestone (every 1000m)
+        const currentMilestone = Math.floor(this.distance / 1000);
+        const previousMilestone = Math.floor((this.distance - scrollAmount) / 1000);
+        if (currentMilestone > previousMilestone && currentMilestone > 0) {
+            this.playMilestoneSound();
+        }
+
+        // AUDIO: Dynamic music intensity based on squad size
+        this.updateMusicIntensity();
+
+        // AUDIO: Footsteps (play periodically based on squad movement)
+        this.footstepTimer += delta;
+        if (this.footstepTimer >= this.footstepInterval && this.squadMembers.length > 0) {
+            this.playFootstepSound();
+            this.footstepTimer = 0;
+        }
+
         // Check combo timeout (3 seconds without collecting)
         if (this.comboCount > 0 && time - this.lastCollectibleTime > 3000) {
             this.resetCombo();
@@ -2220,6 +2284,10 @@ export default class GameScene extends Phaser.Scene {
                 this.lastCollectibleTime = this.time.now;
                 this.updateComboDisplay();
 
+                // AUDIO: Collectible pickup sound + combo sound
+                this.playCollectibleSound();
+                this.playComboSound(this.comboCount);
+
                 // CAMERA ANIMATION 9: Quick zoom on collectible
                 this.cameraEventZoom(0.05, 100);
 
@@ -2266,6 +2334,9 @@ export default class GameScene extends Phaser.Scene {
 
                 // UI/HUD POLISH: Reset combo on hit
                 this.resetCombo();
+
+                // AUDIO: Obstacle hit sound
+                this.playObstacleHitSound();
 
                 // CAMERA ANIMATION 9: Quick zoom on impact
                 this.cameraEventZoom(0.15, 150);
@@ -2320,6 +2391,10 @@ export default class GameScene extends Phaser.Scene {
 
                 // OBJECT POLISH 6: Bright flash when passing through
                 const isGoodGate = chosenGate.operation.mult || chosenGate.operation.add;
+
+                // AUDIO: Gate pass sound (with operation-specific audio)
+                const isMultiplication = chosenGate.operation.mult ? true : false;
+                this.playGatePassSound(isMultiplication);
 
                 // CAMERA ANIMATION 9: Quick zoom on gate pass
                 this.cameraEventZoom(0.12, 200);
@@ -2418,6 +2493,9 @@ export default class GameScene extends Phaser.Scene {
             const memberColor = member.body ? member.body.fillColor : 0x03A9F4;
             this.createParticleBurst(member.x, member.y, memberColor, 15);
 
+            // AUDIO: Character death sound
+            this.playCharacterDeathSound();
+
             // Add additional death effects
             this.cameras.main.flash(50, 255, 255, 255, false);
 
@@ -2457,6 +2535,9 @@ export default class GameScene extends Phaser.Scene {
     triggerGameOver() {
         console.log('💀 GAME OVER!');
         this.gameState = 'gameOver';
+
+        // AUDIO: Play game over music
+        this.playGameOverMusic();
 
         // ANIMATION IMPROVEMENTS 4: Slow-motion effect
         this.physics.world.timeScale = 3.0; // Slow down physics
@@ -2533,6 +2614,9 @@ export default class GameScene extends Phaser.Scene {
     triggerVictory() {
         console.log('🎉 VICTORY!');
         this.gameState = 'victory';
+
+        // AUDIO: Play victory music
+        this.playVictoryMusic();
 
         // CAMERA ANIMATION 10: Zoom in on squad at level end
         // First zoom in on squad, then zoom out for celebration
@@ -2725,8 +2809,456 @@ export default class GameScene extends Phaser.Scene {
         }
     }
 
+    // ========================================
+    // AUDIO SYSTEM 🔊
+    // ========================================
+
+    /**
+     * AUDIO: Initialize audio system
+     */
+    initializeAudio() {
+        console.log('🔊 Initializing audio system...');
+
+        // Start background music
+        this.playBackgroundMusic('game');
+
+        // Start ambient audio loops
+        this.startAmbientAudio();
+
+        console.log('✓ Audio system initialized');
+    }
+
+    /**
+     * AUDIO: Play background music with state
+     */
+    playBackgroundMusic(state) {
+        if (!this.audioEnabled) return;
+
+        this.currentMusicState = state;
+
+        // For now, use Web Audio API to create simple music loops
+        // In production, you would load actual audio files
+
+        // Create base music loop (120 BPM for game)
+        const bpm = state === 'game' ? 130 : 100;
+        const beatInterval = (60 / bpm) * 1000;
+
+        // Clear existing music loops
+        if (this.musicLoopTimer) {
+            clearInterval(this.musicLoopTimer);
+        }
+
+        // Simple procedural music loop
+        this.musicLoopTimer = setInterval(() => {
+            if (this.gameState === 'playing') {
+                this.playMusicalNote(220, 0.1, 0.15, 'square'); // Bass note
+            }
+        }, beatInterval);
+
+        // Melody layer (plays less frequently)
+        this.melodyLoopTimer = setInterval(() => {
+            if (this.gameState === 'playing') {
+                const melodyNotes = [330, 440, 550, 660];
+                const note = melodyNotes[Math.floor(Math.random() * melodyNotes.length)];
+                this.playMusicalNote(note, 0.05, 0.2, 'sine');
+            }
+        }, beatInterval * 4);
+
+        console.log(`♪ Background music started (${state}, ${bpm} BPM)`);
+    }
+
+    /**
+     * AUDIO: Dynamic music - add layers based on squad size
+     */
+    updateMusicIntensity() {
+        if (!this.audioEnabled) return;
+
+        const squadSize = this.squadMembers.length;
+
+        // Dynamic music intensity based on squad size
+        // < 5: Minimal (just base)
+        // 5-24: Normal (base + melody)
+        // 25-49: Intense (base + melody + drums)
+        // 50+: Maximum (all layers)
+
+        // This is a placeholder for actual layered music system
+        // In production, you would adjust volume of different music layers
+
+        if (squadSize >= 50) {
+            // Maximum intensity - all layers playing
+            this.musicIntensityLevel = 4;
+        } else if (squadSize >= 25) {
+            this.musicIntensityLevel = 3;
+        } else if (squadSize >= 5) {
+            this.musicIntensityLevel = 2;
+        } else {
+            this.musicIntensityLevel = 1;
+        }
+    }
+
+    /**
+     * AUDIO: Play a musical note using Web Audio API
+     */
+    playMusicalNote(frequency, volume, duration, waveType = 'sine') {
+        if (!this.audioEnabled || !this.audioContext) return;
+
+        try {
+            const oscillator = this.audioContext.createOscillator();
+            const gainNode = this.audioContext.createGain();
+
+            oscillator.connect(gainNode);
+            gainNode.connect(this.audioContext.destination);
+
+            oscillator.frequency.value = frequency;
+            oscillator.type = waveType;
+
+            gainNode.gain.setValueAtTime(volume * this.musicVolume, this.audioContext.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, this.audioContext.currentTime + duration);
+
+            oscillator.start(this.audioContext.currentTime);
+            oscillator.stop(this.audioContext.currentTime + duration);
+        } catch (e) {
+            console.warn('Audio playback error:', e);
+        }
+    }
+
+    /**
+     * AUDIO: Start ambient audio loops
+     */
+    startAmbientAudio() {
+        if (!this.audioEnabled) return;
+
+        // AMBIENT 1: Background ambience (subtle wind/atmosphere)
+        this.ambientWindTimer = setInterval(() => {
+            if (this.gameState === 'playing') {
+                // Subtle wind whoosh
+                this.playWhiteNoise(0.02, 2000);
+            }
+        }, 5000);
+
+        // AMBIENT 3: Water sounds (tied to water background)
+        this.ambientWaterTimer = setInterval(() => {
+            if (this.gameState === 'playing') {
+                // Subtle water splash/ripple
+                this.playSweep(150, 80, 0.03, 0.5);
+            }
+        }, 8000);
+
+        console.log('🌊 Ambient audio started');
+    }
+
+    /**
+     * AUDIO: Stop all music and ambient audio
+     */
+    stopAllMusic() {
+        if (this.musicLoopTimer) clearInterval(this.musicLoopTimer);
+        if (this.melodyLoopTimer) clearInterval(this.melodyLoopTimer);
+        if (this.ambientWindTimer) clearInterval(this.ambientWindTimer);
+        if (this.ambientWaterTimer) clearInterval(this.ambientWaterTimer);
+    }
+
+    /**
+     * SFX 1: Collectible pickup sound - Pleasant "ding" or "pop"
+     */
+    playCollectibleSound() {
+        if (!this.audioEnabled) return;
+
+        // Pleasant ascending ding
+        this.playMusicalNote(880, 0.15 * this.sfxVolume, 0.1, 'sine');
+        setTimeout(() => {
+            this.playMusicalNote(1320, 0.12 * this.sfxVolume, 0.15, 'sine');
+        }, 50);
+
+        console.log('♪ Collectible sound');
+    }
+
+    /**
+     * SFX 2: Obstacle hit sound - Heavy "thud" or "crash"
+     */
+    playObstacleHitSound() {
+        if (!this.audioEnabled) return;
+
+        // Heavy thud (low frequency burst)
+        this.playMusicalNote(80, 0.3 * this.sfxVolume, 0.2, 'square');
+        this.playWhiteNoise(0.2 * this.sfxVolume, 100);
+
+        console.log('💥 Obstacle hit sound');
+    }
+
+    /**
+     * SFX 3: Gate pass sound - Whoosh + operation-specific sound
+     */
+    playGatePassSound(isMultiplication = false) {
+        if (!this.audioEnabled) return;
+
+        // Whoosh (sweep from high to low)
+        this.playSweep(1000, 200, 0.2 * this.sfxVolume, 0.3);
+
+        // Operation-specific sound
+        if (isMultiplication) {
+            // Positive/exciting sound for multiplication
+            setTimeout(() => {
+                this.playMusicalNote(880, 0.15 * this.sfxVolume, 0.15, 'sine');
+                setTimeout(() => {
+                    this.playMusicalNote(1100, 0.15 * this.sfxVolume, 0.15, 'sine');
+                }, 80);
+            }, 150);
+        } else {
+            // Neutral sound for other operations
+            setTimeout(() => {
+                this.playMusicalNote(440, 0.12 * this.sfxVolume, 0.2, 'square');
+            }, 150);
+        }
+
+        console.log('🌀 Gate pass sound');
+    }
+
+    /**
+     * SFX 4: Character join sound - Quick "pop" sound
+     */
+    playCharacterJoinSound() {
+        if (!this.audioEnabled) return;
+
+        // Quick pop
+        this.playMusicalNote(660, 0.1 * this.sfxVolume, 0.08, 'sine');
+
+        console.log('👤 Character join sound');
+    }
+
+    /**
+     * SFX 5: Character death sound - Subtle "oof" or pop
+     */
+    playCharacterDeathSound() {
+        if (!this.audioEnabled) return;
+
+        // Descending "oof"
+        this.playSweep(440, 220, 0.15 * this.sfxVolume, 0.15);
+
+        console.log('💀 Character death sound');
+    }
+
+    /**
+     * SFX 6: Movement footsteps - Subtle, many characters
+     */
+    playFootstepSound() {
+        if (!this.audioEnabled) return;
+
+        // Very subtle footstep (short low frequency click)
+        const volume = Math.min(0.03 + (this.squadMembers.length * 0.002), 0.15) * this.sfxVolume;
+        this.playMusicalNote(100, volume, 0.05, 'square');
+    }
+
+    /**
+     * SFX 7: Button press sound
+     */
+    playButtonClickSound() {
+        if (!this.audioEnabled) return;
+
+        this.playMusicalNote(550, 0.15 * this.sfxVolume, 0.08, 'sine');
+        setTimeout(() => {
+            this.playMusicalNote(660, 0.12 * this.sfxVolume, 0.1, 'sine');
+        }, 30);
+
+        console.log('🔘 Button click sound');
+    }
+
+    /**
+     * SFX 8: Button hover sound
+     */
+    playButtonHoverSound() {
+        if (!this.audioEnabled) return;
+
+        // Very subtle hover sound
+        this.playMusicalNote(440, 0.05 * this.sfxVolume, 0.06, 'sine');
+
+        console.log('👆 Button hover sound');
+    }
+
+    /**
+     * SFX 9: Milestone achievement sound (every 1000m)
+     */
+    playMilestoneSound() {
+        if (!this.audioEnabled) return;
+
+        // Triumphant fanfare (ascending notes)
+        const notes = [440, 550, 660, 880];
+        notes.forEach((note, i) => {
+            setTimeout(() => {
+                this.playMusicalNote(note, 0.2 * this.sfxVolume, 0.2, 'sine');
+            }, i * 80);
+        });
+
+        console.log('🏆 Milestone sound');
+    }
+
+    /**
+     * SFX 10: Combo sound - Pitch increases with combo chain
+     */
+    playComboSound(comboCount) {
+        if (!this.audioEnabled) return;
+
+        // Pitch increases with combo (cap at x10)
+        const basePitch = 440;
+        const pitchMultiplier = 1 + (Math.min(comboCount, 10) * 0.1);
+        const frequency = basePitch * pitchMultiplier;
+
+        this.playMusicalNote(frequency, 0.15 * this.sfxVolume, 0.1, 'sine');
+
+        if (comboCount >= 5) {
+            // Extra sparkle for high combos
+            setTimeout(() => {
+                this.playMusicalNote(frequency * 1.5, 0.1 * this.sfxVolume, 0.08, 'sine');
+            }, 50);
+        }
+
+        console.log(`🔥 Combo x${comboCount} sound`);
+    }
+
+    /**
+     * AMBIENT 2: Crowd cheering when squad grows
+     */
+    playCrowdCheerSound() {
+        if (!this.audioEnabled) return;
+
+        // Simulate crowd cheer with filtered white noise
+        for (let i = 0; i < 5; i++) {
+            setTimeout(() => {
+                this.playWhiteNoise(0.08 * this.ambientVolume, 200);
+            }, i * 50);
+        }
+
+        console.log('👥 Crowd cheer sound');
+    }
+
+    /**
+     * MUSIC: Game over music - Sad/tense sting
+     */
+    playGameOverMusic() {
+        if (!this.audioEnabled) return;
+
+        this.stopAllMusic();
+
+        // Descending sad notes
+        const sadNotes = [440, 370, 330, 277];
+        sadNotes.forEach((note, i) => {
+            setTimeout(() => {
+                this.playMusicalNote(note, 0.25 * this.musicVolume, 0.5, 'sine');
+            }, i * 300);
+        });
+
+        console.log('😢 Game over music');
+    }
+
+    /**
+     * MUSIC: Victory music - Triumphant fanfare
+     */
+    playVictoryMusic() {
+        if (!this.audioEnabled) return;
+
+        this.stopAllMusic();
+
+        // Triumphant ascending fanfare
+        const victoryNotes = [330, 440, 550, 660, 880];
+        victoryNotes.forEach((note, i) => {
+            setTimeout(() => {
+                this.playMusicalNote(note, 0.3 * this.musicVolume, 0.3, 'sine');
+                this.playMusicalNote(note * 1.5, 0.15 * this.musicVolume, 0.3, 'sine');
+            }, i * 150);
+        });
+
+        // Sustained victory chord
+        setTimeout(() => {
+            this.playMusicalNote(660, 0.2 * this.musicVolume, 2.0, 'sine');
+            this.playMusicalNote(880, 0.2 * this.musicVolume, 2.0, 'sine');
+            this.playMusicalNote(1100, 0.2 * this.musicVolume, 2.0, 'sine');
+        }, 800);
+
+        console.log('🎉 Victory music');
+    }
+
+    /**
+     * AUDIO: Play frequency sweep (for whooshes, etc.)
+     */
+    playSweep(startFreq, endFreq, volume, duration) {
+        if (!this.audioEnabled || !this.audioContext) return;
+
+        try {
+            const oscillator = this.audioContext.createOscillator();
+            const gainNode = this.audioContext.createGain();
+
+            oscillator.connect(gainNode);
+            gainNode.connect(this.audioContext.destination);
+
+            oscillator.frequency.setValueAtTime(startFreq, this.audioContext.currentTime);
+            oscillator.frequency.exponentialRampToValueAtTime(endFreq, this.audioContext.currentTime + duration);
+
+            gainNode.gain.setValueAtTime(volume, this.audioContext.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, this.audioContext.currentTime + duration);
+
+            oscillator.start(this.audioContext.currentTime);
+            oscillator.stop(this.audioContext.currentTime + duration);
+        } catch (e) {
+            console.warn('Audio sweep error:', e);
+        }
+    }
+
+    /**
+     * AUDIO: Play white noise burst (for impacts, crowds, etc.)
+     */
+    playWhiteNoise(volume, duration) {
+        if (!this.audioEnabled || !this.audioContext) return;
+
+        try {
+            const bufferSize = this.audioContext.sampleRate * (duration / 1000);
+            const buffer = this.audioContext.createBuffer(1, bufferSize, this.audioContext.sampleRate);
+            const output = buffer.getChannelData(0);
+
+            for (let i = 0; i < bufferSize; i++) {
+                output[i] = Math.random() * 2 - 1;
+            }
+
+            const whiteNoise = this.audioContext.createBufferSource();
+            whiteNoise.buffer = buffer;
+
+            const gainNode = this.audioContext.createGain();
+            gainNode.gain.setValueAtTime(volume, this.audioContext.currentTime);
+
+            whiteNoise.connect(gainNode);
+            gainNode.connect(this.audioContext.destination);
+
+            whiteNoise.start(this.audioContext.currentTime);
+            whiteNoise.stop(this.audioContext.currentTime + (duration / 1000));
+        } catch (e) {
+            console.warn('White noise error:', e);
+        }
+    }
+
+    /**
+     * AUDIO: Countdown beep sound
+     */
+    playCountdownBeep(isGo = false) {
+        if (!this.audioEnabled) return;
+
+        if (isGo) {
+            // "GO!" - exciting ascending sound
+            this.playMusicalNote(660, 0.25 * this.sfxVolume, 0.2, 'square');
+            setTimeout(() => {
+                this.playMusicalNote(880, 0.25 * this.sfxVolume, 0.3, 'square');
+            }, 80);
+        } else {
+            // Regular countdown beep
+            this.playMusicalNote(550, 0.2 * this.sfxVolume, 0.15, 'square');
+        }
+
+        console.log(`⏱ Countdown beep (${isGo ? 'GO!' : 'beep'})`);
+    }
+
     shutdown() {
         console.log('🛑 GameScene shutdown');
+
+        // Stop all audio
+        this.stopAllMusic();
+
         this.input.off('pointerdown');
         this.input.off('pointermove');
         this.input.off('pointerup');
