@@ -127,7 +127,7 @@ export default class BossManager {
             this.scene.enemyManager.pauseSpawning();
 
             // Clear existing enemies for cleaner boss fight
-            this.scene.enemyManager.clearAllEnemies();
+            this.scene.enemyManager.clear();
         }
 
         // Select boss type

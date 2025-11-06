@@ -397,7 +397,7 @@ export default class Boss {
             if (this.scene.enemyManager) {
                 this.scene.time.delayedCall(i * 300, () => {
                     if (this.active) {
-                        this.scene.enemyManager.spawnEnemyAt(spawnX, spawnY, 'SOLDIER');
+                        this.scene.enemyManager.spawnEnemy(spawnX, spawnY, 'SOLDIER');
                     }
                 });
             }
