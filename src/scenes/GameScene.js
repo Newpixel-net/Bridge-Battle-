@@ -15,6 +15,10 @@ import { getDefaultLoadout } from '../utils/AbilityConstants.js';
 // CHARACTER SELECTION - Priority 3 Implementation
 import { calculateCombinedStats, getCombinedAbilities } from '../utils/CharacterConstants.js';
 
+// BOSS BATTLE SYSTEM - Priority 4 Implementation
+import BossManager from '../systems/BossManager.js';
+import BossHealthBar from '../ui/BossHealthBar.js';
+
 /**
  * GameScene - Phase 1: Foundation COMPLETE REBUILD
  *
@@ -142,6 +146,11 @@ export default class GameScene extends Phaser.Scene {
         this.abilityEffects = null;
         this.abilityUIBar = null;
         this.abilities = [];
+
+        // BOSS BATTLE SYSTEM - Priority 4 Integration
+        this.bossManager = null;
+        this.bossHealthBar = null;
+        this.bossProjectiles = [];
     }
 
     create() {
@@ -158,6 +167,9 @@ export default class GameScene extends Phaser.Scene {
 
         // ABILITY SYSTEM: Initialize abilities (energy, effects, UI)
         this.initializeAbilitySystem();
+
+        // BOSS BATTLE SYSTEM: Initialize boss manager
+        this.initializeBossSystem();
 
         // STEP 2-3: Create environment (road + grass)
         this.createEnvironment();
@@ -2242,7 +2254,17 @@ export default class GameScene extends Phaser.Scene {
             this.enemyManager.update(time, delta);
         }
 
-        // Check combat collisions (bullets vs enemies)
+        // Update boss manager (boss behavior, attacks, projectiles)
+        if (this.bossManager) {
+            this.bossManager.update(time, delta);
+        }
+
+        // Update boss health bar
+        if (this.bossHealthBar) {
+            this.bossHealthBar.update(time, delta);
+        }
+
+        // Check combat collisions (bullets vs enemies + boss)
         this.checkCombatCollisions();
 
         // ========== COLLISION DETECTION ==========
@@ -2942,7 +2964,7 @@ export default class GameScene extends Phaser.Scene {
     }
 
     /**
-     * COMBAT: Check bullet-enemy collisions
+     * COMBAT: Check bullet-enemy collisions + boss collisions
      */
     checkCombatCollisions() {
         const bullets = this.bulletPool.getActiveBullets();
@@ -2952,6 +2974,7 @@ export default class GameScene extends Phaser.Scene {
         for (let bullet of bullets) {
             if (!bullet.active) continue;
 
+            // Check bullet vs regular enemies
             for (let enemy of enemies) {
                 if (!enemy.active) continue;
 
@@ -2984,6 +3007,99 @@ export default class GameScene extends Phaser.Scene {
                     break; // Bullet hit, stop checking this bullet
                 }
             }
+
+            // Check bullet vs boss (if boss active)
+            if (bullet.active && this.bossManager && this.bossManager.isBossAlive()) {
+                const boss = this.bossManager.getCurrentBoss();
+                if (boss && boss.active) {
+                    const dist = Phaser.Math.Distance.Between(
+                        bullet.x,
+                        bullet.y,
+                        boss.x,
+                        boss.y
+                    );
+
+                    if (dist < (bullet.core.radius + boss.size)) {
+                        // Hit boss!
+                        const killed = boss.takeDamage(bullet.damage);
+
+                        // Recycle bullet
+                        this.bulletPool.recycleBullet(bullet);
+
+                        // Play hit sound (louder for boss)
+                        if (this.playBulletHitSound) {
+                            this.playBulletHitSound();
+                        }
+
+                        // If boss defeated, handled by boss itself
+                    }
+                }
+            }
+        }
+
+        // Check boss projectiles vs player squad
+        if (this.bossManager && this.bossProjectiles) {
+            for (let i = this.bossProjectiles.length - 1; i >= 0; i--) {
+                const projectile = this.bossProjectiles[i];
+                if (!projectile || !projectile.active) continue;
+
+                // Check collision with squad
+                const dist = Phaser.Math.Distance.Between(
+                    projectile.x,
+                    projectile.y,
+                    this.squadCenterX,
+                    this.squadCenterY
+                );
+
+                // Squad hit radius (approx 30px)
+                if (dist < 40) {
+                    // Hit squad!
+                    this.takeDamage(projectile.damage || 10);
+
+                    // Destroy projectile
+                    projectile.active = false;
+                    if (projectile.destroy) {
+                        projectile.destroy();
+                    }
+                    this.bossProjectiles.splice(i, 1);
+                }
+            }
+        }
+    }
+
+    /**
+     * Player takes damage from boss attacks
+     */
+    takeDamage(damage) {
+        // Reduce squad size based on damage
+        const membersToLose = Math.floor(damage / 10); // 10 damage = 1 member
+
+        for (let i = 0; i < membersToLose && this.squadMembers.length > 0; i++) {
+            const member = this.squadMembers.pop();
+            if (member && member.destroy) {
+                member.destroy();
+            }
+
+            // Remove shadow
+            if (this.groundShadows.length > 0) {
+                const shadow = this.groundShadows.pop();
+                if (shadow && shadow.destroy) {
+                    shadow.destroy();
+                }
+            }
+        }
+
+        // Update squad display
+        if (this.squadBubbleText) {
+            this.squadBubbleText.setText(`${this.squadMembers.length}`);
+        }
+
+        // Screen shake on hit
+        this.cameras.main.shake(200, 0.005);
+
+        // Check game over
+        if (this.squadMembers.length === 0) {
+            this.gameOver();
         }
     }
 
@@ -3537,6 +3653,156 @@ export default class GameScene extends Phaser.Scene {
         // Explosion sound (sweep down + white noise)
         this.playSweep(300, 100, 0.12 * this.sfxVolume, 0.2);
         this.playWhiteNoise(0.1 * this.sfxVolume, 150);
+    }
+
+    /**
+     * BOSS AUDIO: Boss warning siren
+     */
+    playBossWarningSiren() {
+        if (!this.audioEnabled) return;
+
+        // Dramatic warning siren (sweep up and down)
+        this.playSweep(200, 600, 0.15 * this.sfxVolume, 1.0);
+        setTimeout(() => {
+            this.playSweep(600, 200, 0.15 * this.sfxVolume, 1.0);
+        }, 1000);
+    }
+
+    /**
+     * BOSS AUDIO: Boss attack sound
+     */
+    playBossAttackSound() {
+        if (!this.audioEnabled) return;
+
+        // Heavy attack sound (low frequency + noise)
+        this.playMusicalNote(150, 0.15 * this.sfxVolume, 0.3, 'sawtooth');
+        this.playWhiteNoise(0.08 * this.sfxVolume, 100);
+    }
+
+    /**
+     * BOSS AUDIO: Boss phase transition sound
+     */
+    playBossPhaseSound() {
+        if (!this.audioEnabled) return;
+
+        // Epic phase change sound (sweep up + dramatic note)
+        this.playSweep(100, 800, 0.2 * this.sfxVolume, 0.5);
+        setTimeout(() => {
+            this.playMusicalNote(400, 0.2 * this.sfxVolume, 0.5, 'square');
+        }, 300);
+    }
+
+    /**
+     * BOSS AUDIO: Boss defeated sound
+     */
+    playBossDefeatedSound() {
+        if (!this.audioEnabled) return;
+
+        // Epic death explosion (long sweep down + lots of noise)
+        this.playSweep(800, 50, 0.25 * this.sfxVolume, 1.5);
+        this.playWhiteNoise(0.2 * this.sfxVolume, 1000);
+
+        // Victory chime after explosion
+        setTimeout(() => {
+            this.playMusicalNote(523, 0.15 * this.sfxVolume, 0.3, 'sine'); // C5
+            setTimeout(() => {
+                this.playMusicalNote(659, 0.15 * this.sfxVolume, 0.3, 'sine'); // E5
+                setTimeout(() => {
+                    this.playMusicalNote(784, 0.2 * this.sfxVolume, 0.5, 'sine'); // G5
+                }, 150);
+            }, 150);
+        }, 1500);
+    }
+
+    /**
+     * BOSS AUDIO: Boss music (intense combat music)
+     */
+    playBossMusic() {
+        if (!this.audioEnabled) return;
+
+        // Stop regular music
+        this.stopAllMusic();
+
+        // Faster, more intense music loop
+        const bpm = 160; // Fast tempo for boss
+        const beatInterval = (60 / bpm) * 1000;
+
+        this.musicLoopTimer = setInterval(() => {
+            if (this.gameState === 'playing' || this.gameState === 'victory') {
+                // Intense bass line
+                this.playMusicalNote(65, 0.08 * this.musicVolume, 0.2, 'square');
+
+                // High energy notes
+                setTimeout(() => {
+                    this.playMusicalNote(330, 0.05 * this.musicVolume, 0.1, 'sawtooth');
+                }, beatInterval / 4);
+
+                setTimeout(() => {
+                    this.playMusicalNote(392, 0.05 * this.musicVolume, 0.1, 'sawtooth');
+                }, beatInterval / 2);
+
+                setTimeout(() => {
+                    this.playMusicalNote(440, 0.05 * this.musicVolume, 0.1, 'sawtooth');
+                }, (beatInterval * 3) / 4);
+            }
+        }, beatInterval);
+
+        console.log('🎵 Boss battle music started');
+    }
+
+    // ========================================
+    // BOSS BATTLE SYSTEM 👑
+    // ========================================
+
+    /**
+     * BOSS: Initialize boss system
+     */
+    initializeBossSystem() {
+        console.log('👑 Initializing boss battle system...');
+
+        // Create boss manager
+        this.bossManager = new BossManager(this);
+
+        // Set up boss health bar callback (created when boss spawns)
+        const originalSpawnBoss = this.bossManager.spawnBoss.bind(this.bossManager);
+        this.bossManager.spawnBoss = (bossType) => {
+            originalSpawnBoss(bossType);
+
+            // Create health bar after boss is spawned (3 second delay for warning)
+            this.time.delayedCall(3000, () => {
+                if (this.bossManager.currentBoss && !this.bossManager.currentBoss.isDestroyed) {
+                    this.bossHealthBar = new BossHealthBar(this, this.bossManager.currentBoss);
+                }
+            });
+        };
+
+        console.log('✓ Boss battle system initialized');
+    }
+
+    /**
+     * BOSS: Handle boss victory
+     */
+    handleBossVictory() {
+        console.log('🎉 Boss battle won!');
+
+        // Stop game state
+        this.gameState = 'victory';
+
+        // Camera effect
+        this.cameras.main.fadeOut(2000, 255, 215, 0); // Gold fade
+
+        // Transition to victory screen after fade
+        this.time.delayedCall(2000, () => {
+            // For now, just go to game over with victory flag
+            // Priority 5 will add proper victory screen
+            this.scene.start(SCENES.GAME_OVER, {
+                victory: true,
+                score: this.score,
+                distance: this.distance,
+                enemiesKilled: this.enemiesKilled,
+                bossDefeated: true
+            });
+        });
     }
 
     shutdown() {
