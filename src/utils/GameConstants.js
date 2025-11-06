@@ -53,9 +53,9 @@ export const SQUAD = {
         return Math.floor(WORLD.ROAD_WIDTH * 0.35); // 35% of road width from center
     },
 
-    // Character visuals - Matching reference screenshots
-    CHARACTER_RADIUS: 25,        // Radius of each character sphere
-    CHARACTER_SIZE: 50,          // Diameter for collision
+    // Character visuals - High quality 64×64 minimum for crisp rendering
+    CHARACTER_RADIUS: 32,        // Radius of each character sphere (64×64 total)
+    CHARACTER_SIZE: 64,          // Diameter for collision (64×64 minimum)
 
     // Character position - responsive (lower third)
     get START_Y() {

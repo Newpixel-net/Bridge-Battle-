@@ -112,6 +112,7 @@ export default class GameScene extends Phaser.Scene {
         this.currentMultiplier = 1;   // Current score multiplier
         this.lastCollectibleTime = 0; // For combo timeout
         this.previousDistance = 0;    // For rolling number animation
+        this.lastDustSpawnTime = 0;   // For dust particle timing
 
         // Camera Animation tracking
         this.targetCameraZoom = 1.0;  // Dynamic zoom target
@@ -324,20 +325,29 @@ export default class GameScene extends Phaser.Scene {
     }
 
     /**
-     * STEP 2-3: Create environment (road + grass)
+     * STEP 2-3: Create environment (road + grass) with PARALLAX for motion feel
      */
     createEnvironment() {
         const centerX = GAME.WIDTH / 2;
         const roadHalfWidth = WORLD.ROAD_WIDTH / 2;
 
-        // Sky background
+        // Sky background (static - no scroll)
         this.add.rectangle(
             centerX,
             GAME.HEIGHT / 2,
             GAME.WIDTH,
             GAME.HEIGHT,
             COLORS.SKY_BLUE
-        ).setDepth(-100);
+        ).setDepth(-100).setScrollFactor(0);
+
+        // PARALLAX LAYER 1: Far mountains/clouds (slowest - 0.1x scroll)
+        this.createParallaxLayer1(centerX);
+
+        // PARALLAX LAYER 2: Mid-distance trees/buildings (0.3x scroll)
+        this.createParallaxLayer2(centerX);
+
+        // PARALLAX LAYER 3: Near grass/bushes (0.7x scroll)
+        this.createParallaxLayer3(centerX);
 
         // Left grass
         this.grassLeft = this.add.rectangle(
@@ -458,6 +468,132 @@ export default class GameScene extends Phaser.Scene {
         }
 
         console.log('✓ Asphalt texture grain added');
+    }
+
+    /**
+     * PARALLAX LAYER 1: Far mountains/clouds (slowest - creates depth)
+     */
+    createParallaxLayer1(centerX) {
+        const layerCount = 5;
+        const mountainHeight = 150;
+
+        for (let i = 0; i < layerCount; i++) {
+            const x = (GAME.WIDTH / layerCount) * i + GAME.WIDTH / (layerCount * 2);
+            const y = 100 + Math.sin(i * 1.5) * 30; // Varied heights
+            const width = GAME.WIDTH / layerCount + 100;
+
+            // Mountain shape (triangle)
+            const mountain = this.add.triangle(
+                x, y,
+                0, mountainHeight,          // Bottom left
+                width / 2, 0,               // Top
+                width, mountainHeight,      // Bottom right
+                0x8B7355,                   // Brown/gray mountain color
+                0.6                         // Semi-transparent
+            );
+            mountain.setDepth(-90);
+            mountain.setScrollFactor(0.1, 0); // Very slow scroll - creates distance
+        }
+
+        // Clouds (slow moving)
+        for (let i = 0; i < 4; i++) {
+            const cloudX = Math.random() * GAME.WIDTH;
+            const cloudY = 50 + Math.random() * 100;
+
+            const cloud = this.add.ellipse(cloudX, cloudY, 120, 60, 0xFFFFFF, 0.5);
+            cloud.setDepth(-95);
+            cloud.setScrollFactor(0.15, 0);
+        }
+    }
+
+    /**
+     * PARALLAX LAYER 2: Mid-distance trees/bushes (medium speed)
+     */
+    createParallaxLayer2(centerX) {
+        const roadHalfWidth = WORLD.ROAD_WIDTH / 2;
+        const treesPerSide = 8;
+        const spacing = 200;
+
+        // Left side trees
+        for (let i = 0; i < treesPerSide; i++) {
+            const x = 50 + Math.random() * (centerX - roadHalfWidth - 100);
+            const y = i * spacing + Math.random() * spacing;
+            this.createSimpleTree(x, y, 0.3);
+        }
+
+        // Right side trees
+        for (let i = 0; i < treesPerSide; i++) {
+            const x = centerX + roadHalfWidth + 50 + Math.random() * (centerX - roadHalfWidth - 100);
+            const y = i * spacing + Math.random() * spacing;
+            this.createSimpleTree(x, y, 0.3);
+        }
+    }
+
+    /**
+     * PARALLAX LAYER 3: Near grass/bushes (faster - foreground)
+     */
+    createParallaxLayer3(centerX) {
+        const roadHalfWidth = WORLD.ROAD_WIDTH / 2;
+        const bushCount = 12;
+        const spacing = 150;
+
+        // Left side bushes
+        for (let i = 0; i < bushCount; i++) {
+            const x = centerX - roadHalfWidth - 20 - Math.random() * 30;
+            const y = i * spacing + Math.random() * spacing;
+            this.createSimpleBush(x, y, 0.7);
+        }
+
+        // Right side bushes
+        for (let i = 0; i < bushCount; i++) {
+            const x = centerX + roadHalfWidth + 20 + Math.random() * 30;
+            const y = i * spacing + Math.random() * spacing;
+            this.createSimpleBush(x, y, 0.7);
+        }
+    }
+
+    /**
+     * Create a simple tree for parallax effect
+     */
+    createSimpleTree(x, y, scrollFactor) {
+        // Tree trunk
+        const trunk = this.add.rectangle(x, y, 20, 60, 0x654321);
+        trunk.setDepth(-60);
+        trunk.setScrollFactor(scrollFactor, 1);
+
+        // Tree foliage (rounded top)
+        const foliage = this.add.circle(x, y - 30, 35, 0x228B22, 0.8);
+        foliage.setDepth(-60);
+        foliage.setScrollFactor(scrollFactor, 1);
+
+        // Add gentle sway
+        this.tweens.add({
+            targets: [trunk, foliage],
+            x: x + 5,
+            duration: 2000 + Math.random() * 1000,
+            yoyo: true,
+            repeat: -1,
+            ease: 'Sine.easeInOut'
+        });
+    }
+
+    /**
+     * Create a simple bush for parallax effect
+     */
+    createSimpleBush(x, y, scrollFactor) {
+        const bush = this.add.ellipse(x, y, 40, 30, 0x2E8B57, 0.7);
+        bush.setDepth(-40);
+        bush.setScrollFactor(scrollFactor, 1);
+
+        // Gentle sway
+        this.tweens.add({
+            targets: bush,
+            scaleX: 1.05,
+            duration: 1500 + Math.random() * 500,
+            yoyo: true,
+            repeat: -1,
+            ease: 'Sine.easeInOut'
+        });
     }
 
     /**
@@ -2275,6 +2411,9 @@ export default class GameScene extends Phaser.Scene {
         this.distance += scrollAmount;
         this.scrollOffset += scrollAmount;
 
+        // FORWARD MOTION FEEL: Dust particles behind squad
+        this.spawnDustParticles(time);
+
         // PROGRESSION: Award score for distance traveled (1 point per 10m)
         const distanceToScore = Math.floor(this.distance / 10);
         if (distanceToScore > this.lastScoredDistance) {
@@ -2703,26 +2842,45 @@ export default class GameScene extends Phaser.Scene {
      * Apply gate math operation
      */
     applyGateOperation(operation) {
-        let currentSize = this.squadMembers.length;
+        const currentSize = this.squadMembers.length;
         let newSize = currentSize;
+        let operationType = 'unknown';
 
+        // CRITICAL FIX: Proper math operations that ADD/SUBTRACT/MULTIPLY
         if (operation.mult) {
+            // Multiplication: 5 × 2 = 10
+            operationType = 'multiply';
             newSize = Math.floor(currentSize * operation.mult);
         } else if (operation.add) {
+            // Addition: 1 + 10 = 11 (NOT 10!)
+            operationType = 'add';
             newSize = currentSize + operation.add;
         } else if (operation.div) {
+            // Division: 10 ÷ 2 = 5
+            operationType = 'divide';
             newSize = Math.floor(currentSize / operation.div);
         } else if (operation.sub) {
-            newSize = Math.max(1, currentSize - operation.sub);
+            // Subtraction: 11 - 5 = 6 (can reach 0 for game over)
+            operationType = 'subtract';
+            newSize = currentSize - operation.sub;
         }
 
-        // Ensure at least 1 member
-        newSize = Math.max(1, newSize);
+        // Ensure non-negative (allow 0 for game over trigger)
+        newSize = Math.max(0, newSize);
 
         const diff = newSize - currentSize;
 
+        // Detailed logging for debugging
+        console.log(`🎯 Gate Operation Debug:
+  Operation: ${operation.op} (${operationType})
+  Current Squad: ${currentSize}
+  Calculation: ${this.getCalculationString(operationType, currentSize, operation)}
+  New Squad: ${newSize}
+  Difference: ${diff > 0 ? '+' + diff : diff}
+  Math Verified: ${this.verifyMath(operationType, currentSize, operation, newSize) ? '✓ CORRECT' : '✗ ERROR'}`);
+
         if (diff > 0) {
-            // Add members
+            // Add members with staggered animation
             for (let i = 0; i < diff; i++) {
                 this.time.delayedCall(i * 30, () => this.addSquadMember());
             }
@@ -2731,7 +2889,51 @@ export default class GameScene extends Phaser.Scene {
             this.removeSquadMembers(Math.abs(diff));
         }
 
-        console.log(`Gate ${operation.op}: ${currentSize} → ${newSize}`);
+        // Check for game over (squad wiped out)
+        if (newSize <= 0) {
+            console.log('💀 GAME OVER: Squad eliminated!');
+            this.time.delayedCall(500, () => this.triggerGameOver());
+        }
+    }
+
+    /**
+     * Get human-readable calculation string for logging
+     */
+    getCalculationString(operationType, currentSize, operation) {
+        switch (operationType) {
+            case 'add':
+                return `${currentSize} + ${operation.add} = ${currentSize + operation.add}`;
+            case 'subtract':
+                return `${currentSize} - ${operation.sub} = ${currentSize - operation.sub}`;
+            case 'multiply':
+                return `${currentSize} × ${operation.mult} = ${Math.floor(currentSize * operation.mult)}`;
+            case 'divide':
+                return `${currentSize} ÷ ${operation.div} = ${Math.floor(currentSize / operation.div)}`;
+            default:
+                return 'unknown';
+        }
+    }
+
+    /**
+     * Verify math is correct
+     */
+    verifyMath(operationType, currentSize, operation, newSize) {
+        let expected = currentSize;
+        switch (operationType) {
+            case 'add':
+                expected = currentSize + operation.add;
+                break;
+            case 'subtract':
+                expected = Math.max(0, currentSize - operation.sub);
+                break;
+            case 'multiply':
+                expected = Math.floor(currentSize * operation.mult);
+                break;
+            case 'divide':
+                expected = Math.floor(currentSize / operation.div);
+                break;
+        }
+        return expected === newSize;
     }
 
     /**
@@ -3107,6 +3309,42 @@ export default class GameScene extends Phaser.Scene {
                 duration: 400,
                 ease: 'Cubic.easeOut',
                 onComplete: () => particle.destroy()
+            });
+        }
+    }
+
+    /**
+     * FORWARD MOTION FEEL: Spawn dust particles behind squad
+     */
+    spawnDustParticles(time) {
+        // Spawn dust every 100ms for continuous effect
+        if (time - this.lastDustSpawnTime < 100) return;
+        this.lastDustSpawnTime = time;
+
+        // Create dust particles behind each squad member
+        const particlesPerMember = Math.min(3, Math.ceil(this.squadMembers.length / 5));
+
+        for (let i = 0; i < this.squadMembers.length; i += Math.ceil(this.squadMembers.length / particlesPerMember)) {
+            const member = this.squadMembers[i];
+            if (!member) continue;
+
+            // Spawn dust slightly behind and below member
+            const dustX = member.x + Phaser.Math.Between(-10, 10);
+            const dustY = member.y + 20 + Phaser.Math.Between(-5, 5);
+
+            // Create dust particle (small gray circle)
+            const dust = this.add.circle(dustX, dustY, Phaser.Math.Between(3, 6), 0x999999, 0.4);
+            dust.setDepth(5); // Behind squad but above road
+
+            // Animate dust - fade out and drift back
+            this.tweens.add({
+                targets: dust,
+                y: dustY + 20,
+                alpha: 0,
+                scale: 1.5,
+                duration: 400,
+                ease: 'Cubic.easeOut',
+                onComplete: () => dust.destroy()
             });
         }
     }
