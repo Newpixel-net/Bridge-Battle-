@@ -1098,8 +1098,8 @@ export default class GameScene extends Phaser.Scene {
         const stripeGap = 12;
         const stripesPerCrossing = 6; // Reduced from 8
 
-        // Fewer crossings - only 2 visible at start
-        const crossingPositions = [400, 1200];
+        // Crossings aligned with mathematical gates (10 positions to match Level1.png reference)
+        const crossingPositions = [400, 1200, 2000, 2800, 3600, 4400, 5200, 6000, 6800, 7600];
 
         crossingPositions.forEach(startY => {
             graphics.fillStyle(COLORS.ROAD_LINE_WHITE, 1);
@@ -1142,13 +1142,13 @@ export default class GameScene extends Phaser.Scene {
         this.mathGates = [];
 
         gatePositions.forEach((gate, index) => {
-            // Gate background (semi-transparent white rectangle)
+            // Gate background (semi-transparent cyan rectangle - matches Level1.png reference)
             const bg = this.add.rectangle(
                 centerX,
                 gate.y,
                 180,
                 80,
-                0xFFFFFF,
+                0x00D4FF,
                 0.9
             );
             bg.setDepth(15);
