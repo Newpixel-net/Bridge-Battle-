@@ -35,19 +35,15 @@ export default class GameOverScene extends Phaser.Scene {
         // Dark overlay background
         this.add.rectangle(centerX, centerY, GAME.WIDTH, GAME.HEIGHT, 0x000000, 0.8);
 
-        // Use professional sprite atlas panel if available
-        let panel;
-        let targetScale;
-
-        if (this.atlasHelper) {
-            // Professional Zombie Buster panel (540x410 native)
-            panel = this.atlasHelper.createSprite(centerX, centerY, 'panel_large');
-            targetScale = 1.2; // Scale up slightly for better visibility
-        } else {
-            // Fallback to PNG asset
-            panel = this.add.image(centerX, centerY, 'ui_panel_lose');
-            targetScale = UI_SCALE.PANEL;
+        // ATLAS ONLY - No PNG fallback
+        if (!this.atlasHelper) {
+            console.error('❌ CRITICAL: AtlasHelper not available! Cannot create game over panel.');
+            return;
         }
+
+        // Professional Zombie Buster panel (540x410 native)
+        const panel = this.atlasHelper.createSprite(centerX, centerY, 'panel_large');
+        const targetScale = 1.2; // Scale up slightly for better visibility
 
         panel.setScale(0);
         panel.setDepth(10);

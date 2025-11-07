@@ -56,8 +56,8 @@ export default class MenuScene extends Phaser.Scene {
         // Version info
         this.createVersionInfo();
 
-        // Grass decorations (bottom corners)
-        this.createGrassDecorations();
+        // Grass decorations REMOVED - using atlas system only
+        // this.createGrassDecorations();
 
         // Keyboard shortcuts
         this.setupKeyboardShortcuts();
@@ -159,58 +159,36 @@ export default class MenuScene extends Phaser.Scene {
         const startY = 340;
         const buttonSpacing = 90;
 
-        // Use professional sprite atlas buttons if available, fallback to PNG
-        if (this.atlasHelper) {
-            // Professional Zombie Buster buttons with real coordinates
-            this.atlasHelper.createButton(
-                centerX, startY,
-                'button_play_green',
-                () => this.startGame()
-            );
-
-            this.atlasHelper.createButton(
-                centerX, startY + buttonSpacing,
-                'button_play_brown',
-                () => this.showSettings()
-            );
-
-            this.atlasHelper.createButton(
-                centerX, startY + buttonSpacing * 2,
-                'button_play_green',
-                () => this.showHowToPlay()
-            );
-
-            this.atlasHelper.createButton(
-                centerX, startY + buttonSpacing * 3,
-                'button_play_brown',
-                () => this.showCredits()
-            );
-        } else {
-            // Fallback to PNG assets
-            this.createImageButton(
-                centerX, startY,
-                'ui_button_new_game',
-                () => this.startGame()
-            );
-
-            this.createImageButton(
-                centerX, startY + buttonSpacing,
-                'ui_button_settings',
-                () => this.showSettings()
-            );
-
-            this.createImageButton(
-                centerX, startY + buttonSpacing * 2,
-                'ui_button_shop',
-                () => this.showHowToPlay()
-            );
-
-            this.createImageButton(
-                centerX, startY + buttonSpacing * 3,
-                'ui_button_exit',
-                () => this.showCredits()
-            );
+        // ATLAS ONLY - No PNG fallback
+        if (!this.atlasHelper) {
+            console.error('❌ CRITICAL: AtlasHelper not available! Cannot create buttons.');
+            return;
         }
+
+        // Professional Zombie Buster buttons with real coordinates
+        this.atlasHelper.createButton(
+            centerX, startY,
+            'button_play_green',
+            () => this.startGame()
+        );
+
+        this.atlasHelper.createButton(
+            centerX, startY + buttonSpacing,
+            'button_play_brown',
+            () => this.showSettings()
+        );
+
+        this.atlasHelper.createButton(
+            centerX, startY + buttonSpacing * 2,
+            'button_play_green',
+            () => this.showHowToPlay()
+        );
+
+        this.atlasHelper.createButton(
+            centerX, startY + buttonSpacing * 3,
+            'button_play_brown',
+            () => this.showCredits()
+        );
     }
 
     /**
