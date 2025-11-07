@@ -1,0 +1,173 @@
+{
+  "frames": {
+    "Zombie_1_Head_0000": {
+      "frame": {
+        "x": 313,
+        "y": 257,
+        "w": 93,
+        "h": 95
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 93,
+        "h": 95
+      },
+      "sourceSize": {
+        "w": 93,
+        "h": 95
+      }
+    },
+    "Zombie_1_Head_0001": {
+      "frame": {
+        "x": 328,
+        "y": 129,
+        "w": 94,
+        "h": 96
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 94,
+        "h": 96
+      },
+      "sourceSize": {
+        "w": 94,
+        "h": 96
+      }
+    },
+    "Zombie_1_Head_0002": {
+      "frame": {
+        "x": 217,
+        "y": 129,
+        "w": 94,
+        "h": 95
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 94,
+        "h": 95
+      },
+      "sourceSize": {
+        "w": 94,
+        "h": 95
+      }
+    },
+    "Zombie_2_Head_0000": {
+      "frame": {
+        "x": 385,
+        "y": 1,
+        "w": 109,
+        "h": 93
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 109,
+        "h": 93
+      },
+      "sourceSize": {
+        "w": 109,
+        "h": 93
+      }
+    },
+    "Zombie_3_Body_0000": {
+      "frame": {
+        "x": 160,
+        "y": 449,
+        "w": 79,
+        "h": 62
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 79,
+        "h": 62
+      },
+      "sourceSize": {
+        "w": 79,
+        "h": 62
+      }
+    },
+    "Zombie_3_Head_0000": {
+      "frame": {
+        "x": 412,
+        "y": 385,
+        "w": 88,
+        "h": 84
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 88,
+        "h": 84
+      },
+      "sourceSize": {
+        "w": 88,
+        "h": 84
+      }
+    },
+    "Zombie_3_Head_0001": {
+      "frame": {
+        "x": 408,
+        "y": 257,
+        "w": 88,
+        "h": 84
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 88,
+        "h": 84
+      },
+      "sourceSize": {
+        "w": 88,
+        "h": 84
+      }
+    },
+    "Zombie_3_Head_0002": {
+      "frame": {
+        "x": 424,
+        "y": 129,
+        "w": 87,
+        "h": 84
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 87,
+        "h": 84
+      },
+      "sourceSize": {
+        "w": 87,
+        "h": 84
+      }
+    }
+  },
+  "meta": {
+    "image": "shared-0-sheet5.png",
+    "format": "RGBA8888",
+    "size": {
+      "w": 512,
+      "h": 512
+    },
+    "scale": 1
+  }
+}

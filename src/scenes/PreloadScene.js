@@ -48,8 +48,16 @@ export default class PreloadScene extends Phaser.Scene {
         this.load.atlas('zombie_button_play', zombiePath + 'shared-2-sheet5.png', zombiePath + 'shared-2-sheet5.json');
         this.load.atlas('zombie_button_sound', zombiePath + 'shared-0-sheet3.png', zombiePath + 'shared-0-sheet3.json');
 
+        // ========================================================================
+        // 🧟 ZOMBIE CHARACTER SPRITES - Real character graphics!
+        // ========================================================================
+        // Load zombie character parts (heads, bodies, limbs) for player squad and enemies
+        this.load.atlas('zombie_heads', zombiePath + 'shared-0-sheet5.png', zombiePath + 'shared-0-sheet5.json');
+        this.load.atlas('zombie_parts', zombiePath + 'shared-0-sheet6.png', zombiePath + 'shared-0-sheet6.json');
+
         console.log('🎨 Loading MODERN UI ATLAS - Professional AAA Quality');
         console.log('🎯 Loading REAL ZOMBIE BUSTER BUTTON SPRITES');
+        console.log('🧟 Loading ZOMBIE CHARACTER SPRITES');
     }
 
     create() {

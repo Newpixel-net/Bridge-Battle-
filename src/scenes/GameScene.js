@@ -187,6 +187,13 @@ export default class GameScene extends Phaser.Scene {
     create() {
         console.log('🎮 Building Phase 1 - Step by step...');
 
+        // Create particle texture for gate sparkles
+        const particleGraphics = this.add.graphics();
+        particleGraphics.fillStyle(0xFFFFFF, 1);
+        particleGraphics.fillCircle(8, 8, 8);
+        particleGraphics.generateTexture('particle', 16, 16);
+        particleGraphics.destroy();
+
         // PROGRESSION SYSTEM: Track session start time
         this.startTime = Date.now();
 
@@ -1119,97 +1126,82 @@ export default class GameScene extends Phaser.Scene {
      * 7. Rotation based on movement
      */
     createEnhancedCharacter(x, y) {
-        const baseRadius = SQUAD.CHARACTER_RADIUS;
+        // ========================================================================
+        // SPRITE-BASED CHARACTER RENDERING
+        // Using real zombie sprites from Zombie Buster asset pack
+        // ========================================================================
 
-        // 1. SIZE VARIATION (0.9x to 1.1x for organic feel)
-        const sizeVariation = Phaser.Math.FloatBetween(0.9, 1.1);
-        const radius = baseRadius * sizeVariation;
+        // 1. SIZE VARIATION (0.8x to 1.0x for squad members)
+        const sizeVariation = Phaser.Math.FloatBetween(0.8, 1.0);
+        const baseScale = 0.6; // Base scale for zombie sprites
+        const finalScale = baseScale * sizeVariation;
 
-        // 2. COLOR VARIATION (subtle blue tints)
-        const colorVariations = [
-            0x03A9F4, // Original blue
-            0x0288D1, // Slightly darker
-            0x039BE5, // Slightly lighter
-            0x03A0E3, // Subtle tint
-            0x04B5FF, // Brighter tint
-        ];
-        const bodyColor = Phaser.Utils.Array.GetRandom(colorVariations);
+        // 2. ZOMBIE VARIETY - Randomly select from 3 zombie types
+        const zombieTypes = [1, 2, 3];
+        const zombieType = Phaser.Utils.Array.GetRandom(zombieTypes);
 
         // Ground shadow (ellipse beneath character)
-        const groundShadow = this.add.ellipse(x, y + radius + 5, radius * 1.5, radius * 0.5, 0x000000, 0.3);
+        const shadowSize = 30 * sizeVariation;
+        const groundShadow = this.add.ellipse(x, y + shadowSize, shadowSize * 1.5, shadowSize * 0.4, 0x000000, 0.3);
         groundShadow.setDepth(5);
 
         // Container for character
         const character = this.add.container(x, y);
 
-        // Main body (bright blue with variation)
-        const body = this.add.circle(0, 0, radius, bodyColor);
+        // ========================================================================
+        // SPRITE ASSEMBLY: Head + Body from atlas
+        // ========================================================================
 
-        // Shadow gradient (darker blue, bottom-right)
-        const shadow1 = this.add.circle(4, 4, radius * 0.85, COLORS.SQUAD_BLUE_DARK, 0.25);
-        const shadow2 = this.add.circle(3, 3, radius * 0.7, COLORS.SQUAD_BLUE_DARK, 0.35);
+        // Body sprite (from zombie_parts atlas)
+        const bodySprite = this.add.sprite(0, 10, 'zombie_parts', `Zombie_${zombieType}_Body_0000`);
+        bodySprite.setScale(finalScale);
+        bodySprite.setTint(0x03A9F4); // Blue tint for player squad
 
-        // Highlight (white, top-left)
-        const highlight1 = this.add.circle(-6, -6, radius * 0.4, COLORS.SQUAD_HIGHLIGHT, 0.6);
-        const highlight2 = this.add.circle(-4, -4, radius * 0.25, COLORS.SQUAD_HIGHLIGHT, 0.95);
+        // Head sprite (from zombie_heads atlas)
+        const headSprite = this.add.sprite(0, -15, 'zombie_heads', `Zombie_${zombieType}_Head_0000`);
+        headSprite.setScale(finalScale);
+        headSprite.setTint(0x03A9F4); // Blue tint for player squad
 
-        // Eyes (will be animated for blinking and direction)
-        const eyeSize = radius * 0.12;
-        const eyeY = -radius * 0.1;
-        const eyeSpacing = radius * 0.35;
+        // Left hand sprite (optional, for more detail)
+        const leftHandSprite = this.add.sprite(-15, 5, 'zombie_parts', `Zombie_${zombieType}_HandLeft_0000`);
+        leftHandSprite.setScale(finalScale * 0.9);
+        leftHandSprite.setTint(0x03A9F4);
 
-        const leftEye = this.add.circle(-eyeSpacing, eyeY, eyeSize, 0x000000, 0.8);
-        const rightEye = this.add.circle(eyeSpacing, eyeY, eyeSize, 0x000000, 0.8);
+        // Right hand sprite (optional, for more detail)
+        const rightHandSprite = this.add.sprite(15, 5, 'zombie_parts', `Zombie_${zombieType}_HandRight_0000`);
+        rightHandSprite.setScale(finalScale * 0.9);
+        rightHandSprite.setTint(0x03A9F4);
 
-        // Mouth (for expressions - initially neutral)
-        const mouth = this.add.arc(0, radius * 0.15, radius * 0.15, 0, 180, false, 0x000000, 0.6);
-        mouth.setStrokeStyle(2, 0x000000, 0.8);
-        mouth.isClosed = true;
+        // Feet sprites for running animation
+        const leftFootSprite = this.add.sprite(-8, 25, 'zombie_parts', `Zombie_${zombieType}_FootLeft_0000`);
+        leftFootSprite.setScale(finalScale);
+        leftFootSprite.setTint(0x03A9F4);
 
-        // 8. RUNNING ANIMATION - Add legs that will animate
-        const legLength = radius * 0.6;
-        const legWidth = 3;
-        const legSpacing = radius * 0.25;
-        const legStartY = radius * 0.5;
+        const rightFootSprite = this.add.sprite(8, 25, 'zombie_parts', `Zombie_${zombieType}_FootRight_0000`);
+        rightFootSprite.setScale(finalScale);
+        rightFootSprite.setTint(0x03A9F4);
 
-        // Left leg (line from hip to foot)
-        const leftLeg = this.add.line(
-            0, 0,
-            -legSpacing, legStartY,
-            -legSpacing, legStartY + legLength,
-            0x0277BD,
-            1
-        );
-        leftLeg.setLineWidth(legWidth);
-        leftLeg.setOrigin(0, 0);
-
-        // Right leg (line from hip to foot)
-        const rightLeg = this.add.line(
-            0, 0,
-            legSpacing, legStartY,
-            legSpacing, legStartY + legLength,
-            0x0277BD,
-            1
-        );
-        rightLeg.setLineWidth(legWidth);
-        rightLeg.setOrigin(0, 0);
-
-        // Add to container in correct order (legs first, then body, then details on top)
-        character.add([leftLeg, rightLeg, body, shadow1, shadow2, highlight1, highlight2, leftEye, rightEye, mouth]);
+        // Add to container in correct depth order (feet first, then body parts, then head on top)
+        character.add([
+            leftFootSprite,
+            rightFootSprite,
+            leftHandSprite,
+            bodySprite,
+            rightHandSprite,
+            headSprite
+        ]);
         character.setDepth(10);
 
         // Store references for animations
-        character.body = body;
-        character.leftEye = leftEye;
-        character.rightEye = rightEye;
-        character.mouth = mouth;
-        character.leftLeg = leftLeg;
-        character.rightLeg = rightLeg;
-        character.baseRadius = radius;
+        character.headSprite = headSprite;
+        character.bodySprite = bodySprite;
+        character.leftHandSprite = leftHandSprite;
+        character.rightHandSprite = rightHandSprite;
+        character.leftFootSprite = leftFootSprite;
+        character.rightFootSprite = rightFootSprite;
+        character.zombieType = zombieType;
+        character.baseScale = finalScale;
         character.sizeVariation = sizeVariation;
-        character.legSpacing = legSpacing;
-        character.legStartY = legStartY;
-        character.legLength = legLength;
 
         // Formation properties
         character.formationX = 0;
@@ -1217,46 +1209,82 @@ export default class GameScene extends Phaser.Scene {
         character.groundShadow = groundShadow;
 
         // Animation properties
-        character.bobbingOffset = Math.random() * Math.PI * 2; // Random phase for organic look
+        character.bobbingOffset = Math.random() * Math.PI * 2;
         character.nextBlinkTime = this.time.now + Phaser.Math.Between(2000, 4000);
         character.isBlinking = false;
-        character.currentEmotion = 'neutral'; // 'neutral', 'happy', 'worried'
+        character.currentEmotion = 'neutral';
 
-        // 3. BOBBING ANIMATION - Continuous up/down bounce
+        // ========================================================================
+        // ANIMATIONS: Bobbing and Running
+        // ========================================================================
+
+        // 1. BOBBING ANIMATION - Continuous up/down bounce
         this.tweens.add({
             targets: character,
-            y: y - 3, // Bob up 3 pixels
+            y: y - 3,
             duration: 600,
             yoyo: true,
             repeat: -1,
             ease: 'Sine.easeInOut',
-            delay: character.bobbingOffset * 100 // Stagger animations
+            delay: character.bobbingOffset * 100
         });
 
-        // 8. RUNNING ANIMATION - Alternating leg movement
-        const legSwingAmount = 8; // Pixels to swing forward/back
-        const runCycleDuration = 300; // Fast running cycle
-
-        // Left leg - swings forward first
+        // 2. HEAD BOBBING - Slight independent head movement
         this.tweens.add({
-            targets: leftLeg,
-            x2: -legSpacing + legSwingAmount, // Foot forward
+            targets: headSprite,
+            y: headSprite.y - 2,
+            duration: 400,
+            yoyo: true,
+            repeat: -1,
+            ease: 'Sine.easeInOut',
+            delay: character.bobbingOffset * 100
+        });
+
+        // 3. RUNNING ANIMATION - Alternating foot movement
+        const footSwingAmount = 6;
+        const runCycleDuration = 300;
+
+        // Left foot - swings forward first
+        this.tweens.add({
+            targets: leftFootSprite,
+            x: leftFootSprite.x - footSwingAmount,
             duration: runCycleDuration,
             yoyo: true,
             repeat: -1,
             ease: 'Sine.easeInOut',
-            delay: character.bobbingOffset * 50 // Slight stagger
+            delay: character.bobbingOffset * 50
         });
 
-        // Right leg - swings backward first (opposite of left)
+        // Right foot - swings backward first (opposite of left)
         this.tweens.add({
-            targets: rightLeg,
-            x2: legSpacing - legSwingAmount, // Foot backward
+            targets: rightFootSprite,
+            x: rightFootSprite.x + footSwingAmount,
             duration: runCycleDuration,
             yoyo: true,
             repeat: -1,
             ease: 'Sine.easeInOut',
-            delay: (character.bobbingOffset * 50) + (runCycleDuration / 2) // Offset by half cycle
+            delay: (character.bobbingOffset * 50) + (runCycleDuration / 2)
+        });
+
+        // 4. HAND SWINGING - Subtle arm movement while running
+        this.tweens.add({
+            targets: leftHandSprite,
+            y: leftHandSprite.y + 3,
+            duration: runCycleDuration,
+            yoyo: true,
+            repeat: -1,
+            ease: 'Sine.easeInOut',
+            delay: character.bobbingOffset * 50
+        });
+
+        this.tweens.add({
+            targets: rightHandSprite,
+            y: rightHandSprite.y - 3,
+            duration: runCycleDuration,
+            yoyo: true,
+            repeat: -1,
+            ease: 'Sine.easeInOut',
+            delay: (character.bobbingOffset * 50) + (runCycleDuration / 2)
         });
 
         return character;
@@ -2030,17 +2058,117 @@ export default class GameScene extends Phaser.Scene {
         const rightGate = this.createGateHalf(rightX, y, gatePair.right.op, gatePair.right.color, 'RIGHT', gateWidth);
         rightGate.operation = gatePair.right;
 
+        // ===================================================================
+        // SPLIT GATE VISUAL ENHANCEMENT: Add prominent center divider
+        // ===================================================================
+        const dividerContainer = this.add.container(centerX, y);
+
+        // Main divider pillar (vertical barrier)
+        const dividerWidth = 16;
+        const dividerHeight = GATES.HEIGHT + 40;
+
+        // Outer glow for divider
+        const dividerGlow = this.add.rectangle(0, 0, dividerWidth + 12, dividerHeight + 20, 0xFFFFFF, 0.4);
+        dividerGlow.setBlendMode(Phaser.BlendModes.ADD);
+
+        // Main divider body
+        const divider = this.add.rectangle(0, 0, dividerWidth, dividerHeight, 0xFFFFFF, 0.95);
+        divider.setStrokeStyle(4, 0xFFD700, 1.0);
+
+        // Inner shine
+        const dividerShine = this.add.rectangle(0, 0, dividerWidth - 4, dividerHeight - 4, 0xFFFFFF, 0.6);
+
+        // Top cap (triangle/arrow shape)
+        const capHeight = 30;
+        const capGraphics = this.add.graphics();
+        capGraphics.fillStyle(0xFFD700, 1.0);
+        capGraphics.fillTriangle(
+            -dividerWidth, -dividerHeight/2,
+            dividerWidth, -dividerHeight/2,
+            0, -dividerHeight/2 - capHeight
+        );
+        capGraphics.lineStyle(3, 0xFFFFFF, 1.0);
+        capGraphics.strokeTriangle(
+            -dividerWidth, -dividerHeight/2,
+            dividerWidth, -dividerHeight/2,
+            0, -dividerHeight/2 - capHeight
+        );
+
+        // Bottom cap
+        const bottomCapGraphics = this.add.graphics();
+        bottomCapGraphics.fillStyle(0xFFD700, 1.0);
+        bottomCapGraphics.fillTriangle(
+            -dividerWidth, dividerHeight/2,
+            dividerWidth, dividerHeight/2,
+            0, dividerHeight/2 + capHeight
+        );
+        bottomCapGraphics.lineStyle(3, 0xFFFFFF, 1.0);
+        bottomCapGraphics.strokeTriangle(
+            -dividerWidth, dividerHeight/2,
+            dividerWidth, dividerHeight/2,
+            0, dividerHeight/2 + capHeight
+        );
+
+        // Warning stripes (like reference video)
+        for (let i = 0; i < 5; i++) {
+            const stripeY = -dividerHeight/2 + 20 + (i * (dividerHeight - 40) / 5);
+            const stripe = this.add.rectangle(0, stripeY, dividerWidth - 2, 10,
+                i % 2 === 0 ? 0xFFFF00 : 0x000000, 0.8);
+            dividerContainer.add(stripe);
+        }
+
+        dividerContainer.add([dividerGlow, divider, dividerShine, capGraphics, bottomCapGraphics]);
+        dividerContainer.setDepth(9); // Above gates
+
+        // Pulse animation for divider
+        this.tweens.add({
+            targets: dividerGlow,
+            alpha: 0.2,
+            scaleX: 1.1,
+            duration: 1000,
+            yoyo: true,
+            repeat: -1,
+            ease: 'Sine.easeInOut'
+        });
+
+        // Sparkle particles around gates (like reference video)
+        const leftParticles = this.add.particles(leftX, y, 'particle', {
+            speed: { min: 20, max: 40 },
+            angle: { min: 0, max: 360 },
+            scale: { start: 0.8, end: 0 },
+            alpha: { start: 1, end: 0 },
+            lifespan: 1500,
+            frequency: 100,
+            blendMode: 'ADD',
+            tint: gatePair.left.color
+        });
+        leftParticles.setDepth(10);
+
+        const rightParticles = this.add.particles(rightX, y, 'particle', {
+            speed: { min: 20, max: 40 },
+            angle: { min: 0, max: 360 },
+            scale: { start: 0.8, end: 0 },
+            alpha: { start: 1, end: 0 },
+            lifespan: 1500,
+            frequency: 100,
+            blendMode: 'ADD',
+            tint: gatePair.right.color
+        });
+        rightParticles.setDepth(10);
+
         // OBJECT ANIMATION 3: Rise from ground with shake
         const targetYLeft = leftGate.y;
         const targetYRight = rightGate.y;
         leftGate.y = targetYLeft + 300; // Start below
         rightGate.y = targetYRight + 300;
+        dividerContainer.y = y + 300;
         leftGate.setAlpha(0);
         rightGate.setAlpha(0);
+        dividerContainer.setAlpha(0);
 
-        // Rise animation
+        // Rise animation (including divider)
         this.tweens.add({
-            targets: [leftGate, rightGate],
+            targets: [leftGate, rightGate, dividerContainer, leftParticles, rightParticles],
             y: targetYLeft,
             alpha: 1,
             duration: 800,
@@ -2050,7 +2178,14 @@ export default class GameScene extends Phaser.Scene {
         // Camera shake when gates appear
         this.cameras.main.shake(100, 0.003);
 
-        this.gates.push({ left: leftGate, right: rightGate, passed: false });
+        this.gates.push({
+            left: leftGate,
+            right: rightGate,
+            divider: dividerContainer,
+            leftParticles: leftParticles,
+            rightParticles: rightParticles,
+            passed: false
+        });
     }
 
     /**
@@ -2460,36 +2595,32 @@ export default class GameScene extends Phaser.Scene {
     }
 
     /**
-     * Update character animations (blinking, eye direction, rotation)
+     * Update character animations (rotation, sprite animations)
+     * Note: Sprite-based characters don't need eye/mouth animations
      */
     updateCharacterAnimations(time, movementDirection) {
         this.squadMembers.forEach((character, index) => {
             if (!character.active) return;
 
-            // 4. EYE BLINKING - Random blinks every 2-4 seconds
-            if (time >= character.nextBlinkTime && !character.isBlinking) {
+            // HEAD SPRITE ANIMATION - Cycle through animation frames occasionally
+            if (character.headSprite && time >= character.nextBlinkTime && !character.isBlinking) {
                 character.isBlinking = true;
 
-                // Blink animation (squeeze eyes)
-                this.tweens.add({
-                    targets: [character.leftEye, character.rightEye],
-                    scaleY: 0.1,
-                    duration: 80,
-                    yoyo: true,
-                    onComplete: () => {
-                        character.isBlinking = false;
-                        character.nextBlinkTime = time + Phaser.Math.Between(2000, 4000);
-                    }
+                // Change head frame briefly (like blinking/expression change)
+                const currentFrame = character.headSprite.frame.name;
+                const zombieType = character.zombieType;
+                const frameNum = currentFrame.endsWith('0000') ? '0001' : '0000';
+
+                character.headSprite.setFrame(`Zombie_${zombieType}_Head_${frameNum}`);
+
+                this.time.delayedCall(150, () => {
+                    character.headSprite.setFrame(`Zombie_${zombieType}_Head_0000`);
+                    character.isBlinking = false;
+                    character.nextBlinkTime = time + Phaser.Math.Between(2000, 4000);
                 });
             }
 
-            // 5. EYE DIRECTION - Eyes look toward movement direction
-            const eyeSpacing = character.baseRadius * 0.35;
-            const eyeY = -character.baseRadius * 0.1;
-            const eyeLookOffset = movementDirection * 2; // 2 pixels left/right
-
-            character.leftEye.x = -eyeSpacing + eyeLookOffset;
-            character.rightEye.x = eyeSpacing + eyeLookOffset;
+            // No eye direction for sprite-based characters (eyes are part of sprite)
 
             // 2. CHARACTER ROTATION - Tilt in direction of movement
             const maxTilt = 0.15; // Max 0.15 radians (~8.6 degrees)
@@ -2800,6 +2931,9 @@ export default class GameScene extends Phaser.Scene {
             if (g.left.y > GAME.HEIGHT + 200) {
                 g.left.destroy();
                 g.right.destroy();
+                if (g.divider) g.divider.destroy();
+                if (g.leftParticles) g.leftParticles.destroy();
+                if (g.rightParticles) g.rightParticles.destroy();
                 return false;
             }
             return true;
