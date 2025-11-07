@@ -159,8 +159,8 @@ export default class AbilityUIBar {
         // Update fill width
         this.energyBar.width = barWidth * percent;
 
-        // Update text
-        this.energyText.setText(`${Math.floor(current)}/${max}`);
+        // Update text (both values as whole numbers)
+        this.energyText.setText(`${Math.floor(current)}/${Math.floor(max)}`);
 
         // Color based on energy level
         if (percent > 0.6) {

@@ -221,6 +221,9 @@ export default class GameScene extends Phaser.Scene {
         // Add zebra crossings
         this.createZebraCrossings();
 
+        // Add mathematical gates at crosswalks
+        this.createMathematicalGates();
+
         // STEP 5-6: Add single character
         this.createCharacter();
 
@@ -1113,6 +1116,175 @@ export default class GameScene extends Phaser.Scene {
         });
 
         console.log('✓ Zebra crossings added (reduced)');
+    }
+
+    /**
+     * STEP 5: Create mathematical gates at crosswalks
+     * Gates modify squad count (×2, +20, ÷2, etc.) - matching Level1.png reference
+     */
+    createMathematicalGates() {
+        const centerX = GAME.WIDTH / 2;
+
+        // Gate positions aligned with crosswalks (and extending further up the road)
+        const gatePositions = [
+            { y: 400, operation: '×', value: 2, color: 0x4CAF50 },      // Green for good
+            { y: 1200, operation: '+', value: 20, color: 0x2196F3 },    // Blue for addition
+            { y: 2000, operation: '×', value: 3, color: 0x4CAF50 },
+            { y: 2800, operation: '+', value: 10, color: 0x2196F3 },
+            { y: 3600, operation: '×', value: 5, color: 0x4CAF50 },
+            { y: 4400, operation: '+', value: 50, color: 0x2196F3 },
+            { y: 5200, operation: '×', value: 10, color: 0xFFD700 },    // Gold for big multiplier
+            { y: 6000, operation: '+', value: 30, color: 0x2196F3 },
+            { y: 6800, operation: '×', value: 2, color: 0x4CAF50 },
+            { y: 7600, operation: '+', value: 100, color: 0xFFD700 },   // Gold for huge bonus
+        ];
+
+        this.mathGates = [];
+
+        gatePositions.forEach((gate, index) => {
+            // Gate background (semi-transparent white rectangle)
+            const bg = this.add.rectangle(
+                centerX,
+                gate.y,
+                180,
+                80,
+                0xFFFFFF,
+                0.9
+            );
+            bg.setDepth(15);
+            bg.setStrokeStyle(4, gate.color, 1);
+
+            // Operation text (large, bold)
+            const text = this.add.text(
+                centerX,
+                gate.y,
+                `${gate.operation}${gate.value}`,
+                {
+                    fontSize: '56px',
+                    fontFamily: 'Arial Black',
+                    color: '#000000',
+                    stroke: '#FFFFFF',
+                    strokeThickness: 2
+                }
+            );
+            text.setOrigin(0.5);
+            text.setDepth(16);
+
+            // Store gate data
+            const gateObject = {
+                bg: bg,
+                text: text,
+                operation: gate.operation,
+                value: gate.value,
+                y: gate.y,
+                used: false,
+                bounds: new Phaser.Geom.Rectangle(
+                    centerX - 90,
+                    gate.y - 40,
+                    180,
+                    80
+                )
+            };
+
+            this.mathGates.push(gateObject);
+        });
+
+        console.log(`✓ ${this.mathGates.length} mathematical gates created at crosswalks`);
+    }
+
+    /**
+     * Check if player squad passes through a mathematical gate
+     */
+    checkMathGateCollisions() {
+        if (!this.mathGates) return;
+
+        const squadY = this.squadCenterY - this.cameras.main.scrollY;
+
+        this.mathGates.forEach(gate => {
+            if (gate.used) return;
+
+            // Check if squad is passing through gate
+            if (Math.abs(squadY - gate.y) < 50) {
+                gate.used = true;
+
+                // Apply gate effect
+                const oldCount = this.squadMembers.length;
+                let newCount = oldCount;
+
+                if (gate.operation === '×') {
+                    newCount = Math.floor(oldCount * gate.value);
+                } else if (gate.operation === '+') {
+                    newCount = oldCount + gate.value;
+                } else if (gate.operation === '-') {
+                    newCount = Math.max(1, oldCount - gate.value);
+                } else if (gate.operation === '÷') {
+                    newCount = Math.floor(oldCount / gate.value);
+                    if (newCount < 1) newCount = 1;
+                }
+
+                const difference = newCount - oldCount;
+
+                // Add or remove characters
+                if (difference > 0) {
+                    for (let i = 0; i < difference; i++) {
+                        this.addCharacter();
+                    }
+                } else if (difference < 0) {
+                    for (let i = 0; i < Math.abs(difference); i++) {
+                        if (this.squadMembers.length > 1) {
+                            this.removeCharacter();
+                        }
+                    }
+                }
+
+                // Show popup effect
+                this.showGatePopup(gate.text.x, gate.y, difference, gate.operation);
+
+                // Visual feedback - gate consumed
+                this.tweens.add({
+                    targets: [gate.bg, gate.text],
+                    alpha: 0,
+                    scale: 1.5,
+                    duration: 300,
+                    ease: 'Power2'
+                });
+
+                console.log(`🚪 Gate passed: ${gate.operation}${gate.value} → ${oldCount} to ${newCount} (${difference >= 0 ? '+' : ''}${difference})`);
+            }
+        });
+    }
+
+    /**
+     * Show popup effect when passing through gate
+     */
+    showGatePopup(x, y, difference, operation) {
+        const sign = difference >= 0 ? '+' : '';
+        const popupText = this.add.text(
+            x,
+            y,
+            `${sign}${difference}`,
+            {
+                fontSize: '72px',
+                fontFamily: 'Arial Black',
+                color: difference >= 0 ? '#00FF00' : '#FF0000',
+                stroke: '#000000',
+                strokeThickness: 6
+            }
+        );
+        popupText.setOrigin(0.5);
+        popupText.setDepth(100);
+        popupText.setScrollFactor(1, 1);
+
+        // Animate popup
+        this.tweens.add({
+            targets: popupText,
+            y: y - 100,
+            alpha: 0,
+            scale: 1.5,
+            duration: 1000,
+            ease: 'Power2',
+            onComplete: () => popupText.destroy()
+        });
     }
 
     /**
@@ -2811,6 +2983,9 @@ export default class GameScene extends Phaser.Scene {
 
         // PROGRESSION: Check for milestones and award bonuses
         this.checkMilestones();
+
+        // ========== MATHEMATICAL GATES ==========
+        this.checkMathGateCollisions();
 
         // ========== UI/HUD POLISH UPDATES ==========
         this.updateDistanceDisplay();        // Rolling numbers + milestone
