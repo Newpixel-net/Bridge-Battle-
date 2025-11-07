@@ -56,9 +56,41 @@ export default class PreloadScene extends Phaser.Scene {
         // this.load.atlas('zombie_heads', zombiePath + 'shared-0-sheet5.png', zombiePath + 'shared-0-sheet5.json');
         this.load.atlas('zombie_parts', zombiePath + 'shared-0-sheet6.png', zombiePath + 'shared-0-sheet6.json');
 
+        // ========================================================================
+        // 🎮 NEW HIGH-QUALITY GAME SPRITES from raw-assets
+        // ========================================================================
+        const spritePath = 'assets/sprites/';
+
+        // ENEMIES - Viking goblins and flying enemies (Phase 1 & 2)
+        this.load.image('goblin_warrior', spritePath + 'enemies/goblinwarrior-sheet0.png');
+        this.load.image('goblin_archer', spritePath + 'enemies/goblinarcher-sheet0.png');
+        this.load.image('goblin_bomber', spritePath + 'enemies/goblinbomber-sheet0.png');
+        this.load.image('goblin_cyclops', spritePath + 'enemies/goblincyclops-sheet0.png');
+        this.load.image('fly_enemy_01', spritePath + 'enemies/flyenemy_01-sheet0.png');
+        this.load.image('fly_enemy_02', spritePath + 'enemies/flyenemy_02-sheet0.png');
+        this.load.image('fly_enemy_05', spritePath + 'enemies/flyenemy_05-sheet0.png');
+
+        // PLAYER - Viking hero character
+        this.load.image('viking_player', spritePath + 'player/player-sheet0.png');
+
+        // EFFECTS - Explosions, fire, blood
+        this.load.image('explosion_electro', spritePath + 'effects/explosion_electro-sheet0.png');
+        this.load.image('explosion_bomb', spritePath + 'effects/explosion_bomb-sheet0.png');
+        this.load.image('explosion_ground', spritePath + 'effects/explosion_ground-sheet0.png');
+        this.load.image('fire_effect', spritePath + 'effects/fire-sheet0.png');
+        this.load.image('flame_effect', spritePath + 'effects/flame-sheet0.png');
+        this.load.image('blood_splatter', spritePath + 'effects/blood-sheet1.png');
+        this.load.image('dust_effect', spritePath + 'effects/dust-sheet0.png');
+        this.load.image('magic_effect', spritePath + 'effects/magic-sheet0.png');
+
+        // COLLECTIBLES - Coins and bonus boxes
+        this.load.image('coin_sprite', spritePath + 'collectibles/coin-sheet0.png');
+        this.load.image('bonus_box', spritePath + 'collectibles/bonusbox-sheet0.png');
+
         console.log('🎨 Loading MODERN UI ATLAS - Professional AAA Quality');
         console.log('🎯 Loading REAL ZOMBIE BUSTER BUTTON SPRITES');
         console.log('🧟 Loading ZOMBIE CHARACTER SPRITES');
+        console.log('✨ Loading HIGH-QUALITY GAME SPRITES - Vikings, Goblins, Effects!');
     }
 
     create() {
