@@ -11,11 +11,11 @@ import WaveManager from '../systems/WaveManager.js';
 import Enemy from '../entities/Enemy.js';
 import Boss from '../entities/Boss.js';
 
-// ABILITY SYSTEM - Priority 2 Implementation
-import EnergySystem from '../systems/EnergySystem.js';
-import AbilityEffects from '../systems/AbilityEffects.js';
-import AbilityUIBar from '../ui/AbilityUIBar.js';
-import { getDefaultLoadout } from '../utils/AbilityConstants.js';
+// ABILITY SYSTEM - REMOVED (not needed for simple crowd runner)
+// import EnergySystem from '../systems/EnergySystem.js';
+// import AbilityEffects from '../systems/AbilityEffects.js';
+// import AbilityUIBar from '../ui/AbilityUIBar.js';
+// import { getDefaultLoadout } from '../utils/AbilityConstants.js';
 
 // CHARACTER SELECTION - Priority 3 Implementation
 import { calculateCombinedStats, getCombinedAbilities } from '../utils/CharacterConstants.js';
@@ -172,11 +172,11 @@ export default class GameScene extends Phaser.Scene {
         this.noDeaths = true;              // Track if player hasn't lost squad members
         this.difficultyMultiplier = 1.0;  // Increases over time for difficulty scaling
 
-        // ABILITY SYSTEM - Priority 2 Integration
-        this.energySystem = null;
-        this.abilityEffects = null;
-        this.abilityUIBar = null;
-        this.abilities = [];
+        // ABILITY SYSTEM - REMOVED (simple crowd runner doesn't need abilities/energy)
+        // this.energySystem = null;
+        // this.abilityEffects = null;
+        // this.abilityUIBar = null;
+        // this.abilities = [];
 
         // BOSS BATTLE SYSTEM - Priority 4 Integration
         this.bossManager = null;
@@ -206,8 +206,8 @@ export default class GameScene extends Phaser.Scene {
         // COMBAT SYSTEM: Initialize combat (bullets, shooting, enemies)
         this.initializeCombatSystem();
 
-        // ABILITY SYSTEM: Initialize abilities (energy, effects, UI)
-        this.initializeAbilitySystem();
+        // ABILITY SYSTEM: REMOVED (simple crowd runner doesn't need abilities)
+        // this.initializeAbilitySystem();
 
         // BOSS BATTLE SYSTEM: Initialize boss manager
         this.initializeBossSystem();
@@ -1305,7 +1305,7 @@ export default class GameScene extends Phaser.Scene {
 
         // 1. SIZE VARIATION (0.8x to 1.0x for squad members)
         const sizeVariation = Phaser.Math.FloatBetween(0.8, 1.0);
-        const baseScale = 0.6; // Base scale for zombie sprites
+        const baseScale = 6.0; // ENLARGED 10x for crowd runner visibility (was 0.6)
         const finalScale = baseScale * sizeVariation;
 
         // 2. ZOMBIE VARIETY - Randomly select from available zombie types
@@ -1595,82 +1595,27 @@ export default class GameScene extends Phaser.Scene {
      * Create enhanced UI with all polish features
      */
     createDistanceUI() {
+        // SIMPLIFIED UI - Crowd runner style (minimal UI)
+        // Only show back button - unit counter already shown in squad bubble
         const uiDepth = 100;
 
-        // UI/HUD POLISH 8: Vignette effect - subtle edge darkening
-        this.createVignette(uiDepth - 1);
-
-        // Top-left panel background (expanded)
-        const panelBg = this.add.rectangle(10, 10, 280, 180, 0x000000, 0.6);
-        panelBg.setOrigin(0, 0);
-        panelBg.setDepth(uiDepth);
-        panelBg.setScrollFactor(0);
-
-        // Panel glow
-        const panelGlow = this.add.rectangle(10, 10, 280, 180, 0x00AAFF, 0.1);
-        panelGlow.setOrigin(0, 0);
-        panelGlow.setDepth(uiDepth);
-        panelGlow.setScrollFactor(0);
-        panelGlow.setStrokeStyle(2, 0x00AAFF, 0.5);
-
-        // UI/HUD POLISH 1: Distance counter with rolling numbers (crisp 2× resolution)
-        this.distanceText = this.add.text(20, 20, '0m', {
-            fontSize: '28px',
+        // Simple back button (top-left corner only)
+        const backButton = this.add.text(20, 20, '← BACK', {
+            fontSize: '24px',
             fontFamily: 'Arial Black',
-            color: '#FFD700',
+            color: '#FFFFFF',
             stroke: '#000000',
             strokeThickness: 4
         });
-        this.distanceText.setDepth(uiDepth + 1);
-        this.distanceText.setScrollFactor(0);
-        this.distanceText.setResolution(2); // 2× resolution for crisp rendering
-
-        // UI/HUD POLISH 7: Milestone tracker (crisp 2× resolution)
-        this.milestoneText = this.add.text(20, 52, 'Next: 100m', {
-            fontSize: '14px',
-            fontFamily: 'Arial',
-            color: '#FFA500',
-            stroke: '#000000',
-            strokeThickness: 3
+        backButton.setDepth(uiDepth);
+        backButton.setScrollFactor(0);
+        backButton.setInteractive({ useHandCursor: true });
+        backButton.on('pointerdown', () => {
+            console.log('Back button pressed');
+            this.scene.start('MenuScene');
         });
-        this.milestoneText.setDepth(uiDepth + 1);
-        this.milestoneText.setScrollFactor(0);
-        this.milestoneText.setResolution(2); // 2× resolution for crisp rendering
 
-        // UI/HUD POLISH 2: Squad size with color coding (crisp 2× resolution)
-        this.squadSizeUI = this.add.text(20, 75, 'Squad: 1', {
-            fontSize: '20px',
-            fontFamily: 'Arial Black',
-            color: COLORS.SQUAD_BLUE,
-            stroke: '#000000',
-            strokeThickness: 3
-        });
-        this.squadSizeUI.setDepth(uiDepth + 1);
-        this.squadSizeUI.setScrollFactor(0);
-        this.squadSizeUI.setResolution(2); // 2× resolution for crisp rendering
-
-        // WAVE SYSTEM: Wave info display
-        this.waveInfoText = this.add.text(20, 100, 'Wave: -', {
-            fontSize: '16px',
-            fontFamily: 'Arial Bold',
-            color: '#FF6B6B',
-            stroke: '#000000',
-            strokeThickness: 3
-        });
-        this.waveInfoText.setDepth(uiDepth + 1);
-        this.waveInfoText.setScrollFactor(0);
-        this.waveInfoText.setResolution(2);
-
-        // UI/HUD POLISH 3: Visual gauge for squad size
-        this.createSquadGauge(20, 130, uiDepth);
-
-        // UI/HUD POLISH 5 & 6: Combo tracker and multiplier display
-        this.createComboUI(20, 135, uiDepth);
-
-        // UI/HUD POLISH 4: Upcoming obstacles preview (top-right)
-        this.createUpcomingPreview(GAME.WIDTH - 160, 10, uiDepth);
-
-        console.log('✓ Enhanced UI with all polish features created');
+        console.log('✓ Minimal UI created (back button only)');
     }
 
     /**
@@ -2021,8 +1966,8 @@ export default class GameScene extends Phaser.Scene {
         if (this.comboCount > 0) {
             this.comboCount = 0;
             this.currentMultiplier = 1;
-            this.updateComboDisplay();
-            this.updateMultiplierDisplay();
+            // this.updateComboDisplay(); // REMOVED - simplified UI
+            // this.updateMultiplierDisplay(); // REMOVED - simplified UI
         }
     }
 
@@ -2843,8 +2788,8 @@ export default class GameScene extends Phaser.Scene {
             ease: 'Back.easeOut'
         });
 
-        // Update visual gauge
-        this.updateSquadGauge();
+        // Update visual gauge - REMOVED (simplified UI)
+        // this.updateSquadGauge();
 
         // Store for next comparison
         this.previousSquadSize = count;
@@ -3036,22 +2981,21 @@ export default class GameScene extends Phaser.Scene {
         // ========== MATHEMATICAL GATES ==========
         this.checkMathGateCollisions();
 
-        // ========== UI/HUD POLISH UPDATES ==========
-        this.updateDistanceDisplay();        // Rolling numbers + milestone
-        this.updateUpcomingPreview();        // Upcoming obstacles preview
-        this.updateMultiplierDisplay();      // Multiplier based on combo
-        this.updateWaveDisplay();            // Wave progress
+        // ========== UI UPDATES - SIMPLIFIED ==========
+        // (Crowd runner only needs unit counter in bubble - no complex UI)
+        // this.updateDistanceDisplay();
+        // this.updateUpcomingPreview();
+        // this.updateMultiplierDisplay();
+        // this.updateWaveDisplay();
 
-        // ========== ABILITY SYSTEM UPDATES ==========
-        // Update energy regeneration
-        if (this.energySystem) {
-            this.energySystem.update(time, delta);
-        }
-
-        // Update ability UI (cooldowns, etc.)
-        if (this.abilityUIBar) {
-            this.abilityUIBar.update(time, delta);
-        }
+        // ========== ABILITY SYSTEM UPDATES - REMOVED ==========
+        // (Simple crowd runner doesn't use energy/abilities)
+        // if (this.energySystem) {
+        //     this.energySystem.update(time, delta);
+        // }
+        // if (this.abilityUIBar) {
+        //     this.abilityUIBar.update(time, delta);
+        // }
 
         // ========== AUDIO UPDATES ==========
         // AUDIO: Check for milestone (every 1000m)
