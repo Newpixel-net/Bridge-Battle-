@@ -129,8 +129,8 @@ export default class Enemy {
             if (this.scene.textures.exists(enemySprite)) {
                 // Load the high-quality sprite
                 mainSprite = this.scene.add.sprite(0, 0, enemySprite);
-                // Scale sprite sheets are large, so scale them down appropriately
-                const spriteScale = finalScale * 0.15; // Sprite sheets are ~2000px, scale to game size
+                // Scale sprite sheets - ENLARGED 10x for visibility (crowd runner style)
+                const spriteScale = finalScale * 1.5; // Was 0.15, now 1.5 for 10x larger characters
                 mainSprite.setScale(spriteScale);
                 mainSprite.setTint(this.color); // Tint based on enemy type
 
@@ -319,48 +319,34 @@ export default class Enemy {
 
     /**
      * Update enemy (called each frame)
-     * CRITICAL: Makes enemy advance toward player continuously
+     * COUNT MASTERS STYLE: Enemies are STATIONARY obstacles (no movement!)
      */
     update(time, delta) {
         if (!this.active || this.isDestroyed || this.isDying) return;
 
-        // WAVE SYSTEM: Advance toward player
-        this.advanceTowardPlayer();
+        // STATIONARY: Enemies stay at spawn position
+        // World auto-scrolls, bringing enemies to player
+        // NO movement, NO rotation, just stay in place
 
-        // FORWARD MOTION FEEL: Rotate to face player
-        this.rotateTowardPlayer();
+        // Ensure velocity is zero (stationary obstacle)
+        if (this.container.body) {
+            this.container.body.setVelocity(0, 0);
+        }
     }
 
     /**
-     * WAVE SYSTEM: Advance toward player continuously
+     * REMOVED: advanceTowardPlayer() - enemies are stationary in Count Masters style
      */
-    advanceTowardPlayer() {
-        if (!this.scene.squadCenterX || !this.scene.squadCenterY) return;
-        if (!this.container.body) return;
-
-        // Get player position
-        const playerX = this.scene.squadCenterX;
-        const playerY = this.scene.squadCenterY;
-
-        // Calculate angle to player
-        const angle = Phaser.Math.Angle.Between(
-            this.container.x,
-            this.container.y,
-            playerX,
-            playerY
-        );
-
-        // Set velocity toward player
-        this.container.body.setVelocity(
-            Math.cos(angle) * this.speed,
-            Math.sin(angle) * this.speed
-        );
-    }
 
     /**
+     * REMOVED: rotateTowardPlayer() - enemies are stationary obstacles
+     */
+
+    /**
+     * NOTE: The methods below are kept for reference but not used
      * Rotate enemy to face the player (forward motion feel)
      */
-    rotateTowardPlayer() {
+    rotateTowardPlayer_UNUSED() {
         if (!this.scene.squadCenterX || !this.scene.squadCenterY) return;
 
         // Calculate angle from enemy to player

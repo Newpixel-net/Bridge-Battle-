@@ -42,6 +42,7 @@ export default class WaveManager {
 
     /**
      * Create definition for a regular wave
+     * COUNT MASTERS STYLE: Enemies are STATIONARY obstacles at fixed positions
      */
     createRegularWave(waveNumber) {
         // Wave difficulty increases
@@ -58,9 +59,15 @@ export default class WaveManager {
             regularCount = enemyCount - eliteCount;
         }
 
+        // FIXED SPAWN POSITIONS: Between gates on the path
+        // Gates at: 400, 1200, 2000, 2800, 3600, 4400, 5200, 6000, 6800, 7600
+        // Enemies at: 700, 1500, 2300, 3100, 3900, 4700, 5500, 6300, 7100, 7900
+        const spawnPositions = [700, 1500, 2300, 3100, 3900, 4700, 5500, 6300, 7100, 7900];
+
         return {
             waveNumber: waveNumber,
             type: 'regular',
+            spawnY: spawnPositions[waveNumber - 1], // Fixed Y position on path
             enemies: [
                 {
                     type: 'SOLDIER',
@@ -73,8 +80,8 @@ export default class WaveManager {
                     formation: 'line'
                 }
             ],
-            spawnDelay: 100,           // ms between each enemy spawn
-            advanceSpeed: 80 + (waveNumber * 5)  // Enemies get faster
+            spawnDelay: 100           // ms between each enemy spawn (for formation)
+            // NO advanceSpeed - enemies are STATIONARY obstacles!
         };
     }
 
@@ -207,14 +214,18 @@ export default class WaveManager {
 
     /**
      * Spawn regular enemy wave
+     * COUNT MASTERS STYLE: Spawn at fixed Y position (stationary obstacles)
      */
     spawnRegularWave(waveData) {
         waveData.enemies.forEach(enemyGroup => {
             if (enemyGroup.count === 0) return;
 
+            // Use fixed spawnY from wave data (700, 1500, 2300, etc.)
             const positions = this.calculateFormationPositions(
                 enemyGroup.formation,
-                enemyGroup.count
+                enemyGroup.count,
+                null,  // Use default centerX
+                waveData.spawnY  // Fixed Y position for this wave
             );
 
             positions.forEach((pos, index) => {
@@ -225,7 +236,7 @@ export default class WaveManager {
                             enemyGroup.type,
                             pos.x,
                             pos.y,
-                            waveData.advanceSpeed
+                            0  // NO SPEED - enemies are stationary!
                         );
                     }
                 );
