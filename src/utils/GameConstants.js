@@ -291,8 +291,8 @@ export const UI_SCALE = {
     // Level badges (660×660px native) → ~330×330px at 50% scale
     BADGE: 0.5,
 
-    // Decorations (grass, etc.)
-    DECORATION: 0.5
+    // Decorations (grass 1073×490px native) → ~214×98px at 0.2 scale
+    DECORATION: 0.2
 };
 
 // ============================================================================
