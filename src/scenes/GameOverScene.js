@@ -35,15 +35,24 @@ export default class GameOverScene extends Phaser.Scene {
         // Dark overlay background
         this.add.rectangle(centerX, centerY, GAME.WIDTH, GAME.HEIGHT, 0x000000, 0.8);
 
-        // TEMPORARY: Use PNG asset until sprite atlas coordinates are properly mapped
-        // TODO: Map actual sprite coordinates and re-enable atlas system
-        const panel = this.add.image(centerX, centerY, 'ui_panel_lose');
+        // Use professional sprite atlas panel if available
+        let panel;
+        let targetScale;
+
+        if (this.atlasHelper) {
+            // Professional Zombie Buster panel (540x410 native)
+            panel = this.atlasHelper.createSprite(centerX, centerY, 'panel_large');
+            targetScale = 1.2; // Scale up slightly for better visibility
+        } else {
+            // Fallback to PNG asset
+            panel = this.add.image(centerX, centerY, 'ui_panel_lose');
+            targetScale = UI_SCALE.PANEL;
+        }
+
         panel.setScale(0);
         panel.setDepth(10);
 
         // Scale in animation
-        // FIXED: Scale using UI_SCALE.PANEL constant (1640x1800 → 623x684)
-        const targetScale = UI_SCALE.PANEL;
         this.tweens.add({
             targets: panel,
             scaleX: targetScale,

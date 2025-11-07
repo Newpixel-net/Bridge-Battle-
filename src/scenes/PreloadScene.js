@@ -61,19 +61,18 @@ export default class PreloadScene extends Phaser.Scene {
 
         console.log('📦 Loading NEW ultra-high-res UI assets from:', uiPath);
 
-        // ✨ NEW: Load professional sprite atlases from ready-made games
-        // These are battle-tested UI elements from published games
+        // ✨ PROFESSIONAL: Load real UI sprite atlases from Zombie Buster
         const atlasPath = 'assets/ui-atlas/';
 
-        // Load sprite sheets as full textures (we'll extract frames programmatically)
-        this.load.image('zombie', atlasPath + 'ui-zombie.png');
-        this.load.image('zombie2', atlasPath + 'ui-zombie2.png');
-        this.load.image('viking', atlasPath + 'ui-viking.png');
+        // Load actual UI sprite sheets with buttons, panels, stars
+        this.load.image('zombie_main', atlasPath + 'zombie-ui-main.png');
+        this.load.image('zombie_buttons', atlasPath + 'zombie-ui-buttons.png');
+        this.load.image('zombie_panels', atlasPath + 'zombie-ui-panels.png');
 
-        // Load comprehensive atlas JSON with all UI elements categorized
-        this.load.json('ui_atlas_complete', atlasPath + 'ui-complete-atlas.json');
+        // Load atlas JSON with REAL coordinates mapped from sprite sheets
+        this.load.json('ui_atlas_complete', atlasPath + 'ui-atlas-real.json');
 
-        console.log('🎮 Loading professional UI sprite atlases from published games');
+        console.log('🎮 Loading professional UI from Zombie Buster game');
     }
 
     create() {
