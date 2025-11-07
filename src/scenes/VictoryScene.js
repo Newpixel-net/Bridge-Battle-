@@ -53,6 +53,15 @@ export default class VictoryScene extends Phaser.Scene {
     }
 
     create() {
+        // Get AtlasHelper from registry (initialized in PreloadScene)
+        this.atlasHelper = this.registry.get('atlasHelper');
+
+        if (this.atlasHelper) {
+            console.log('✓ AtlasHelper available - using professional sprite atlases');
+        } else {
+            console.log('⚠️  AtlasHelper not available - using fallback PNG assets');
+        }
+
         // Background gradient (gold to white)
         this.createBackground();
 
@@ -77,16 +86,26 @@ export default class VictoryScene extends Phaser.Scene {
         const centerY = GAME.HEIGHT / 2;
 
         // Add the complete victory panel image
-        const panel = this.add.image(centerX, centerY, 'ui_panel_win');
+        let panel;
+        if (this.atlasHelper) {
+            // Use atlas sprite for professional quality
+            panel = this.atlasHelper.createSprite(centerX, centerY, 'panel_victory_large');
+        } else {
+            // Fallback to PNG asset
+            panel = this.add.image(centerX, centerY, 'ui_panel_win');
+            panel.setScale(UI_SCALE.PANEL);
+        }
+
         panel.setScale(0);
         panel.setDepth(10);
 
         // Scale in animation
         // FIXED: Scale using UI_SCALE.PANEL constant (1640x1800 → 623x684)
+        const targetScale = this.atlasHelper ? panel.scaleX : UI_SCALE.PANEL;
         this.tweens.add({
             targets: panel,
-            scaleX: UI_SCALE.PANEL,
-            scaleY: UI_SCALE.PANEL,
+            scaleX: targetScale,
+            scaleY: targetScale,
             duration: 600,
             ease: 'Back.easeOut',
             delay: 500
@@ -105,7 +124,7 @@ export default class VictoryScene extends Phaser.Scene {
         continueButton.setDepth(11);
 
         // Hover effect on button area
-        const hoverScale = UI_SCALE.PANEL * 1.05;
+        const hoverScale = targetScale * 1.05;
         continueButton.on('pointerover', () => {
             this.tweens.add({
                 targets: panel,
@@ -119,8 +138,8 @@ export default class VictoryScene extends Phaser.Scene {
         continueButton.on('pointerout', () => {
             this.tweens.add({
                 targets: panel,
-                scaleX: UI_SCALE.PANEL,
-                scaleY: UI_SCALE.PANEL,
+                scaleX: targetScale,
+                scaleY: targetScale,
                 duration: 150
             });
         });

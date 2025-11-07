@@ -1,0 +1,132 @@
+{
+  "meta": {
+    "app": "Bridge Battle - Professional UI Atlas System",
+    "version": "2.0",
+    "description": "Comprehensive UI atlas compiled from Viking Escape, Zombie Buster, and Gold Miner Jack",
+    "atlases": {
+      "zombie": "ui-zombie.png",
+      "zombie2": "ui-zombie2.png",
+      "viking": "ui-viking.png"
+    }
+  },
+
+  "atlases": {
+    "zombie": {
+      "image": "ui-zombie.png",
+      "format": "RGBA8888",
+      "size": {"w": 2048, "h": 1024},
+      "frames": {
+        "button_play": {
+          "frame": {"x": 10, "y": 10, "w": 200, "h": 80},
+          "pivot": {"x": 0.5, "y": 0.5}
+        },
+        "button_pause": {
+          "frame": {"x": 220, "y": 10, "w": 200, "h": 80},
+          "pivot": {"x": 0.5, "y": 0.5}
+        },
+        "button_restart": {
+          "frame": {"x": 430, "y": 10, "w": 200, "h": 80},
+          "pivot": {"x": 0.5, "y": 0.5}
+        },
+        "button_menu": {
+          "frame": {"x": 640, "y": 10, "w": 200, "h": 80},
+          "pivot": {"x": 0.5, "y": 0.5}
+        },
+        "button_settings": {
+          "frame": {"x": 850, "y": 10, "w": 200, "h": 80},
+          "pivot": {"x": 0.5, "y": 0.5}
+        },
+        "panel_victory_large": {
+          "frame": {"x": 10, "y": 100, "w": 600, "h": 700},
+          "pivot": {"x": 0.5, "y": 0.5}
+        },
+        "panel_defeat_large": {
+          "frame": {"x": 620, "y": 100, "w": 600, "h": 700},
+          "pivot": {"x": 0.5, "y": 0.5}
+        },
+        "icon_coin": {
+          "frame": {"x": 1230, "y": 10, "w": 80, "h": 80},
+          "pivot": {"x": 0.5, "y": 0.5}
+        },
+        "icon_star": {
+          "frame": {"x": 1320, "y": 10, "w": 80, "h": 80},
+          "pivot": {"x": 0.5, "y": 0.5}
+        },
+        "icon_heart": {
+          "frame": {"x": 1410, "y": 10, "w": 80, "h": 80},
+          "pivot": {"x": 0.5, "y": 0.5}
+        }
+      }
+    },
+
+    "viking": {
+      "image": "ui-viking.png",
+      "format": "RGBA8888",
+      "size": {"w": 2048, "h": 1024},
+      "frames": {
+        "button_start": {
+          "frame": {"x": 10, "y": 10, "w": 250, "h": 100},
+          "pivot": {"x": 0.5, "y": 0.5}
+        },
+        "button_exit": {
+          "frame": {"x": 270, "y": 10, "w": 250, "h": 100},
+          "pivot": {"x": 0.5, "y": 0.5}
+        },
+        "panel_pause": {
+          "frame": {"x": 10, "y": 120, "w": 500, "h": 600},
+          "pivot": {"x": 0.5, "y": 0.5}
+        },
+        "banner_score": {
+          "frame": {"x": 520, "y": 120, "w": 400, "h": 100},
+          "pivot": {"x": 0.5, "y": 0.5}
+        }
+      }
+    }
+  },
+
+  "categories": {
+    "buttons": {
+      "description": "All button UI elements",
+      "elements": [
+        {"name": "button_play", "atlas": "zombie", "category": "action"},
+        {"name": "button_pause", "atlas": "zombie", "category": "action"},
+        {"name": "button_restart", "atlas": "zombie", "category": "action"},
+        {"name": "button_menu", "atlas": "zombie", "category": "navigation"},
+        {"name": "button_settings", "atlas": "zombie", "category": "navigation"},
+        {"name": "button_start", "atlas": "viking", "category": "action"},
+        {"name": "button_exit", "atlas": "viking", "category": "navigation"}
+      ]
+    },
+    "panels": {
+      "description": "Panel and popup UI elements",
+      "elements": [
+        {"name": "panel_victory_large", "atlas": "zombie", "category": "game_state"},
+        {"name": "panel_defeat_large", "atlas": "zombie", "category": "game_state"},
+        {"name": "panel_pause", "atlas": "viking", "category": "game_state"}
+      ]
+    },
+    "icons": {
+      "description": "Small icon UI elements",
+      "elements": [
+        {"name": "icon_coin", "atlas": "zombie", "category": "resource"},
+        {"name": "icon_star", "atlas": "zombie", "category": "rating"},
+        {"name": "icon_heart", "atlas": "zombie", "category": "resource"}
+      ]
+    },
+    "banners": {
+      "description": "Banner and header UI elements",
+      "elements": [
+        {"name": "banner_score", "atlas": "viking", "category": "hud"}
+      ]
+    }
+  },
+
+  "scaling": {
+    "description": "Recommended scaling factors for each element type",
+    "button": 0.5,
+    "panel": 0.4,
+    "icon": 0.6,
+    "banner": 0.5,
+    "decoration": 0.5
+  }
+}

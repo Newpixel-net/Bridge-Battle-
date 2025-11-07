@@ -1,5 +1,6 @@
 import Phaser from 'phaser';
 import { SCENES, COLORS } from '../utils/GameConstants.js';
+import { AtlasHelper } from '../utils/AtlasHelper.js';
 
 /**
  * PreloadScene - Asset loading
@@ -65,18 +66,29 @@ export default class PreloadScene extends Phaser.Scene {
         const atlasPath = 'assets/ui-atlas/';
 
         // Load sprite sheets as full textures (we'll extract frames programmatically)
-        this.load.image('ui_atlas_zombie', atlasPath + 'ui-zombie.png');
-        this.load.image('ui_atlas_zombie2', atlasPath + 'ui-zombie2.png');
-        this.load.image('ui_atlas_viking', atlasPath + 'ui-viking.png');
+        this.load.image('zombie', atlasPath + 'ui-zombie.png');
+        this.load.image('zombie2', atlasPath + 'ui-zombie2.png');
+        this.load.image('viking', atlasPath + 'ui-viking.png');
 
-        // Load atlas JSON for frame definitions
-        this.load.json('ui_atlas_data', atlasPath + 'ui-basic-atlas.json');
+        // Load comprehensive atlas JSON with all UI elements categorized
+        this.load.json('ui_atlas_complete', atlasPath + 'ui-complete-atlas.json');
 
         console.log('🎮 Loading professional UI sprite atlases from published games');
     }
 
     create() {
         console.log('✓ Assets loaded');
+
+        // Initialize AtlasHelper with comprehensive atlas data
+        const atlasHelper = AtlasHelper.initialize(this);
+
+        if (atlasHelper) {
+            // Make AtlasHelper globally available to all scenes
+            this.registry.set('atlasHelper', atlasHelper);
+            console.log('✓ AtlasHelper initialized and registered globally');
+        } else {
+            console.warn('⚠️  AtlasHelper initialization failed - scenes will use fallback assets');
+        }
 
         // Create placeholder textures for squad members
         this.createPlaceholderTextures();

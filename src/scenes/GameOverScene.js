@@ -23,20 +23,39 @@ export default class GameOverScene extends Phaser.Scene {
         const centerX = GAME.WIDTH / 2;
         const centerY = GAME.HEIGHT / 2;
 
+        // Get AtlasHelper from registry (initialized in PreloadScene)
+        this.atlasHelper = this.registry.get('atlasHelper');
+
+        if (this.atlasHelper) {
+            console.log('✓ AtlasHelper available - using professional sprite atlases');
+        } else {
+            console.log('⚠️  AtlasHelper not available - using fallback PNG assets');
+        }
+
         // Dark overlay background
         this.add.rectangle(centerX, centerY, GAME.WIDTH, GAME.HEIGHT, 0x000000, 0.8);
 
         // Use complete defeat panel (Option B - pre-made panel asset)
-        const panel = this.add.image(centerX, centerY, 'ui_panel_lose');
+        let panel;
+        if (this.atlasHelper) {
+            // Use atlas sprite for professional quality
+            panel = this.atlasHelper.createSprite(centerX, centerY, 'panel_defeat_large');
+        } else {
+            // Fallback to PNG asset
+            panel = this.add.image(centerX, centerY, 'ui_panel_lose');
+            panel.setScale(UI_SCALE.PANEL);
+        }
+
         panel.setScale(0);
         panel.setDepth(10);
 
         // Scale in animation
         // FIXED: Scale using UI_SCALE.PANEL constant (1640x1800 → 623x684)
+        const targetScale = this.atlasHelper ? panel.scaleX : UI_SCALE.PANEL;
         this.tweens.add({
             targets: panel,
-            scaleX: UI_SCALE.PANEL,
-            scaleY: UI_SCALE.PANEL,
+            scaleX: targetScale,
+            scaleY: targetScale,
             duration: 600,
             ease: 'Back.easeOut',
             delay: 300
@@ -55,7 +74,7 @@ export default class GameOverScene extends Phaser.Scene {
         continueButton.setDepth(11);
 
         // Hover effect
-        const hoverScale = UI_SCALE.PANEL * 1.05;
+        const hoverScale = targetScale * 1.05;
         continueButton.on('pointerover', () => {
             this.tweens.add({
                 targets: panel,
@@ -69,8 +88,8 @@ export default class GameOverScene extends Phaser.Scene {
         continueButton.on('pointerout', () => {
             this.tweens.add({
                 targets: panel,
-                scaleX: UI_SCALE.PANEL,
-                scaleY: UI_SCALE.PANEL,
+                scaleX: targetScale,
+                scaleY: targetScale,
                 duration: 150
             });
         });

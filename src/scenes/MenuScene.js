@@ -35,6 +35,15 @@ export default class MenuScene extends Phaser.Scene {
         const centerX = GAME.WIDTH / 2;
         const centerY = GAME.HEIGHT / 2;
 
+        // Get AtlasHelper from registry (initialized in PreloadScene)
+        this.atlasHelper = this.registry.get('atlasHelper');
+
+        if (this.atlasHelper) {
+            console.log('✓ AtlasHelper available - using professional sprite atlases');
+        } else {
+            console.log('⚠️  AtlasHelper not available - using fallback PNG assets');
+        }
+
         // Animated background
         this.createAnimatedBackground();
 
@@ -150,33 +159,58 @@ export default class MenuScene extends Phaser.Scene {
         const startY = 340;
         const buttonSpacing = 90;
 
-        // New Game button (using PNG asset)
-        this.createImageButton(
-            centerX, startY,
-            'ui_button_new_game',
-            () => this.startGame()
-        );
+        // Use AtlasHelper if available, otherwise fallback to PNG assets
+        if (this.atlasHelper) {
+            // NEW: Using professional sprite atlas buttons
+            this.atlasHelper.createButton(
+                centerX, startY,
+                'button_play',
+                () => this.startGame()
+            );
 
-        // Settings button
-        this.createImageButton(
-            centerX, startY + buttonSpacing,
-            'ui_button_settings',
-            () => this.showSettings()
-        );
+            this.atlasHelper.createButton(
+                centerX, startY + buttonSpacing,
+                'button_options',
+                () => this.showSettings()
+            );
 
-        // Shop button (new feature - shows "How to Play" for now)
-        this.createImageButton(
-            centerX, startY + buttonSpacing * 2,
-            'ui_button_shop',
-            () => this.showHowToPlay()
-        );
+            this.atlasHelper.createButton(
+                centerX, startY + buttonSpacing * 2,
+                'button_shop',
+                () => this.showHowToPlay()
+            );
 
-        // Exit button (shows credits)
-        this.createImageButton(
-            centerX, startY + buttonSpacing * 3,
-            'ui_button_exit',
-            () => this.showCredits()
-        );
+            this.atlasHelper.createButton(
+                centerX, startY + buttonSpacing * 3,
+                'button_home',
+                () => this.showCredits()
+            );
+        } else {
+            // FALLBACK: Using PNG assets from EPS extraction
+            this.createImageButton(
+                centerX, startY,
+                'ui_button_new_game',
+                () => this.startGame()
+            );
+
+            this.createImageButton(
+                centerX, startY + buttonSpacing,
+                'ui_button_settings',
+                () => this.showSettings()
+            );
+
+            this.createImageButton(
+                centerX, startY + buttonSpacing * 2,
+                'ui_button_shop',
+                () => this.showHowToPlay()
+            );
+
+            this.createImageButton(
+                centerX, startY + buttonSpacing * 3,
+                'ui_button_exit',
+                () => this.showCredits()
+            );
+        }
     }
 
     /**
