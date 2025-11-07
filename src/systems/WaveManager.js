@@ -59,10 +59,10 @@ export default class WaveManager {
             regularCount = enemyCount - eliteCount;
         }
 
-        // FIXED SPAWN POSITIONS: Between gates on the path (REDUCED to 5 waves)
-        // Gates at: 400, 1200, 2000, 2800, 3600
-        // Enemies at: 700, 1500, 2300, 3100, 3900
-        const spawnPositions = [700, 1500, 2300, 3100, 3900];
+        // FIXED SPAWN POSITIONS: 500 units AFTER gates (clear separation)
+        // Gates at: 600, 1600, 2600, 3600, 4600
+        // Enemies at: 1100, 2100, 3100, 4100, 5100 (500 units after each gate)
+        const spawnPositions = [1100, 2100, 3100, 4100, 5100];
 
         return {
             waveNumber: waveNumber,
