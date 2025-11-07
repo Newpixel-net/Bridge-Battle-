@@ -91,8 +91,9 @@ export default class Enemy {
         const sizeVariation = Phaser.Math.FloatBetween(0.9, 1.1);
         const finalScale = baseScale * sizeVariation;
 
-        // ZOMBIE VARIETY - Randomly select from 3 zombie types
-        const zombieTypes = [1, 2, 3];
+        // ZOMBIE VARIETY - Randomly select from available zombie types
+        // NOTE: Only using types 1-2 as type 3 assets are incomplete
+        const zombieTypes = [1, 2];
         const zombieType = Phaser.Utils.Array.GetRandom(zombieTypes);
 
         // Ground shadow
@@ -107,29 +108,72 @@ export default class Enemy {
         const container = this.scene.add.container(this.x, this.y);
 
         // SPRITE ASSEMBLY: Head + Body + Limbs from atlas
-        const bodySprite = this.scene.add.sprite(0, 10, 'zombie_parts', `Zombie_${zombieType}_Body_0000`);
-        bodySprite.setScale(finalScale);
-        bodySprite.setTint(this.color); // Tint based on enemy type (red/brown/orange)
+        // Use fallback graphics if textures don't exist
+        let bodySprite, headSprite;
 
-        const headSprite = this.scene.add.sprite(0, -15, 'zombie_heads', `Zombie_${zombieType}_Head_0000`);
-        headSprite.setScale(finalScale);
-        headSprite.setTint(this.color);
+        try {
+            if (this.scene.textures.exists('zombie_parts')) {
+                bodySprite = this.scene.add.sprite(0, 10, 'zombie_parts', `Zombie_${zombieType}_Body_0000`);
+                bodySprite.setScale(finalScale);
+                bodySprite.setTint(this.color);
+            } else {
+                // Fallback: colored circle for body
+                const graphics = this.scene.add.graphics();
+                graphics.fillStyle(this.color);
+                graphics.fillCircle(0, 10, 20);
+                bodySprite = graphics;
+            }
+        } catch (error) {
+            // Fallback: colored circle for body
+            const graphics = this.scene.add.graphics();
+            graphics.fillStyle(this.color);
+            graphics.fillCircle(0, 10, 20);
+            bodySprite = graphics;
+        }
 
-        const leftHandSprite = this.scene.add.sprite(-15, 5, 'zombie_parts', `Zombie_${zombieType}_HandLeft_0000`);
-        leftHandSprite.setScale(finalScale * 0.9);
-        leftHandSprite.setTint(this.color);
+        // Fallback for head (simple circle since zombie_heads atlas is missing)
+        const headGraphics = this.scene.add.graphics();
+        headGraphics.fillStyle(this.color);
+        headGraphics.fillCircle(0, -15, 15);
+        headGraphics.fillStyle(0xFFFFFF);
+        headGraphics.fillCircle(-5, -18, 3); // Left eye
+        headGraphics.fillCircle(5, -18, 3);  // Right eye
+        headSprite = headGraphics;
 
-        const rightHandSprite = this.scene.add.sprite(15, 5, 'zombie_parts', `Zombie_${zombieType}_HandRight_0000`);
-        rightHandSprite.setScale(finalScale * 0.9);
-        rightHandSprite.setTint(this.color);
+        // Limb sprites with fallback
+        let leftHandSprite, rightHandSprite, leftFootSprite, rightFootSprite;
 
-        const leftFootSprite = this.scene.add.sprite(-8, 25, 'zombie_parts', `Zombie_${zombieType}_FootLeft_0000`);
-        leftFootSprite.setScale(finalScale);
-        leftFootSprite.setTint(this.color);
+        try {
+            if (this.scene.textures.exists('zombie_parts')) {
+                leftHandSprite = this.scene.add.sprite(-15, 5, 'zombie_parts', `Zombie_${zombieType}_HandLeft_0000`);
+                leftHandSprite.setScale(finalScale * 0.9);
+                leftHandSprite.setTint(this.color);
 
-        const rightFootSprite = this.scene.add.sprite(8, 25, 'zombie_parts', `Zombie_${zombieType}_FootRight_0000`);
-        rightFootSprite.setScale(finalScale);
-        rightFootSprite.setTint(this.color);
+                rightHandSprite = this.scene.add.sprite(15, 5, 'zombie_parts', `Zombie_${zombieType}_HandRight_0000`);
+                rightHandSprite.setScale(finalScale * 0.9);
+                rightHandSprite.setTint(this.color);
+
+                leftFootSprite = this.scene.add.sprite(-8, 25, 'zombie_parts', `Zombie_${zombieType}_FootLeft_0000`);
+                leftFootSprite.setScale(finalScale);
+                leftFootSprite.setTint(this.color);
+
+                rightFootSprite = this.scene.add.sprite(8, 25, 'zombie_parts', `Zombie_${zombieType}_FootRight_0000`);
+                rightFootSprite.setScale(finalScale);
+                rightFootSprite.setTint(this.color);
+            } else {
+                // Fallback: small circles for limbs
+                leftHandSprite = this.scene.add.circle(-15, 5, 8, this.color);
+                rightHandSprite = this.scene.add.circle(15, 5, 8, this.color);
+                leftFootSprite = this.scene.add.circle(-8, 25, 8, this.color);
+                rightFootSprite = this.scene.add.circle(8, 25, 8, this.color);
+            }
+        } catch (error) {
+            // Fallback: small circles for limbs
+            leftHandSprite = this.scene.add.circle(-15, 5, 8, this.color);
+            rightHandSprite = this.scene.add.circle(15, 5, 8, this.color);
+            leftFootSprite = this.scene.add.circle(-8, 25, 8, this.color);
+            rightFootSprite = this.scene.add.circle(8, 25, 8, this.color);
+        }
 
         // Add to container in depth order (feet first, head last)
         container.add([
