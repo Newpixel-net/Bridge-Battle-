@@ -66,98 +66,221 @@ export default class MenuScene extends Phaser.Scene {
     }
 
     /**
-     * Create animated background
+     * Create animated background with professional AAA elements
      */
     createAnimatedBackground() {
         const centerX = GAME.WIDTH / 2;
         const centerY = GAME.HEIGHT / 2;
 
-        // Base gradient background
-        const bg = this.add.rectangle(centerX, centerY, GAME.WIDTH, GAME.HEIGHT, COLORS.SKY_BLUE);
+        // Rich gradient background
+        const bg = this.add.rectangle(centerX, centerY, GAME.WIDTH, GAME.HEIGHT, 0x1a1a2e);
 
-        // Animated clouds/shapes in background
-        for (let i = 0; i < 5; i++) {
-            const x = Phaser.Math.Between(0, GAME.WIDTH);
-            const y = Phaser.Math.Between(0, GAME.HEIGHT);
-            const size = Phaser.Math.Between(60, 120);
+        // Create gradient effect with multiple overlays
+        const gradientTop = this.add.rectangle(centerX, 150, GAME.WIDTH, 300, 0x2d1b4e, 0.4);
+        const gradientBottom = this.add.rectangle(centerX, GAME.HEIGHT - 150, GAME.WIDTH, 300, 0x0f3460, 0.3);
 
-            const cloud = this.add.circle(x, y, size, 0xFFFFFF, 0.1);
+        if (!this.atlasHelper) return;
 
+        // PROFESSIONAL: Rotating sunburst rays background
+        const sunburst = this.atlasHelper.createSprite(centerX, 200, 'sunburst_rays');
+        sunburst.setAlpha(0.15);
+        sunburst.setDepth(1);
+
+        // Slow eternal rotation
+        this.tweens.add({
+            targets: sunburst,
+            angle: 360,
+            duration: 30000,
+            repeat: -1,
+            ease: 'Linear'
+        });
+
+        // PROFESSIONAL: Ice crystal decorations in corners
+        const crystalTopLeft = this.atlasHelper.createSprite(120, 80, 'ice_crystals');
+        crystalTopLeft.setAlpha(0.6);
+        crystalTopLeft.setDepth(1);
+
+        const crystalTopRight = this.atlasHelper.createSprite(GAME.WIDTH - 120, 80, 'ice_crystals');
+        crystalTopRight.setAlpha(0.6);
+        crystalTopRight.setFlipX(true);
+        crystalTopRight.setDepth(1);
+
+        // Floating animation for crystals
+        this.tweens.add({
+            targets: [crystalTopLeft, crystalTopRight],
+            y: '-=15',
+            duration: 2500,
+            yoyo: true,
+            repeat: -1,
+            ease: 'Sine.easeInOut'
+        });
+
+        // PROFESSIONAL: Floating stars
+        for (let i = 0; i < 8; i++) {
+            const starX = Phaser.Math.Between(100, GAME.WIDTH - 100);
+            const starY = Phaser.Math.Between(100, GAME.HEIGHT - 100);
+
+            const star = this.atlasHelper.createSprite(starX, starY,
+                i % 3 === 0 ? 'star_yellow_filled' : 'star_yellow_outline');
+            star.setAlpha(0.3);
+            star.setDepth(1);
+
+            // Gentle floating
             this.tweens.add({
-                targets: cloud,
-                x: x + 50,
-                y: y + Phaser.Math.Between(-20, 20),
-                alpha: 0.15,
-                duration: Phaser.Math.Between(3000, 5000),
+                targets: star,
+                y: starY - 30,
+                alpha: 0.6,
+                duration: Phaser.Math.Between(2000, 4000),
                 yoyo: true,
                 repeat: -1,
-                ease: 'Sine.easeInOut'
+                ease: 'Sine.easeInOut',
+                delay: Phaser.Math.Between(0, 2000)
+            });
+
+            // Gentle rotation
+            this.tweens.add({
+                targets: star,
+                angle: 360,
+                duration: Phaser.Math.Between(8000, 12000),
+                repeat: -1,
+                ease: 'Linear'
             });
         }
     }
 
     /**
-     * Create title section
+     * Create title section with professional AAA elements
      */
     createTitle() {
         const centerX = GAME.WIDTH / 2;
 
-        // Main title
-        const title = this.add.text(centerX, 140, 'BRIDGE\nBATTLE', {
-            fontSize: '84px',
+        if (!this.atlasHelper) return;
+
+        // PROFESSIONAL: Golden panel background for title area
+        const titlePanel = this.atlasHelper.createSprite(centerX, 180, 'panel_golden');
+        titlePanel.setDepth(5);
+        titlePanel.setScale(1.1); // Slightly larger for prominence
+
+        // Scale in animation on load
+        titlePanel.setScale(0);
+        this.tweens.add({
+            targets: titlePanel,
+            scaleX: 1.1,
+            scaleY: 1.1,
+            duration: 800,
+            ease: 'Elastic.easeOut',
+            delay: 300
+        });
+
+        // Gentle floating
+        this.tweens.add({
+            targets: titlePanel,
+            y: 175,
+            duration: 2500,
+            yoyo: true,
+            repeat: -1,
+            ease: 'Sine.easeInOut',
+            delay: 1100
+        });
+
+        // PROFESSIONAL: Decorative stars around panel
+        const starPositions = [
+            { x: centerX - 200, y: 100 },
+            { x: centerX + 200, y: 100 },
+            { x: centerX - 180, y: 250 },
+            { x: centerX + 180, y: 250 }
+        ];
+
+        starPositions.forEach((pos, i) => {
+            const star = this.atlasHelper.createSprite(pos.x, pos.y, 'star_yellow_filled');
+            star.setDepth(6);
+            star.setScale(0.8);
+
+            // Pop in animation
+            star.setScale(0);
+            this.tweens.add({
+                targets: star,
+                scaleX: 0.8,
+                scaleY: 0.8,
+                duration: 600,
+                ease: 'Back.easeOut',
+                delay: 500 + (i * 100)
+            });
+
+            // Twinkle
+            this.tweens.add({
+                targets: star,
+                alpha: 0.5,
+                duration: 1000 + (i * 200),
+                yoyo: true,
+                repeat: -1,
+                ease: 'Sine.easeInOut'
+            });
+        });
+
+        // Main title text over panel
+        const title = this.add.text(centerX, 160, 'BRIDGE\nBATTLE', {
+            fontSize: '68px',
             fontFamily: 'Arial Black',
             color: '#FFFFFF',
-            stroke: '#1976D2',
-            strokeThickness: 12,
+            stroke: '#4A2C2A',
+            strokeThickness: 10,
             align: 'center',
             shadow: {
-                offsetX: 4,
-                offsetY: 4,
+                offsetX: 3,
+                offsetY: 3,
                 color: '#000000',
-                blur: 8,
+                blur: 12,
                 fill: true
             }
         });
         title.setOrigin(0.5);
+        title.setDepth(10);
 
-        // Floating animation
+        // Fade in animation
+        title.setAlpha(0);
         this.tweens.add({
             targets: title,
-            y: 130,
-            duration: 2000,
-            yoyo: true,
-            repeat: -1,
-            ease: 'Sine.easeInOut'
+            alpha: 1,
+            duration: 1000,
+            delay: 800
         });
 
-        // Subtitle with game features
-        const subtitle = this.add.text(centerX, 260, 'Squad Combat • Boss Battles • Epic Abilities', {
-            fontSize: '20px',
-            fontFamily: 'Arial',
-            color: '#FFD700',
-            stroke: '#000000',
-            strokeThickness: 3
-        });
-        subtitle.setOrigin(0.5);
+        // PROFESSIONAL: "TAP TO PLAY" sprite below
+        const tapToPlay = this.atlasHelper.createSprite(centerX, 290, 'text_tap_to_play');
+        tapToPlay.setDepth(10);
 
-        // Pulse animation
+        // Pulse animation - AAA feel
+        tapToPlay.setScale(0);
         this.tweens.add({
-            targets: subtitle,
-            alpha: 0.7,
-            duration: 1500,
+            targets: tapToPlay,
+            scaleX: 0.8,
+            scaleY: 0.8,
+            duration: 600,
+            ease: 'Back.easeOut',
+            delay: 1200
+        });
+
+        this.tweens.add({
+            targets: tapToPlay,
+            scaleX: 0.85,
+            scaleY: 0.85,
+            alpha: 0.8,
+            duration: 1200,
             yoyo: true,
             repeat: -1,
-            ease: 'Sine.easeInOut'
+            ease: 'Sine.easeInOut',
+            delay: 1800
         });
     }
 
     /**
-     * Create main menu buttons
+     * Create main menu buttons with professional AAA polish
      */
     createMainButtons() {
         const centerX = GAME.WIDTH / 2;
-        const startY = 340;
-        const buttonSpacing = 90;
+        const startY = 400;
+        const buttonSpacing = 85;
 
         // ATLAS ONLY - No PNG fallback
         if (!this.atlasHelper) {
@@ -165,30 +288,75 @@ export default class MenuScene extends Phaser.Scene {
             return;
         }
 
-        // Professional Zombie Buster buttons with real coordinates
-        this.atlasHelper.createButton(
-            centerX, startY,
-            'button_play_green',
-            () => this.startGame()
-        );
+        // Button configuration: [label, color, callback, delay]
+        const buttons = [
+            ['START GAME', 'button_play_green', () => this.startGame(), 0],
+            ['SETTINGS', 'button_play_brown', () => this.showSettings(), 100],
+            ['HOW TO PLAY', 'button_play_green', () => this.showHowToPlay(), 200],
+            ['CREDITS', 'button_play_brown', () => this.showCredits(), 300]
+        ];
 
-        this.atlasHelper.createButton(
-            centerX, startY + buttonSpacing,
-            'button_play_brown',
-            () => this.showSettings()
-        );
+        buttons.forEach(([label, buttonSprite, callback, delay], index) => {
+            const yPos = startY + (buttonSpacing * index);
 
-        this.atlasHelper.createButton(
-            centerX, startY + buttonSpacing * 2,
-            'button_play_green',
-            () => this.showHowToPlay()
-        );
+            // Create professional button from atlas
+            const button = this.atlasHelper.createButton(
+                centerX, yPos,
+                buttonSprite,
+                callback
+            );
 
-        this.atlasHelper.createButton(
-            centerX, startY + buttonSpacing * 3,
-            'button_play_brown',
-            () => this.showCredits()
-        );
+            // Add text label on top of button
+            const buttonText = this.add.text(centerX, yPos, label, {
+                fontSize: '28px',
+                fontFamily: 'Arial Black',
+                color: '#FFFFFF',
+                stroke: '#000000',
+                strokeThickness: 5,
+                shadow: {
+                    offsetX: 2,
+                    offsetY: 2,
+                    color: '#000000',
+                    blur: 4,
+                    fill: true
+                }
+            });
+            buttonText.setOrigin(0.5);
+            buttonText.setDepth(101); // Above button
+
+            // Entrance animation - slide in from sides
+            const slideFrom = index % 2 === 0 ? -100 : GAME.WIDTH + 100;
+            button.setX(slideFrom);
+            buttonText.setX(slideFrom);
+
+            this.tweens.add({
+                targets: [button, buttonText],
+                x: centerX,
+                duration: 800,
+                ease: 'Back.easeOut',
+                delay: 1400 + delay
+            });
+
+            // Link button and text for hover effects
+            button.on('pointerover', () => {
+                this.tweens.add({
+                    targets: buttonText,
+                    scaleX: 1.08,
+                    scaleY: 1.08,
+                    duration: 150,
+                    ease: 'Back.easeOut'
+                });
+            });
+
+            button.on('pointerout', () => {
+                this.tweens.add({
+                    targets: buttonText,
+                    scaleX: 1,
+                    scaleY: 1,
+                    duration: 150
+                });
+            });
+        });
     }
 
     /**
@@ -729,17 +897,56 @@ export default class MenuScene extends Phaser.Scene {
     }
 
     /**
-     * Create version info
+     * Create version info with professional styling
      */
     createVersionInfo() {
         const centerX = GAME.WIDTH / 2;
 
-        this.add.text(centerX, GAME.HEIGHT - 30, 'v1.0 Complete • All Systems Operational', {
-            fontSize: '14px',
-            fontFamily: 'Arial',
-            color: '#FFFFFF',
-            alpha: 0.6
-        }).setOrigin(0.5);
+        // Version text with fade-in
+        const versionText = this.add.text(
+            centerX,
+            GAME.HEIGHT - 35,
+            'v2.0 Modern Edition • AAA Quality UI',
+            {
+                fontSize: '16px',
+                fontFamily: 'Arial',
+                color: '#00D4FF',
+                stroke: '#000000',
+                strokeThickness: 2,
+                alpha: 0
+            }
+        );
+        versionText.setOrigin(0.5);
+        versionText.setDepth(20);
+
+        this.tweens.add({
+            targets: versionText,
+            alpha: 0.7,
+            duration: 1500,
+            delay: 2000,
+            ease: 'Sine.easeIn'
+        });
+
+        // Add small decorative stars
+        if (this.atlasHelper) {
+            const star1 = this.atlasHelper.createSprite(centerX - 240, GAME.HEIGHT - 35, 'star_brown_small');
+            star1.setScale(0.5);
+            star1.setAlpha(0);
+            star1.setDepth(20);
+
+            const star2 = this.atlasHelper.createSprite(centerX + 240, GAME.HEIGHT - 35, 'star_brown_small');
+            star2.setScale(0.5);
+            star2.setAlpha(0);
+            star2.setDepth(20);
+
+            this.tweens.add({
+                targets: [star1, star2],
+                alpha: 0.6,
+                duration: 1000,
+                delay: 2200,
+                ease: 'Sine.easeIn'
+            });
+        }
     }
 
     /**
