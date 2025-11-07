@@ -1101,8 +1101,8 @@ export default class GameScene extends Phaser.Scene {
         const stripeGap = 12;
         const stripesPerCrossing = 6; // Reduced from 8
 
-        // Crossings aligned with mathematical gates (REDUCED to 5 to match wave count)
-        const crossingPositions = [400, 1200, 2000, 2800, 3600];
+        // Crossings aligned with mathematical gates (5 positions before each enemy group)
+        const crossingPositions = [600, 1400, 2200, 3000, 3800];
 
         crossingPositions.forEach(startY => {
             graphics.fillStyle(COLORS.ROAD_LINE_WHITE, 1);
@@ -1128,13 +1128,14 @@ export default class GameScene extends Phaser.Scene {
     createMathematicalGates() {
         const centerX = GAME.WIDTH / 2;
 
-        // Gate positions (REDUCED to 5 gates to match 5 enemy waves)
+        // Gate positions (5 gates BEFORE each enemy group)
+        // Player starts at Y=450, so gates start at Y=600 (ahead of player)
         const gatePositions = [
-            { y: 400, operation: '×', value: 2, color: 0x4CAF50 },      // Green for multiply
-            { y: 1200, operation: '+', value: 20, color: 0x2196F3 },    // Blue for addition
-            { y: 2000, operation: '×', value: 3, color: 0x4CAF50 },     // Green for multiply
-            { y: 2800, operation: '+', value: 30, color: 0x2196F3 },    // Blue for addition
-            { y: 3600, operation: '×', value: 5, color: 0xFFD700 },     // Gold for big multiplier
+            { y: 600, operation: '×', value: 2, color: 0x4CAF50 },      // Gate 1 → then enemies at 700
+            { y: 1400, operation: '+', value: 20, color: 0x2196F3 },    // Gate 2 → then enemies at 1500
+            { y: 2200, operation: '×', value: 3, color: 0x4CAF50 },     // Gate 3 → then enemies at 2300
+            { y: 3000, operation: '+', value: 30, color: 0x2196F3 },    // Gate 4 → then enemies at 3100
+            { y: 3800, operation: '×', value: 5, color: 0xFFD700 },     // Gate 5 → then enemies at 3900
         ];
 
         this.mathGates = [];
@@ -4065,44 +4066,15 @@ export default class GameScene extends Phaser.Scene {
 
     /**
      * PROGRESSION: Create visual celebration for milestone
+     * DISABLED: Was blocking gameplay during combat (covered entire screen)
      */
     createMilestoneCelebration(milestone) {
-        // Flash screen gold
-        this.cameras.main.flash(500, 255, 215, 0);
+        // DISABLED - Popup was blocking view during combat
+        // TODO: Replace with small corner notification or end-of-level summary
+        console.log(`✅ Milestone: ${milestone}m`);
 
-        // Show milestone text
-        const text = this.add.text(
-            GAME.WIDTH / 2,
-            GAME.HEIGHT / 2 - 100,
-            `${milestone}m MILESTONE!`,
-            {
-                fontSize: '48px',
-                fontFamily: 'Arial Black',
-                color: '#FFD700',
-                stroke: '#000000',
-                strokeThickness: 8
-            }
-        );
-        text.setOrigin(0.5);
-        text.setDepth(200);
-        text.setScrollFactor(0);
-        text.setAlpha(0);
-
-        // Animate in and out
-        this.tweens.add({
-            targets: text,
-            alpha: 1,
-            scaleX: 1.2,
-            scaleY: 1.2,
-            duration: 400,
-            ease: 'Back.easeOut',
-            yoyo: true,
-            hold: 1000,
-            onComplete: () => text.destroy()
-        });
-
-        // Particle burst
-        this.createParticleBurst(GAME.WIDTH / 2, GAME.HEIGHT / 2, 0xFFD700, 30);
+        // Optional: Small subtle flash (won't block view)
+        // this.cameras.main.flash(200, 255, 215, 0, false, 0.1);
     }
 
     // ========================================
@@ -4154,9 +4126,10 @@ export default class GameScene extends Phaser.Scene {
         // Create warning indicator system for off-screen enemies
         this.createWarningIndicatorSystem();
 
-        // Start wave system after countdown (3 seconds)
-        this.time.delayedCall(4000, () => {
-            this.waveManager.startNextWave();  // Start Wave 1
+        // COUNT MASTERS STYLE: Spawn all enemy groups at fixed positions at start
+        // (No wave system - all enemies pre-placed on path)
+        this.time.delayedCall(2000, () => {
+            this.spawnAllEnemyGroups();  // Spawn all 5 groups at once
         });
 
         console.log('✓ Combat system initialized with Wave Manager');
@@ -4510,7 +4483,45 @@ export default class GameScene extends Phaser.Scene {
     }
 
     /**
-     * WAVE SYSTEM: Spawn a wave enemy (called by WaveManager)
+     * COUNT MASTERS: Spawn all enemy groups at fixed positions (at level start)
+     */
+    spawnAllEnemyGroups() {
+        console.log('🎯 Spawning all enemy groups at fixed positions...');
+
+        // 5 enemy groups at fixed Y positions
+        const enemyGroups = [
+            { y: 700, count: 15, type: 'SOLDIER' },   // Wave 1: 15 enemies (REDUCED from 20)
+            { y: 1500, count: 18, type: 'SOLDIER' },  // Wave 2: 18 enemies (REDUCED from 22)
+            { y: 2300, count: 20, type: 'SOLDIER' },  // Wave 3: 20 enemies (REDUCED from 24)
+            { y: 3100, count: 22, type: 'TANK' },     // Wave 4: 22 enemies (REDUCED from 26)
+            { y: 3900, count: 25, type: 'TANK' }      // Wave 5: 25 enemies (REDUCED from 28)
+        ];
+
+        const centerX = GAME.WIDTH / 2;
+        const roadWidth = WORLD.ROAD_WIDTH;
+
+        enemyGroups.forEach((group, index) => {
+            console.log(`  Spawning group ${index + 1}: ${group.count} enemies at Y=${group.y}`);
+
+            // Spawn in a horizontal line formation
+            const spacing = Math.min(roadWidth / (group.count + 1), 50);
+            const startX = centerX - (spacing * (group.count - 1) / 2);
+
+            for (let i = 0; i < group.count; i++) {
+                const x = startX + (i * spacing);
+                const y = group.y;
+
+                // Spawn stationary enemy (speed = 0)
+                const enemy = this.spawnWaveEnemy(group.type, x, y, 0);
+            }
+        });
+
+        // Total: 15 + 18 + 20 + 22 + 25 = 100 enemies
+        console.log(`✓ Spawned total: 100 enemies in 5 groups`);
+    }
+
+    /**
+     * WAVE SYSTEM: Spawn a wave enemy (called by WaveManager or spawnAllEnemyGroups)
      */
     spawnWaveEnemy(type, x, y, speed) {
         // Use the imported Enemy class
