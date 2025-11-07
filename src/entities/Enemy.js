@@ -129,8 +129,8 @@ export default class Enemy {
             if (this.scene.textures.exists(enemySprite)) {
                 // Load the high-quality sprite
                 mainSprite = this.scene.add.sprite(0, 0, enemySprite);
-                // Scale sprite sheets - ENLARGED 10x for visibility (crowd runner style)
-                const spriteScale = finalScale * 1.5; // Was 0.15, now 1.5 for 10x larger characters
+                // Scale sprite sheets - REDUCED from 1.5 to 0.45 (was too large, obscuring path)
+                const spriteScale = finalScale * 0.45; // Was 1.5 (blocked view), now 0.45 for proper visibility
                 mainSprite.setScale(spriteScale);
                 mainSprite.setTint(this.color); // Tint based on enemy type
 

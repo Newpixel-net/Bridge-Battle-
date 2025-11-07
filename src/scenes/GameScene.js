@@ -200,6 +200,9 @@ export default class GameScene extends Phaser.Scene {
         // ANIMATION IMPROVEMENTS 1: Scene transition fade-in
         this.cameras.main.fadeIn(800, 0, 0, 0);
 
+        // CAMERA: Zoom out to see more of the playfield (was too zoomed in, blocked view)
+        this.cameras.main.setZoom(0.7); // 0.7 = zoomed out, see more ahead
+
         // AUDIO SYSTEM: Initialize audio
         this.initializeAudio();
 
@@ -1098,8 +1101,8 @@ export default class GameScene extends Phaser.Scene {
         const stripeGap = 12;
         const stripesPerCrossing = 6; // Reduced from 8
 
-        // Crossings aligned with mathematical gates (10 positions to match Level1.png reference)
-        const crossingPositions = [400, 1200, 2000, 2800, 3600, 4400, 5200, 6000, 6800, 7600];
+        // Crossings aligned with mathematical gates (REDUCED to 5 to match wave count)
+        const crossingPositions = [400, 1200, 2000, 2800, 3600];
 
         crossingPositions.forEach(startY => {
             graphics.fillStyle(COLORS.ROAD_LINE_WHITE, 1);
@@ -1125,18 +1128,13 @@ export default class GameScene extends Phaser.Scene {
     createMathematicalGates() {
         const centerX = GAME.WIDTH / 2;
 
-        // Gate positions aligned with crosswalks (and extending further up the road)
+        // Gate positions (REDUCED to 5 gates to match 5 enemy waves)
         const gatePositions = [
-            { y: 400, operation: '×', value: 2, color: 0x4CAF50 },      // Green for good
+            { y: 400, operation: '×', value: 2, color: 0x4CAF50 },      // Green for multiply
             { y: 1200, operation: '+', value: 20, color: 0x2196F3 },    // Blue for addition
-            { y: 2000, operation: '×', value: 3, color: 0x4CAF50 },
-            { y: 2800, operation: '+', value: 10, color: 0x2196F3 },
-            { y: 3600, operation: '×', value: 5, color: 0x4CAF50 },
-            { y: 4400, operation: '+', value: 50, color: 0x2196F3 },
-            { y: 5200, operation: '×', value: 10, color: 0xFFD700 },    // Gold for big multiplier
-            { y: 6000, operation: '+', value: 30, color: 0x2196F3 },
-            { y: 6800, operation: '×', value: 2, color: 0x4CAF50 },
-            { y: 7600, operation: '+', value: 100, color: 0xFFD700 },   // Gold for huge bonus
+            { y: 2000, operation: '×', value: 3, color: 0x4CAF50 },     // Green for multiply
+            { y: 2800, operation: '+', value: 30, color: 0x2196F3 },    // Blue for addition
+            { y: 3600, operation: '×', value: 5, color: 0xFFD700 },     // Gold for big multiplier
         ];
 
         this.mathGates = [];
@@ -1305,7 +1303,7 @@ export default class GameScene extends Phaser.Scene {
 
         // 1. SIZE VARIATION (0.8x to 1.0x for squad members)
         const sizeVariation = Phaser.Math.FloatBetween(0.8, 1.0);
-        const baseScale = 6.0; // ENLARGED 10x for crowd runner visibility (was 0.6)
+        const baseScale = 1.8; // REDUCED: was 6.0 (too large, blocked view), now ~30% for proper visibility
         const finalScale = baseScale * sizeVariation;
 
         // 2. ZOMBIE VARIETY - Randomly select from available zombie types

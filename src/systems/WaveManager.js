@@ -11,8 +11,8 @@ export default class WaveManager {
         this.stageNumber = stageNumber;
 
         this.currentWave = 0;
-        this.totalWaves = 11;      // 10 regular + 1 boss
-        this.wavesPerStage = 10;   // Regular waves before boss
+        this.totalWaves = 6;       // REDUCED: 5 regular + 1 boss (was 11, too many enemies visible)
+        this.wavesPerStage = 5;    // REDUCED: 5 waves before boss (was 10, caused 200+ enemies on screen)
 
         this.isWaveActive = false;
         this.waveDelay = 3000;     // 3 seconds between waves
@@ -59,10 +59,10 @@ export default class WaveManager {
             regularCount = enemyCount - eliteCount;
         }
 
-        // FIXED SPAWN POSITIONS: Between gates on the path
-        // Gates at: 400, 1200, 2000, 2800, 3600, 4400, 5200, 6000, 6800, 7600
-        // Enemies at: 700, 1500, 2300, 3100, 3900, 4700, 5500, 6300, 7100, 7900
-        const spawnPositions = [700, 1500, 2300, 3100, 3900, 4700, 5500, 6300, 7100, 7900];
+        // FIXED SPAWN POSITIONS: Between gates on the path (REDUCED to 5 waves)
+        // Gates at: 400, 1200, 2000, 2800, 3600
+        // Enemies at: 700, 1500, 2300, 3100, 3900
+        const spawnPositions = [700, 1500, 2300, 3100, 3900];
 
         return {
             waveNumber: waveNumber,
