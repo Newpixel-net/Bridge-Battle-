@@ -187,6 +187,13 @@ export default class GameScene extends Phaser.Scene {
     create() {
         console.log('🎮 Building Phase 1 - Step by step...');
 
+        // Create particle texture for gate sparkles
+        const particleGraphics = this.add.graphics();
+        particleGraphics.fillStyle(0xFFFFFF, 1);
+        particleGraphics.fillCircle(8, 8, 8);
+        particleGraphics.generateTexture('particle', 16, 16);
+        particleGraphics.destroy();
+
         // PROGRESSION SYSTEM: Track session start time
         this.startTime = Date.now();
 
@@ -2030,17 +2037,117 @@ export default class GameScene extends Phaser.Scene {
         const rightGate = this.createGateHalf(rightX, y, gatePair.right.op, gatePair.right.color, 'RIGHT', gateWidth);
         rightGate.operation = gatePair.right;
 
+        // ===================================================================
+        // SPLIT GATE VISUAL ENHANCEMENT: Add prominent center divider
+        // ===================================================================
+        const dividerContainer = this.add.container(centerX, y);
+
+        // Main divider pillar (vertical barrier)
+        const dividerWidth = 16;
+        const dividerHeight = GATES.HEIGHT + 40;
+
+        // Outer glow for divider
+        const dividerGlow = this.add.rectangle(0, 0, dividerWidth + 12, dividerHeight + 20, 0xFFFFFF, 0.4);
+        dividerGlow.setBlendMode(Phaser.BlendModes.ADD);
+
+        // Main divider body
+        const divider = this.add.rectangle(0, 0, dividerWidth, dividerHeight, 0xFFFFFF, 0.95);
+        divider.setStrokeStyle(4, 0xFFD700, 1.0);
+
+        // Inner shine
+        const dividerShine = this.add.rectangle(0, 0, dividerWidth - 4, dividerHeight - 4, 0xFFFFFF, 0.6);
+
+        // Top cap (triangle/arrow shape)
+        const capHeight = 30;
+        const capGraphics = this.add.graphics();
+        capGraphics.fillStyle(0xFFD700, 1.0);
+        capGraphics.fillTriangle(
+            -dividerWidth, -dividerHeight/2,
+            dividerWidth, -dividerHeight/2,
+            0, -dividerHeight/2 - capHeight
+        );
+        capGraphics.lineStyle(3, 0xFFFFFF, 1.0);
+        capGraphics.strokeTriangle(
+            -dividerWidth, -dividerHeight/2,
+            dividerWidth, -dividerHeight/2,
+            0, -dividerHeight/2 - capHeight
+        );
+
+        // Bottom cap
+        const bottomCapGraphics = this.add.graphics();
+        bottomCapGraphics.fillStyle(0xFFD700, 1.0);
+        bottomCapGraphics.fillTriangle(
+            -dividerWidth, dividerHeight/2,
+            dividerWidth, dividerHeight/2,
+            0, dividerHeight/2 + capHeight
+        );
+        bottomCapGraphics.lineStyle(3, 0xFFFFFF, 1.0);
+        bottomCapGraphics.strokeTriangle(
+            -dividerWidth, dividerHeight/2,
+            dividerWidth, dividerHeight/2,
+            0, dividerHeight/2 + capHeight
+        );
+
+        // Warning stripes (like reference video)
+        for (let i = 0; i < 5; i++) {
+            const stripeY = -dividerHeight/2 + 20 + (i * (dividerHeight - 40) / 5);
+            const stripe = this.add.rectangle(0, stripeY, dividerWidth - 2, 10,
+                i % 2 === 0 ? 0xFFFF00 : 0x000000, 0.8);
+            dividerContainer.add(stripe);
+        }
+
+        dividerContainer.add([dividerGlow, divider, dividerShine, capGraphics, bottomCapGraphics]);
+        dividerContainer.setDepth(9); // Above gates
+
+        // Pulse animation for divider
+        this.tweens.add({
+            targets: dividerGlow,
+            alpha: 0.2,
+            scaleX: 1.1,
+            duration: 1000,
+            yoyo: true,
+            repeat: -1,
+            ease: 'Sine.easeInOut'
+        });
+
+        // Sparkle particles around gates (like reference video)
+        const leftParticles = this.add.particles(leftX, y, 'particle', {
+            speed: { min: 20, max: 40 },
+            angle: { min: 0, max: 360 },
+            scale: { start: 0.8, end: 0 },
+            alpha: { start: 1, end: 0 },
+            lifespan: 1500,
+            frequency: 100,
+            blendMode: 'ADD',
+            tint: gatePair.left.color
+        });
+        leftParticles.setDepth(10);
+
+        const rightParticles = this.add.particles(rightX, y, 'particle', {
+            speed: { min: 20, max: 40 },
+            angle: { min: 0, max: 360 },
+            scale: { start: 0.8, end: 0 },
+            alpha: { start: 1, end: 0 },
+            lifespan: 1500,
+            frequency: 100,
+            blendMode: 'ADD',
+            tint: gatePair.right.color
+        });
+        rightParticles.setDepth(10);
+
         // OBJECT ANIMATION 3: Rise from ground with shake
         const targetYLeft = leftGate.y;
         const targetYRight = rightGate.y;
         leftGate.y = targetYLeft + 300; // Start below
         rightGate.y = targetYRight + 300;
+        dividerContainer.y = y + 300;
         leftGate.setAlpha(0);
         rightGate.setAlpha(0);
+        dividerContainer.setAlpha(0);
 
-        // Rise animation
+        // Rise animation (including divider)
         this.tweens.add({
-            targets: [leftGate, rightGate],
+            targets: [leftGate, rightGate, dividerContainer, leftParticles, rightParticles],
             y: targetYLeft,
             alpha: 1,
             duration: 800,
@@ -2050,7 +2157,14 @@ export default class GameScene extends Phaser.Scene {
         // Camera shake when gates appear
         this.cameras.main.shake(100, 0.003);
 
-        this.gates.push({ left: leftGate, right: rightGate, passed: false });
+        this.gates.push({
+            left: leftGate,
+            right: rightGate,
+            divider: dividerContainer,
+            leftParticles: leftParticles,
+            rightParticles: rightParticles,
+            passed: false
+        });
     }
 
     /**
@@ -2800,6 +2914,9 @@ export default class GameScene extends Phaser.Scene {
             if (g.left.y > GAME.HEIGHT + 200) {
                 g.left.destroy();
                 g.right.destroy();
+                if (g.divider) g.divider.destroy();
+                if (g.leftParticles) g.leftParticles.destroy();
+                if (g.rightParticles) g.rightParticles.destroy();
                 return false;
             }
             return true;
