@@ -137,7 +137,8 @@ export default class Boss {
         const finalScale = baseScale;
 
         // ZOMBIE TYPE - Use type 3 (looks most intimidating)
-        const zombieType = 3;
+        // Use zombie type 2 (larger) for bosses (type 3 assets incomplete)
+        const zombieType = 2;
 
         // Ground shadow (larger for boss)
         const shadowSize = 50;
@@ -168,29 +169,68 @@ export default class Boss {
         middleGlow.setBlendMode(Phaser.BlendModes.ADD);
 
         // SPRITE ASSEMBLY: Head + Body + Limbs from atlas
-        const bodySprite = this.scene.add.sprite(0, 10, 'zombie_parts', `Zombie_${zombieType}_Body_0000`);
-        bodySprite.setScale(finalScale);
-        bodySprite.setTint(this.color); // Tint based on boss type
+        // Use fallback graphics if textures don't exist
+        let bodySprite, headSprite;
 
-        const headSprite = this.scene.add.sprite(0, -15, 'zombie_heads', `Zombie_${zombieType}_Head_0000`);
-        headSprite.setScale(finalScale);
-        headSprite.setTint(this.color);
+        try {
+            if (this.scene.textures.exists('zombie_parts')) {
+                bodySprite = this.scene.add.sprite(0, 10, 'zombie_parts', `Zombie_${zombieType}_Body_0000`);
+                bodySprite.setScale(finalScale);
+                bodySprite.setTint(this.color);
+            } else {
+                const graphics = this.scene.add.graphics();
+                graphics.fillStyle(this.color);
+                graphics.fillCircle(0, 10, 30);
+                bodySprite = graphics;
+            }
+        } catch (error) {
+            const graphics = this.scene.add.graphics();
+            graphics.fillStyle(this.color);
+            graphics.fillCircle(0, 10, 30);
+            bodySprite = graphics;
+        }
 
-        const leftHandSprite = this.scene.add.sprite(-20, 5, 'zombie_parts', `Zombie_${zombieType}_HandLeft_0000`);
-        leftHandSprite.setScale(finalScale * 0.9);
-        leftHandSprite.setTint(this.color);
+        // Fallback for head (simple circle since zombie_heads atlas is missing)
+        const headGraphics = this.scene.add.graphics();
+        headGraphics.fillStyle(this.color);
+        headGraphics.fillCircle(0, -15, 20);
+        headGraphics.fillStyle(0xFFFFFF);
+        headGraphics.fillCircle(-7, -18, 4); // Left eye
+        headGraphics.fillCircle(7, -18, 4);  // Right eye
+        headSprite = headGraphics;
 
-        const rightHandSprite = this.scene.add.sprite(20, 5, 'zombie_parts', `Zombie_${zombieType}_HandRight_0000`);
-        rightHandSprite.setScale(finalScale * 0.9);
-        rightHandSprite.setTint(this.color);
+        // Limb sprites with fallback
+        let leftHandSprite, rightHandSprite, leftFootSprite, rightFootSprite;
 
-        const leftFootSprite = this.scene.add.sprite(-10, 30, 'zombie_parts', `Zombie_${zombieType}_FootLeft_0000`);
-        leftFootSprite.setScale(finalScale);
-        leftFootSprite.setTint(this.color);
+        try {
+            if (this.scene.textures.exists('zombie_parts')) {
+                leftHandSprite = this.scene.add.sprite(-20, 5, 'zombie_parts', `Zombie_${zombieType}_HandLeft_0000`);
+                leftHandSprite.setScale(finalScale * 0.9);
+                leftHandSprite.setTint(this.color);
 
-        const rightFootSprite = this.scene.add.sprite(10, 30, 'zombie_parts', `Zombie_${zombieType}_FootRight_0000`);
-        rightFootSprite.setScale(finalScale);
-        rightFootSprite.setTint(this.color);
+                rightHandSprite = this.scene.add.sprite(20, 5, 'zombie_parts', `Zombie_${zombieType}_HandRight_0000`);
+                rightHandSprite.setScale(finalScale * 0.9);
+                rightHandSprite.setTint(this.color);
+
+                leftFootSprite = this.scene.add.sprite(-10, 30, 'zombie_parts', `Zombie_${zombieType}_FootLeft_0000`);
+                leftFootSprite.setScale(finalScale);
+                leftFootSprite.setTint(this.color);
+
+                rightFootSprite = this.scene.add.sprite(10, 30, 'zombie_parts', `Zombie_${zombieType}_FootRight_0000`);
+                rightFootSprite.setScale(finalScale);
+                rightFootSprite.setTint(this.color);
+            } else {
+                leftHandSprite = this.scene.add.circle(-20, 5, 10, this.color);
+                rightHandSprite = this.scene.add.circle(20, 5, 10, this.color);
+                leftFootSprite = this.scene.add.circle(-10, 30, 10, this.color);
+                rightFootSprite = this.scene.add.circle(10, 30, 10, this.color);
+            }
+        } catch (error) {
+            leftHandSprite = this.scene.add.circle(-20, 5, 10, this.color);
+            rightHandSprite = this.scene.add.circle(20, 5, 10, this.color);
+            leftFootSprite = this.scene.add.circle(-10, 30, 10, this.color);
+            rightFootSprite = this.scene.add.circle(10, 30, 10, this.color);
+        }
 
         // BOSS CROWN - Golden crown above head
         const crown = this.scene.add.triangle(

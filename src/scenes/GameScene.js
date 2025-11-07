@@ -1136,8 +1136,9 @@ export default class GameScene extends Phaser.Scene {
         const baseScale = 0.6; // Base scale for zombie sprites
         const finalScale = baseScale * sizeVariation;
 
-        // 2. ZOMBIE VARIETY - Randomly select from 3 zombie types
-        const zombieTypes = [1, 2, 3];
+        // 2. ZOMBIE VARIETY - Randomly select from available zombie types
+        // NOTE: Only using types 1-2 as type 3 assets are incomplete
+        const zombieTypes = [1, 2];
         const zombieType = Phaser.Utils.Array.GetRandom(zombieTypes);
 
         // Ground shadow (ellipse beneath character)
@@ -1150,36 +1151,70 @@ export default class GameScene extends Phaser.Scene {
 
         // ========================================================================
         // SPRITE ASSEMBLY: Head + Body from atlas
+        // Use fallback graphics if textures don't exist
         // ========================================================================
+        let bodySprite, headSprite;
+        const playerColor = 0x03A9F4; // Blue tint for player squad
 
-        // Body sprite (from zombie_parts atlas)
-        const bodySprite = this.add.sprite(0, 10, 'zombie_parts', `Zombie_${zombieType}_Body_0000`);
-        bodySprite.setScale(finalScale);
-        bodySprite.setTint(0x03A9F4); // Blue tint for player squad
+        try {
+            if (this.textures.exists('zombie_parts')) {
+                bodySprite = this.add.sprite(0, 10, 'zombie_parts', `Zombie_${zombieType}_Body_0000`);
+                bodySprite.setScale(finalScale);
+                bodySprite.setTint(playerColor);
+            } else {
+                const graphics = this.add.graphics();
+                graphics.fillStyle(playerColor);
+                graphics.fillCircle(0, 10, 20);
+                bodySprite = graphics;
+            }
+        } catch (error) {
+            const graphics = this.add.graphics();
+            graphics.fillStyle(playerColor);
+            graphics.fillCircle(0, 10, 20);
+            bodySprite = graphics;
+        }
 
-        // Head sprite (from zombie_heads atlas)
-        const headSprite = this.add.sprite(0, -15, 'zombie_heads', `Zombie_${zombieType}_Head_0000`);
-        headSprite.setScale(finalScale);
-        headSprite.setTint(0x03A9F4); // Blue tint for player squad
+        // Fallback for head (simple circle since zombie_heads atlas is missing)
+        const headGraphics = this.add.graphics();
+        headGraphics.fillStyle(playerColor);
+        headGraphics.fillCircle(0, -15, 15);
+        headGraphics.fillStyle(0xFFFFFF);
+        headGraphics.fillCircle(-5, -18, 3); // Left eye
+        headGraphics.fillCircle(5, -18, 3);  // Right eye
+        headSprite = headGraphics;
 
-        // Left hand sprite (optional, for more detail)
-        const leftHandSprite = this.add.sprite(-15, 5, 'zombie_parts', `Zombie_${zombieType}_HandLeft_0000`);
-        leftHandSprite.setScale(finalScale * 0.9);
-        leftHandSprite.setTint(0x03A9F4);
+        // Limb sprites with fallback
+        let leftHandSprite, rightHandSprite, leftFootSprite, rightFootSprite;
 
-        // Right hand sprite (optional, for more detail)
-        const rightHandSprite = this.add.sprite(15, 5, 'zombie_parts', `Zombie_${zombieType}_HandRight_0000`);
-        rightHandSprite.setScale(finalScale * 0.9);
-        rightHandSprite.setTint(0x03A9F4);
+        try {
+            if (this.textures.exists('zombie_parts')) {
+                leftHandSprite = this.add.sprite(-15, 5, 'zombie_parts', `Zombie_${zombieType}_HandLeft_0000`);
+                leftHandSprite.setScale(finalScale * 0.9);
+                leftHandSprite.setTint(playerColor);
 
-        // Feet sprites for running animation
-        const leftFootSprite = this.add.sprite(-8, 25, 'zombie_parts', `Zombie_${zombieType}_FootLeft_0000`);
-        leftFootSprite.setScale(finalScale);
-        leftFootSprite.setTint(0x03A9F4);
+                rightHandSprite = this.add.sprite(15, 5, 'zombie_parts', `Zombie_${zombieType}_HandRight_0000`);
+                rightHandSprite.setScale(finalScale * 0.9);
+                rightHandSprite.setTint(playerColor);
 
-        const rightFootSprite = this.add.sprite(8, 25, 'zombie_parts', `Zombie_${zombieType}_FootRight_0000`);
-        rightFootSprite.setScale(finalScale);
-        rightFootSprite.setTint(0x03A9F4);
+                leftFootSprite = this.add.sprite(-8, 25, 'zombie_parts', `Zombie_${zombieType}_FootLeft_0000`);
+                leftFootSprite.setScale(finalScale);
+                leftFootSprite.setTint(playerColor);
+
+                rightFootSprite = this.add.sprite(8, 25, 'zombie_parts', `Zombie_${zombieType}_FootRight_0000`);
+                rightFootSprite.setScale(finalScale);
+                rightFootSprite.setTint(playerColor);
+            } else {
+                leftHandSprite = this.add.circle(-15, 5, 8, playerColor);
+                rightHandSprite = this.add.circle(15, 5, 8, playerColor);
+                leftFootSprite = this.add.circle(-8, 25, 8, playerColor);
+                rightFootSprite = this.add.circle(8, 25, 8, playerColor);
+            }
+        } catch (error) {
+            leftHandSprite = this.add.circle(-15, 5, 8, playerColor);
+            rightHandSprite = this.add.circle(15, 5, 8, playerColor);
+            leftFootSprite = this.add.circle(-8, 25, 8, playerColor);
+            rightFootSprite = this.add.circle(8, 25, 8, playerColor);
+        }
 
         // Add to container in correct depth order (feet first, then body parts, then head on top)
         character.add([
@@ -4141,7 +4176,7 @@ export default class GameScene extends Phaser.Scene {
                         }
 
                         // Update squad formation after member loss
-                        this.updateSquadPositions();
+                        this.recalculateFormation();
 
                         // Kill the enemy (they sacrifice themselves)
                         enemy.die();
