@@ -170,19 +170,19 @@ export default class MenuScene extends Phaser.Scene {
 
             this.atlasHelper.createButton(
                 centerX, startY + buttonSpacing,
-                'button_options',
+                'button_settings',
                 () => this.showSettings()
             );
 
             this.atlasHelper.createButton(
                 centerX, startY + buttonSpacing * 2,
-                'button_shop',
+                'button_pause',
                 () => this.showHowToPlay()
             );
 
             this.atlasHelper.createButton(
                 centerX, startY + buttonSpacing * 3,
-                'button_home',
+                'button_menu',
                 () => this.showCredits()
             );
         } else {
