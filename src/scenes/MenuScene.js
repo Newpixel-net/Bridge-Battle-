@@ -159,58 +159,36 @@ export default class MenuScene extends Phaser.Scene {
         const startY = 340;
         const buttonSpacing = 90;
 
-        // Use AtlasHelper if available, otherwise fallback to PNG assets
-        if (this.atlasHelper) {
-            // NEW: Using professional sprite atlas buttons
-            this.atlasHelper.createButton(
-                centerX, startY,
-                'button_play',
-                () => this.startGame()
-            );
+        // TEMPORARY: Use PNG assets until sprite atlas coordinates are properly mapped
+        // The atlas frame coordinates are placeholder values and need manual mapping
+        // from the actual sprite sheets. Using working PNG fallback for now.
 
-            this.atlasHelper.createButton(
-                centerX, startY + buttonSpacing,
-                'button_settings',
-                () => this.showSettings()
-            );
+        // TODO: Map actual sprite coordinates from ui-zombie.png, ui-zombie2.png, ui-viking.png
+        // and update ui-complete-atlas.json with correct frame positions
 
-            this.atlasHelper.createButton(
-                centerX, startY + buttonSpacing * 2,
-                'button_pause',
-                () => this.showHowToPlay()
-            );
+        this.createImageButton(
+            centerX, startY,
+            'ui_button_new_game',
+            () => this.startGame()
+        );
 
-            this.atlasHelper.createButton(
-                centerX, startY + buttonSpacing * 3,
-                'button_menu',
-                () => this.showCredits()
-            );
-        } else {
-            // FALLBACK: Using PNG assets from EPS extraction
-            this.createImageButton(
-                centerX, startY,
-                'ui_button_new_game',
-                () => this.startGame()
-            );
+        this.createImageButton(
+            centerX, startY + buttonSpacing,
+            'ui_button_settings',
+            () => this.showSettings()
+        );
 
-            this.createImageButton(
-                centerX, startY + buttonSpacing,
-                'ui_button_settings',
-                () => this.showSettings()
-            );
+        this.createImageButton(
+            centerX, startY + buttonSpacing * 2,
+            'ui_button_shop',
+            () => this.showHowToPlay()
+        );
 
-            this.createImageButton(
-                centerX, startY + buttonSpacing * 2,
-                'ui_button_shop',
-                () => this.showHowToPlay()
-            );
-
-            this.createImageButton(
-                centerX, startY + buttonSpacing * 3,
-                'ui_button_exit',
-                () => this.showCredits()
-            );
-        }
+        this.createImageButton(
+            centerX, startY + buttonSpacing * 3,
+            'ui_button_exit',
+            () => this.showCredits()
+        );
     }
 
     /**
