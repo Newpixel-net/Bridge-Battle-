@@ -221,6 +221,9 @@ export default class GameScene extends Phaser.Scene {
         // Add zebra crossings
         this.createZebraCrossings();
 
+        // Add mathematical gates at crosswalks
+        this.createMathematicalGates();
+
         // STEP 5-6: Add single character
         this.createCharacter();
 
@@ -1095,8 +1098,8 @@ export default class GameScene extends Phaser.Scene {
         const stripeGap = 12;
         const stripesPerCrossing = 6; // Reduced from 8
 
-        // Fewer crossings - only 2 visible at start
-        const crossingPositions = [400, 1200];
+        // Crossings aligned with mathematical gates (10 positions to match Level1.png reference)
+        const crossingPositions = [400, 1200, 2000, 2800, 3600, 4400, 5200, 6000, 6800, 7600];
 
         crossingPositions.forEach(startY => {
             graphics.fillStyle(COLORS.ROAD_LINE_WHITE, 1);
@@ -1113,6 +1116,175 @@ export default class GameScene extends Phaser.Scene {
         });
 
         console.log('✓ Zebra crossings added (reduced)');
+    }
+
+    /**
+     * STEP 5: Create mathematical gates at crosswalks
+     * Gates modify squad count (×2, +20, ÷2, etc.) - matching Level1.png reference
+     */
+    createMathematicalGates() {
+        const centerX = GAME.WIDTH / 2;
+
+        // Gate positions aligned with crosswalks (and extending further up the road)
+        const gatePositions = [
+            { y: 400, operation: '×', value: 2, color: 0x4CAF50 },      // Green for good
+            { y: 1200, operation: '+', value: 20, color: 0x2196F3 },    // Blue for addition
+            { y: 2000, operation: '×', value: 3, color: 0x4CAF50 },
+            { y: 2800, operation: '+', value: 10, color: 0x2196F3 },
+            { y: 3600, operation: '×', value: 5, color: 0x4CAF50 },
+            { y: 4400, operation: '+', value: 50, color: 0x2196F3 },
+            { y: 5200, operation: '×', value: 10, color: 0xFFD700 },    // Gold for big multiplier
+            { y: 6000, operation: '+', value: 30, color: 0x2196F3 },
+            { y: 6800, operation: '×', value: 2, color: 0x4CAF50 },
+            { y: 7600, operation: '+', value: 100, color: 0xFFD700 },   // Gold for huge bonus
+        ];
+
+        this.mathGates = [];
+
+        gatePositions.forEach((gate, index) => {
+            // Gate background (semi-transparent cyan rectangle - matches Level1.png reference)
+            const bg = this.add.rectangle(
+                centerX,
+                gate.y,
+                180,
+                80,
+                0x00D4FF,
+                0.9
+            );
+            bg.setDepth(15);
+            bg.setStrokeStyle(4, gate.color, 1);
+
+            // Operation text (large, bold)
+            const text = this.add.text(
+                centerX,
+                gate.y,
+                `${gate.operation}${gate.value}`,
+                {
+                    fontSize: '56px',
+                    fontFamily: 'Arial Black',
+                    color: '#000000',
+                    stroke: '#FFFFFF',
+                    strokeThickness: 2
+                }
+            );
+            text.setOrigin(0.5);
+            text.setDepth(16);
+
+            // Store gate data
+            const gateObject = {
+                bg: bg,
+                text: text,
+                operation: gate.operation,
+                value: gate.value,
+                y: gate.y,
+                used: false,
+                bounds: new Phaser.Geom.Rectangle(
+                    centerX - 90,
+                    gate.y - 40,
+                    180,
+                    80
+                )
+            };
+
+            this.mathGates.push(gateObject);
+        });
+
+        console.log(`✓ ${this.mathGates.length} mathematical gates created at crosswalks`);
+    }
+
+    /**
+     * Check if player squad passes through a mathematical gate
+     */
+    checkMathGateCollisions() {
+        if (!this.mathGates) return;
+
+        const squadY = this.squadCenterY - this.cameras.main.scrollY;
+
+        this.mathGates.forEach(gate => {
+            if (gate.used) return;
+
+            // Check if squad is passing through gate
+            if (Math.abs(squadY - gate.y) < 50) {
+                gate.used = true;
+
+                // Apply gate effect
+                const oldCount = this.squadMembers.length;
+                let newCount = oldCount;
+
+                if (gate.operation === '×') {
+                    newCount = Math.floor(oldCount * gate.value);
+                } else if (gate.operation === '+') {
+                    newCount = oldCount + gate.value;
+                } else if (gate.operation === '-') {
+                    newCount = Math.max(1, oldCount - gate.value);
+                } else if (gate.operation === '÷') {
+                    newCount = Math.floor(oldCount / gate.value);
+                    if (newCount < 1) newCount = 1;
+                }
+
+                const difference = newCount - oldCount;
+
+                // Add or remove characters
+                if (difference > 0) {
+                    for (let i = 0; i < difference; i++) {
+                        this.addCharacter();
+                    }
+                } else if (difference < 0) {
+                    for (let i = 0; i < Math.abs(difference); i++) {
+                        if (this.squadMembers.length > 1) {
+                            this.removeCharacter();
+                        }
+                    }
+                }
+
+                // Show popup effect
+                this.showGatePopup(gate.text.x, gate.y, difference, gate.operation);
+
+                // Visual feedback - gate consumed
+                this.tweens.add({
+                    targets: [gate.bg, gate.text],
+                    alpha: 0,
+                    scale: 1.5,
+                    duration: 300,
+                    ease: 'Power2'
+                });
+
+                console.log(`🚪 Gate passed: ${gate.operation}${gate.value} → ${oldCount} to ${newCount} (${difference >= 0 ? '+' : ''}${difference})`);
+            }
+        });
+    }
+
+    /**
+     * Show popup effect when passing through gate
+     */
+    showGatePopup(x, y, difference, operation) {
+        const sign = difference >= 0 ? '+' : '';
+        const popupText = this.add.text(
+            x,
+            y,
+            `${sign}${difference}`,
+            {
+                fontSize: '72px',
+                fontFamily: 'Arial Black',
+                color: difference >= 0 ? '#00FF00' : '#FF0000',
+                stroke: '#000000',
+                strokeThickness: 6
+            }
+        );
+        popupText.setOrigin(0.5);
+        popupText.setDepth(100);
+        popupText.setScrollFactor(1, 1);
+
+        // Animate popup
+        this.tweens.add({
+            targets: popupText,
+            y: y - 100,
+            alpha: 0,
+            scale: 1.5,
+            duration: 1000,
+            ease: 'Power2',
+            onComplete: () => popupText.destroy()
+        });
     }
 
     /**
@@ -1368,6 +1540,55 @@ export default class GameScene extends Phaser.Scene {
         this.squadText.setResolution(2); // 2× resolution for crisp rendering
 
         console.log(`✓ Squad bubble created ABOVE character at (${x}, ${y})`);
+
+        // ADDITIONAL: Create platform indicator at FRONT of formation (Level1.png reference)
+        this.createSquadPlatformIndicator();
+    }
+
+    /**
+     * Create platform indicator at front of squad formation
+     * Matches Level1.png reference - blue square with white number at front of player crowd
+     */
+    createSquadPlatformIndicator() {
+        const x = this.squadCenterX;
+        const y = this.squadCenterY;
+
+        // Blue platform background (rectangle at squad front)
+        this.squadPlatformBg = this.add.rectangle(x, y - 50, 60, 40, COLORS.SQUAD_BLUE, 0.9);
+        this.squadPlatformBg.setDepth(9); // Just below characters (depth 10)
+        this.squadPlatformBg.setStrokeStyle(3, COLORS.BUBBLE_BORDER, 1);
+
+        // Squad count on platform (smaller than bubble text)
+        this.squadPlatformText = this.add.text(x, y - 50, '1', {
+            fontSize: '28px',
+            fontFamily: 'Arial Black',
+            color: '#FFFFFF',
+            stroke: '#000000',
+            strokeThickness: 3
+        });
+        this.squadPlatformText.setOrigin(0.5);
+        this.squadPlatformText.setDepth(9);
+        this.squadPlatformText.setResolution(2);
+
+        console.log(`✓ Squad platform indicator created at front of formation`);
+    }
+
+    /**
+     * Update squad platform position to stay at front of formation
+     */
+    updateSquadPlatformPosition() {
+        if (!this.squadPlatformBg || !this.squadPlatformText) return;
+
+        // Position platform at front of formation (ahead of squad center)
+        const frontY = this.squadCenterY - 80; // 80px ahead of squad center
+
+        this.squadPlatformBg.x = this.squadCenterX;
+        this.squadPlatformBg.y = frontY;
+        this.squadPlatformText.x = this.squadCenterX;
+        this.squadPlatformText.y = frontY;
+
+        // Update text
+        this.squadPlatformText.setText(this.squadMembers.length.toString());
     }
 
     /**
@@ -2812,6 +3033,9 @@ export default class GameScene extends Phaser.Scene {
         // PROGRESSION: Check for milestones and award bonuses
         this.checkMilestones();
 
+        // ========== MATHEMATICAL GATES ==========
+        this.checkMathGateCollisions();
+
         // ========== UI/HUD POLISH UPDATES ==========
         this.updateDistanceDisplay();        // Rolling numbers + milestone
         this.updateUpcomingPreview();        // Upcoming obstacles preview
@@ -3052,6 +3276,104 @@ export default class GameScene extends Phaser.Scene {
             this.squadBubble.x = this.squadCenterX;
             this.squadText.x = this.squadCenterX;
         }
+
+        // Update squad platform indicator position
+        this.updateSquadPlatformPosition();
+
+        // Update enemy group indicators
+        this.updateEnemyGroupIndicators();
+    }
+
+    /**
+     * Update enemy group indicators (red platforms with white numbers)
+     * Groups nearby enemies and shows count above them
+     */
+    updateEnemyGroupIndicators() {
+        // Initialize indicator pool if needed
+        if (!this.enemyGroupIndicators) {
+            this.enemyGroupIndicators = [];
+            // Create pool of 10 indicators
+            for (let i = 0; i < 10; i++) {
+                const bg = this.add.rectangle(0, 0, 60, 40, 0xFF4444, 0.9);
+                bg.setDepth(9);
+                bg.setStrokeStyle(3, 0xFFFFFF, 1);
+                bg.setVisible(false);
+
+                const text = this.add.text(0, 0, '0', {
+                    fontSize: '28px',
+                    fontFamily: 'Arial Black',
+                    color: '#FFFFFF',
+                    stroke: '#000000',
+                    strokeThickness: 3
+                });
+                text.setOrigin(0.5);
+                text.setDepth(9);
+                text.setResolution(2);
+                text.setVisible(false);
+
+                this.enemyGroupIndicators.push({ bg, text, active: false });
+            }
+        }
+
+        // Hide all indicators first
+        this.enemyGroupIndicators.forEach(indicator => {
+            indicator.bg.setVisible(false);
+            indicator.text.setVisible(false);
+            indicator.active = false;
+        });
+
+        // Get all active enemies
+        const activeEnemies = this.waveManager ? this.waveManager.activeEnemies.filter(e => e.active && e.hp > 0) : [];
+
+        if (activeEnemies.length === 0) return;
+
+        // Group enemies by proximity (within 150px of each other)
+        const enemyGroups = [];
+        const processedEnemies = new Set();
+
+        activeEnemies.forEach(enemy => {
+            if (processedEnemies.has(enemy)) return;
+
+            // Start new group with this enemy
+            const group = [enemy];
+            processedEnemies.add(enemy);
+
+            // Find nearby enemies
+            activeEnemies.forEach(other => {
+                if (processedEnemies.has(other)) return;
+
+                const dist = Phaser.Math.Distance.Between(
+                    enemy.x, enemy.y,
+                    other.x, other.y
+                );
+
+                if (dist < 150) { // Group threshold
+                    group.push(other);
+                    processedEnemies.add(other);
+                }
+            });
+
+            enemyGroups.push(group);
+        });
+
+        // Show indicator for each group
+        enemyGroups.forEach((group, index) => {
+            if (index >= this.enemyGroupIndicators.length) return;
+
+            // Calculate group center
+            const avgX = group.reduce((sum, e) => sum + e.x, 0) / group.length;
+            const avgY = group.reduce((sum, e) => sum + e.y, 0) / group.length;
+
+            // Position indicator above group
+            const indicator = this.enemyGroupIndicators[index];
+            indicator.bg.setPosition(avgX, avgY - 60);
+            indicator.text.setPosition(avgX, avgY - 60);
+            indicator.text.setText(group.length.toString());
+
+            indicator.bg.setVisible(true);
+            indicator.text.setVisible(true);
+            indicator.active = true;
+        });
     }
 
     /**
