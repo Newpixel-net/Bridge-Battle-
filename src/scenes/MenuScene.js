@@ -52,6 +52,23 @@ export default class MenuScene extends Phaser.Scene {
             console.log('⚠️  AtlasHelper not available - using fallback PNG assets');
         }
 
+        // DEBUG: Show full textures to verify they're loading
+        console.log('🔍 DEBUG: Creating full texture test...');
+        const testMain = this.add.image(100, 100, 'main');
+        testMain.setOrigin(0, 0);
+        testMain.setAlpha(0.5);
+        testMain.setScale(0.2);
+
+        const testButtons = this.add.image(100, 300, 'buttons');
+        testButtons.setOrigin(0, 0);
+        testButtons.setAlpha(0.5);
+        testButtons.setScale(0.2);
+
+        const testPanels = this.add.image(100, 500, 'panels');
+        testPanels.setOrigin(0, 0);
+        testPanels.setAlpha(0.5);
+        testPanels.setScale(0.2);
+
         // Animated background
         this.createAnimatedBackground();
 
