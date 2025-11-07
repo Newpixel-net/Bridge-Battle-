@@ -1,0 +1,47 @@
+{
+    "frames": {
+        "button_play": {
+            "frame": { "x": 0, "y": 0, "w": 200, "h": 80 },
+            "rotated": false,
+            "trimmed": false,
+            "spriteSourceSize": { "x": 0, "y": 0, "w": 200, "h": 80 },
+            "sourceSize": { "w": 200, "h": 80 }
+        },
+        "button_pause": {
+            "frame": { "x": 210, "y": 0, "w": 200, "h": 80 },
+            "rotated": false,
+            "trimmed": false,
+            "spriteSourceSize": { "x": 0, "y": 0, "w": 200, "h": 80 },
+            "sourceSize": { "w": 200, "h": 80 }
+        },
+        "button_restart": {
+            "frame": { "x": 420, "y": 0, "w": 200, "h": 80 },
+            "rotated": false,
+            "trimmed": false,
+            "spriteSourceSize": { "x": 0, "y": 0, "w": 200, "h": 80 },
+            "sourceSize": { "w": 200, "h": 80 }
+        },
+        "panel_victory": {
+            "frame": { "x": 0, "y": 100, "w": 600, "h": 400 },
+            "rotated": false,
+            "trimmed": false,
+            "spriteSourceSize": { "x": 0, "y": 0, "w": 600, "h": 400 },
+            "sourceSize": { "w": 600, "h": 400 }
+        },
+        "panel_defeat": {
+            "frame": { "x": 610, "y": 100, "w": 600, "h": 400 },
+            "rotated": false,
+            "trimmed": false,
+            "spriteSourceSize": { "x": 0, "y": 0, "w": 600, "h": 400 },
+            "sourceSize": { "w": 600, "h": 400 }
+        }
+    },
+    "meta": {
+        "app": "Bridge Battle UI Extractor",
+        "version": "1.0",
+        "image": "ui-zombie.png",
+        "format": "RGBA8888",
+        "size": { "w": 2048, "h": 1024 },
+        "scale": "1"
+    }
+}

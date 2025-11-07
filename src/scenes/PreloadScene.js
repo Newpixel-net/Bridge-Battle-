@@ -59,6 +59,20 @@ export default class PreloadScene extends Phaser.Scene {
         this.load.image('ui_badge_26', uiPath + 'badge_level_26.png');
 
         console.log('📦 Loading NEW ultra-high-res UI assets from:', uiPath);
+
+        // ✨ NEW: Load professional sprite atlases from ready-made games
+        // These are battle-tested UI elements from published games
+        const atlasPath = 'assets/ui-atlas/';
+
+        // Load sprite sheets as full textures (we'll extract frames programmatically)
+        this.load.image('ui_atlas_zombie', atlasPath + 'ui-zombie.png');
+        this.load.image('ui_atlas_zombie2', atlasPath + 'ui-zombie2.png');
+        this.load.image('ui_atlas_viking', atlasPath + 'ui-viking.png');
+
+        // Load atlas JSON for frame definitions
+        this.load.json('ui_atlas_data', atlasPath + 'ui-basic-atlas.json');
+
+        console.log('🎮 Loading professional UI sprite atlases from published games');
     }
 
     create() {
