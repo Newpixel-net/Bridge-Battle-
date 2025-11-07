@@ -130,8 +130,9 @@ export class AtlasHelper {
 
         console.log(`✅ Button sprite created, making interactive`);
 
-        // Make interactive
+        // Make interactive and ensure it appears on top
         button.setInteractive({ useHandCursor: true });
+        button.setDepth(100); // High depth to appear above decorations
 
         const baseScale = button.scaleX;
         const hoverScale = baseScale * 1.08;
