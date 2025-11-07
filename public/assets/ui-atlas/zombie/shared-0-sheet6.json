@@ -1,0 +1,413 @@
+{
+  "frames": {
+    "Zombie_1_Body_0000": {
+      "frame": {
+        "x": 76,
+        "y": 1,
+        "w": 61,
+        "h": 62
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 61,
+        "h": 62
+      },
+      "sourceSize": {
+        "w": 61,
+        "h": 62
+      }
+    },
+    "Zombie_1_FootLeft_0000": {
+      "frame": {
+        "x": 1,
+        "y": 225,
+        "w": 38,
+        "h": 27
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 38,
+        "h": 27
+      },
+      "sourceSize": {
+        "w": 38,
+        "h": 27
+      }
+    },
+    "Zombie_1_FootRight_0000": {
+      "frame": {
+        "x": 129,
+        "y": 225,
+        "w": 32,
+        "h": 25
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 32,
+        "h": 25
+      },
+      "sourceSize": {
+        "w": 32,
+        "h": 25
+      }
+    },
+    "Zombie_1_HandLeft_0000": {
+      "frame": {
+        "x": 76,
+        "y": 65,
+        "w": 65,
+        "h": 31
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 65,
+        "h": 31
+      },
+      "sourceSize": {
+        "w": 65,
+        "h": 31
+      }
+    },
+    "Zombie_1_HandRight_0000": {
+      "frame": {
+        "x": 129,
+        "y": 193,
+        "w": 62,
+        "h": 26
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 62,
+        "h": 26
+      },
+      "sourceSize": {
+        "w": 62,
+        "h": 26
+      }
+    },
+    "Zombie_2_Body_0000": {
+      "frame": {
+        "x": 1,
+        "y": 1,
+        "w": 73,
+        "h": 65
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 73,
+        "h": 65
+      },
+      "sourceSize": {
+        "w": 73,
+        "h": 65
+      }
+    },
+    "Zombie_2_FootLeft_0000": {
+      "frame": {
+        "x": 1,
+        "y": 225,
+        "w": 38,
+        "h": 27
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 38,
+        "h": 27
+      },
+      "sourceSize": {
+        "w": 38,
+        "h": 27
+      }
+    },
+    "Zombie_2_FootRight_0000": {
+      "frame": {
+        "x": 129,
+        "y": 225,
+        "w": 32,
+        "h": 25
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 32,
+        "h": 25
+      },
+      "sourceSize": {
+        "w": 32,
+        "h": 25
+      }
+    },
+    "Zombie_2_HandLeft_0000": {
+      "frame": {
+        "x": 1,
+        "y": 68,
+        "w": 65,
+        "h": 31
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 65,
+        "h": 31
+      },
+      "sourceSize": {
+        "w": 65,
+        "h": 31
+      }
+    },
+    "Zombie_2_HandRight_0000": {
+      "frame": {
+        "x": 143,
+        "y": 129,
+        "w": 64,
+        "h": 31
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 64,
+        "h": 31
+      },
+      "sourceSize": {
+        "w": 64,
+        "h": 31
+      }
+    },
+    "Zombie_3_FootLeft_0000": {
+      "frame": {
+        "x": 1,
+        "y": 225,
+        "w": 38,
+        "h": 27
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 38,
+        "h": 27
+      },
+      "sourceSize": {
+        "w": 38,
+        "h": 27
+      }
+    },
+    "Zombie_3_FootRight_0000": {
+      "frame": {
+        "x": 129,
+        "y": 225,
+        "w": 32,
+        "h": 25
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 32,
+        "h": 25
+      },
+      "sourceSize": {
+        "w": 32,
+        "h": 25
+      }
+    },
+    "Zombie_3_HandLeft_0000": {
+      "frame": {
+        "x": 185,
+        "y": 65,
+        "w": 66,
+        "h": 34
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 66,
+        "h": 34
+      },
+      "sourceSize": {
+        "w": 66,
+        "h": 34
+      }
+    },
+    "Zombie_3_HandRight_0000": {
+      "frame": {
+        "x": 68,
+        "y": 161,
+        "w": 63,
+        "h": 28
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 63,
+        "h": 28
+      },
+      "sourceSize": {
+        "w": 63,
+        "h": 28
+      }
+    },
+    "Zombie_4_FootLeft_0000": {
+      "frame": {
+        "x": 193,
+        "y": 1,
+        "w": 55,
+        "h": 42
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 55,
+        "h": 42
+      },
+      "sourceSize": {
+        "w": 55,
+        "h": 42
+      }
+    },
+    "Zombie_4_FootRight_0000": {
+      "frame": {
+        "x": 1,
+        "y": 129,
+        "w": 48,
+        "h": 37
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 48,
+        "h": 37
+      },
+      "sourceSize": {
+        "w": 48,
+        "h": 37
+      }
+    },
+    "Zombie_5_FootLeft_0000": {
+      "frame": {
+        "x": 193,
+        "y": 1,
+        "w": 55,
+        "h": 42
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 55,
+        "h": 42
+      },
+      "sourceSize": {
+        "w": 55,
+        "h": 42
+      }
+    },
+    "Zombie_5_FootRight_0000": {
+      "frame": {
+        "x": 1,
+        "y": 129,
+        "w": 48,
+        "h": 37
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 48,
+        "h": 37
+      },
+      "sourceSize": {
+        "w": 48,
+        "h": 37
+      }
+    },
+    "Zombie_6_FootLeft_0000": {
+      "frame": {
+        "x": 193,
+        "y": 1,
+        "w": 55,
+        "h": 42
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 55,
+        "h": 42
+      },
+      "sourceSize": {
+        "w": 55,
+        "h": 42
+      }
+    },
+    "Zombie_6_FootRight_0000": {
+      "frame": {
+        "x": 1,
+        "y": 129,
+        "w": 48,
+        "h": 37
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 48,
+        "h": 37
+      },
+      "sourceSize": {
+        "w": 48,
+        "h": 37
+      }
+    }
+  },
+  "meta": {
+    "image": "shared-0-sheet6.png",
+    "format": "RGBA8888",
+    "size": {
+      "w": 256,
+      "h": 256
+    },
+    "scale": 1
+  }
+}
