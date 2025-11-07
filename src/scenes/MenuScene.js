@@ -35,14 +35,39 @@ export default class MenuScene extends Phaser.Scene {
         const centerX = GAME.WIDTH / 2;
         const centerY = GAME.HEIGHT / 2;
 
+        console.log('🎮 MenuScene.create() called');
+
         // Get AtlasHelper from registry (initialized in PreloadScene)
         this.atlasHelper = this.registry.get('atlasHelper');
 
+        console.log('🔍 AtlasHelper status:', this.atlasHelper ? 'AVAILABLE' : 'NOT AVAILABLE');
+
         if (this.atlasHelper) {
             console.log('✓ AtlasHelper available - using professional sprite atlases');
+            console.log('🔍 Testing atlas - available textures:', this.textures.list);
+            console.log('🔍 Checking for main texture:', this.textures.exists('main'));
+            console.log('🔍 Checking for buttons texture:', this.textures.exists('buttons'));
+            console.log('🔍 Checking for panels texture:', this.textures.exists('panels'));
         } else {
             console.log('⚠️  AtlasHelper not available - using fallback PNG assets');
         }
+
+        // DEBUG: Show full textures to verify they're loading
+        console.log('🔍 DEBUG: Creating full texture test...');
+        const testMain = this.add.image(100, 100, 'main');
+        testMain.setOrigin(0, 0);
+        testMain.setAlpha(0.5);
+        testMain.setScale(0.2);
+
+        const testButtons = this.add.image(100, 300, 'buttons');
+        testButtons.setOrigin(0, 0);
+        testButtons.setAlpha(0.5);
+        testButtons.setScale(0.2);
+
+        const testPanels = this.add.image(100, 500, 'panels');
+        testPanels.setOrigin(0, 0);
+        testPanels.setAlpha(0.5);
+        testPanels.setScale(0.2);
 
         // Animated background
         this.createAnimatedBackground();
