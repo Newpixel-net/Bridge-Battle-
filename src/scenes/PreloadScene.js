@@ -29,6 +29,7 @@ export default class PreloadScene extends Phaser.Scene {
         // NO old PNG assets - complete modern redesign
 
         const atlasPath = 'assets/ui-atlas/';
+        const zombiePath = atlasPath + 'zombie/';
 
         // Load professional sprite sheets
         this.load.image('main', atlasPath + 'zombie-ui-main.png');
@@ -38,7 +39,17 @@ export default class PreloadScene extends Phaser.Scene {
         // Load comprehensive modern atlas JSON
         this.load.json('ui_atlas_complete', atlasPath + 'modern-ui-atlas.json');
 
+        // ========================================================================
+        // 🎯 REAL ZOMBIE BUSTER BUTTON SPRITES
+        // ========================================================================
+        // Load the actual button sprite sheets with real coordinates
+        this.load.atlas('zombie_buttons_small', zombiePath + 'shared-0-sheet4.png', zombiePath + 'shared-0-sheet4.json');
+        this.load.atlas('zombie_buttons_social', zombiePath + 'shared-2-sheet6.png', zombiePath + 'shared-2-sheet6.json');
+        this.load.atlas('zombie_button_play', zombiePath + 'shared-2-sheet5.png', zombiePath + 'shared-2-sheet5.json');
+        this.load.atlas('zombie_button_sound', zombiePath + 'shared-0-sheet3.png', zombiePath + 'shared-0-sheet3.json');
+
         console.log('🎨 Loading MODERN UI ATLAS - Professional AAA Quality');
+        console.log('🎯 Loading REAL ZOMBIE BUSTER BUTTON SPRITES');
     }
 
     create() {

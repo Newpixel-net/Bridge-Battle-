@@ -1,0 +1,80 @@
+{
+  "frames": {
+    "Button_Exit_0000": {
+      "frame": {"x": 641, "y": 1665, "w": 115, "h": 115},
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {"x": 0, "y": 0, "w": 115, "h": 115},
+      "sourceSize": {"w": 115, "h": 115}
+    },
+    "Button_Exit_0001": {
+      "frame": {"x": 586, "y": 1793, "w": 115, "h": 115},
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {"x": 0, "y": 0, "w": 115, "h": 115},
+      "sourceSize": {"w": 115, "h": 115}
+    },
+    "Button_Facebook_0000": {
+      "frame": {"x": 257, "y": 1665, "w": 115, "h": 115},
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {"x": 0, "y": 0, "w": 115, "h": 115},
+      "sourceSize": {"w": 115, "h": 115}
+    },
+    "Button_Facebook_0001": {
+      "frame": {"x": 385, "y": 1665, "w": 115, "h": 115},
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {"x": 0, "y": 0, "w": 115, "h": 115},
+      "sourceSize": {"w": 115, "h": 115}
+    },
+    "Button_Google_Plus_0000": {
+      "frame": {"x": 257, "y": 1793, "w": 115, "h": 115},
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {"x": 0, "y": 0, "w": 115, "h": 115},
+      "sourceSize": {"w": 115, "h": 115}
+    },
+    "Button_Google_Plus_0001": {
+      "frame": {"x": 513, "y": 1665, "w": 115, "h": 115},
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {"x": 0, "y": 0, "w": 115, "h": 115},
+      "sourceSize": {"w": 115, "h": 115}
+    },
+    "Button_More_Games_0000": {
+      "frame": {"x": 1, "y": 1793, "w": 115, "h": 115},
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {"x": 0, "y": 0, "w": 115, "h": 115},
+      "sourceSize": {"w": 115, "h": 115}
+    },
+    "Button_More_Games_0001": {
+      "frame": {"x": 129, "y": 1793, "w": 115, "h": 115},
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {"x": 0, "y": 0, "w": 115, "h": 115},
+      "sourceSize": {"w": 115, "h": 115}
+    },
+    "Button_Twitter_0000": {
+      "frame": {"x": 769, "y": 1793, "w": 115, "h": 115},
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {"x": 0, "y": 0, "w": 115, "h": 115},
+      "sourceSize": {"w": 115, "h": 115}
+    },
+    "Button_Twitter_0001": {
+      "frame": {"x": 897, "y": 1665, "w": 115, "h": 115},
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {"x": 0, "y": 0, "w": 115, "h": 115},
+      "sourceSize": {"w": 115, "h": 115}
+    }
+  },
+  "meta": {
+    "image": "shared-2-sheet6.png",
+    "format": "RGBA8888",
+    "size": {"w": 2048, "h": 2048},
+    "scale": 1
+  }
+}

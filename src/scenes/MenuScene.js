@@ -300,40 +300,33 @@ export default class MenuScene extends Phaser.Scene {
     }
 
     /**
-     * Create main menu buttons with professional AAA polish
+     * Create main menu buttons with professional AAA polish using REAL zombie buster sprites
      */
     createMainButtons() {
         const centerX = GAME.WIDTH / 2;
         const startY = 400;
-        const buttonSpacing = 85;
+        const buttonSpacing = 100;
 
-        // ATLAS ONLY - No PNG fallback
-        if (!this.atlasHelper) {
-            console.error('❌ CRITICAL: AtlasHelper not available! Cannot create buttons.');
-            return;
-        }
-
-        // Button configuration: [label, color, callback, delay]
+        // Button configuration: [label, atlasKey, frameName, callback, delay]
         const buttons = [
-            ['START GAME', 'button_play_green', () => this.startGame(), 0],
-            ['SETTINGS', 'button_play_brown', () => this.showSettings(), 100],
-            ['HOW TO PLAY', 'button_play_green', () => this.showHowToPlay(), 200],
-            ['CREDITS', 'button_play_brown', () => this.showCredits(), 300]
+            ['START GAME', 'zombie_buttons_small', 'Button_Start_0000', () => this.startGame(), 0],
+            ['SETTINGS', 'zombie_button_sound', 'Button_Sound_0000', () => this.showSettings(), 100],
+            ['HOW TO PLAY', 'zombie_buttons_small', 'Button_Levels_0000', () => this.showHowToPlay(), 200],
+            ['CREDITS', 'zombie_buttons_small', 'Button_Menu_0000', () => this.showCredits(), 300]
         ];
 
-        buttons.forEach(([label, buttonSprite, callback, delay], index) => {
+        buttons.forEach(([label, atlasKey, frameName, callback, delay], index) => {
             const yPos = startY + (buttonSpacing * index);
 
-            // Create professional button from atlas
-            const button = this.atlasHelper.createButton(
-                centerX, yPos,
-                buttonSprite,
-                callback
-            );
+            // Create button sprite from the loaded atlas
+            const button = this.add.sprite(centerX, yPos, atlasKey, frameName);
+            button.setScale(0.8);
+            button.setInteractive({ useHandCursor: true });
+            button.setDepth(100);
 
             // Add text label on top of button
             const buttonText = this.add.text(centerX, yPos, label, {
-                fontSize: '28px',
+                fontSize: '24px',
                 fontFamily: 'Arial Black',
                 color: '#FFFFFF',
                 stroke: '#000000',
@@ -362,24 +355,44 @@ export default class MenuScene extends Phaser.Scene {
                 delay: 1400 + delay
             });
 
-            // Link button and text for hover effects
+            // Button hover/click effects
+            const baseScale = 0.8;
+            const hoverScale = baseScale * 1.08;
+            const clickScale = baseScale * 0.95;
+
             button.on('pointerover', () => {
                 this.tweens.add({
-                    targets: buttonText,
-                    scaleX: 1.08,
-                    scaleY: 1.08,
+                    targets: [button, buttonText],
+                    scaleX: hoverScale,
+                    scaleY: hoverScale,
                     duration: 150,
                     ease: 'Back.easeOut'
                 });
+                button.setTint(0xFFFFFF);
             });
 
             button.on('pointerout', () => {
                 this.tweens.add({
-                    targets: buttonText,
-                    scaleX: 1,
-                    scaleY: 1,
+                    targets: [button, buttonText],
+                    scaleX: baseScale,
+                    scaleY: baseScale,
                     duration: 150
                 });
+                button.clearTint();
+            });
+
+            button.on('pointerdown', () => {
+                this.tweens.add({
+                    targets: [button, buttonText],
+                    scaleX: clickScale,
+                    scaleY: clickScale,
+                    duration: 100,
+                    yoyo: true,
+                    ease: 'Quad.easeInOut'
+                });
+
+                this.cameras.main.flash(100, 255, 255, 255);
+                this.time.delayedCall(100, callback);
             });
         });
     }

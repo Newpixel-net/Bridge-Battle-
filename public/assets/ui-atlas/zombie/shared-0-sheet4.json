@@ -1,0 +1,150 @@
+{
+  "frames": {
+    "Button_Fullscreen_0000": {
+      "frame": {"x": 385, "y": 1, "w": 115, "h": 115},
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {"x": 0, "y": 0, "w": 115, "h": 115},
+      "sourceSize": {"w": 115, "h": 115}
+    },
+    "Button_Fullscreen_0001": {
+      "frame": {"x": 257, "y": 1, "w": 115, "h": 115},
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {"x": 0, "y": 0, "w": 115, "h": 115},
+      "sourceSize": {"w": 115, "h": 115}
+    },
+    "Button_Menu_0000": {
+      "frame": {"x": 129, "y": 129, "w": 115, "h": 115},
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {"x": 0, "y": 0, "w": 115, "h": 115},
+      "sourceSize": {"w": 115, "h": 115}
+    },
+    "Button_Menu_0001": {
+      "frame": {"x": 1, "y": 129, "w": 115, "h": 115},
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {"x": 0, "y": 0, "w": 115, "h": 115},
+      "sourceSize": {"w": 115, "h": 115}
+    },
+    "Button_Music_0000": {
+      "frame": {"x": 129, "y": 1, "w": 115, "h": 115},
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {"x": 0, "y": 0, "w": 115, "h": 115},
+      "sourceSize": {"w": 115, "h": 115}
+    },
+    "Button_Music_0001": {
+      "frame": {"x": 1, "y": 1, "w": 115, "h": 115},
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {"x": 0, "y": 0, "w": 115, "h": 115},
+      "sourceSize": {"w": 115, "h": 115}
+    },
+    "Button_Pause_0000": {
+      "frame": {"x": 385, "y": 235, "w": 115, "h": 115},
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {"x": 0, "y": 0, "w": 115, "h": 115},
+      "sourceSize": {"w": 115, "h": 115}
+    },
+    "Button_Pause_0001": {
+      "frame": {"x": 257, "y": 257, "w": 115, "h": 115},
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {"x": 0, "y": 0, "w": 115, "h": 115},
+      "sourceSize": {"w": 115, "h": 115}
+    },
+    "Button_Reload_0000": {
+      "frame": {"x": 129, "y": 257, "w": 115, "h": 115},
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {"x": 0, "y": 0, "w": 115, "h": 115},
+      "sourceSize": {"w": 115, "h": 115}
+    },
+    "Button_Reload_0001": {
+      "frame": {"x": 1, "y": 257, "w": 115, "h": 115},
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {"x": 0, "y": 0, "w": 115, "h": 115},
+      "sourceSize": {"w": 115, "h": 115}
+    },
+    "Button_Return_0000": {
+      "frame": {"x": 385, "y": 118, "w": 115, "h": 115},
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {"x": 0, "y": 0, "w": 115, "h": 115},
+      "sourceSize": {"w": 115, "h": 115}
+    },
+    "Button_Return_0001": {
+      "frame": {"x": 257, "y": 129, "w": 115, "h": 115},
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {"x": 0, "y": 0, "w": 115, "h": 115},
+      "sourceSize": {"w": 115, "h": 115}
+    },
+    "Button_Start_0000": {
+      "frame": {"x": 385, "y": 118, "w": 115, "h": 115},
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {"x": 0, "y": 0, "w": 115, "h": 115},
+      "sourceSize": {"w": 115, "h": 115}
+    },
+    "Button_Start_0001": {
+      "frame": {"x": 257, "y": 129, "w": 115, "h": 115},
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {"x": 0, "y": 0, "w": 115, "h": 115},
+      "sourceSize": {"w": 115, "h": 115}
+    },
+    "Button_Next_0000": {
+      "frame": {"x": 385, "y": 118, "w": 115, "h": 115},
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {"x": 0, "y": 0, "w": 115, "h": 115},
+      "sourceSize": {"w": 115, "h": 115}
+    },
+    "Button_Next_0001": {
+      "frame": {"x": 257, "y": 129, "w": 115, "h": 115},
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {"x": 0, "y": 0, "w": 115, "h": 115},
+      "sourceSize": {"w": 115, "h": 115}
+    },
+    "Button_Levels_0000": {
+      "frame": {"x": 129, "y": 129, "w": 115, "h": 115},
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {"x": 0, "y": 0, "w": 115, "h": 115},
+      "sourceSize": {"w": 115, "h": 115}
+    },
+    "Button_Levels_0001": {
+      "frame": {"x": 1, "y": 129, "w": 115, "h": 115},
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {"x": 0, "y": 0, "w": 115, "h": 115},
+      "sourceSize": {"w": 115, "h": 115}
+    },
+    "Button_Restart_0000": {
+      "frame": {"x": 129, "y": 257, "w": 115, "h": 115},
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {"x": 0, "y": 0, "w": 115, "h": 115},
+      "sourceSize": {"w": 115, "h": 115}
+    },
+    "Button_Restart_0001": {
+      "frame": {"x": 1, "y": 257, "w": 115, "h": 115},
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {"x": 0, "y": 0, "w": 115, "h": 115},
+      "sourceSize": {"w": 115, "h": 115}
+    }
+  },
+  "meta": {
+    "image": "shared-0-sheet4.png",
+    "format": "RGBA8888",
+    "size": {"w": 512, "h": 512},
+    "scale": 1
+  }
+}
