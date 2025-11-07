@@ -91,10 +91,24 @@ export default class Enemy {
         const sizeVariation = Phaser.Math.FloatBetween(0.9, 1.1);
         const finalScale = baseScale * sizeVariation;
 
-        // ZOMBIE VARIETY - Randomly select from available zombie types
-        // NOTE: Only using types 1-2 as type 3 assets are incomplete
-        const zombieTypes = [1, 2];
-        const zombieType = Phaser.Utils.Array.GetRandom(zombieTypes);
+        // ENEMY VARIETY - Select appropriate sprite based on enemy type and size
+        // Use high-quality goblin sprites from Viking Escape
+        let enemySprite;
+
+        // Select sprite based on enemy type and health
+        if (this.enemyType === 'TANK' || this.maxHealth >= 10) {
+            // Large enemies: use cyclops or bomber
+            const tankSprites = ['goblin_cyclops', 'goblin_bomber'];
+            enemySprite = Phaser.Utils.Array.GetRandom(tankSprites);
+        } else if (this.enemyType === 'SPEED') {
+            // Fast enemies: use flying enemies
+            const speedSprites = ['fly_enemy_01', 'fly_enemy_02', 'fly_enemy_05'];
+            enemySprite = Phaser.Utils.Array.GetRandom(speedSprites);
+        } else {
+            // Normal enemies: use warrior or archer
+            const normalSprites = ['goblin_warrior', 'goblin_archer'];
+            enemySprite = Phaser.Utils.Array.GetRandom(normalSprites);
+        }
 
         // Ground shadow
         const shadowSize = 30 * sizeVariation;
@@ -107,149 +121,78 @@ export default class Enemy {
 
         const container = this.scene.add.container(this.x, this.y);
 
-        // SPRITE ASSEMBLY: Head + Body + Limbs from atlas
-        // Use fallback graphics if textures don't exist
-        let bodySprite, headSprite;
+        // HIGH-QUALITY SPRITE: Use Viking goblin sprites
+        // These are full character sprites from the Viking Escape game
+        let mainSprite;
 
         try {
-            if (this.scene.textures.exists('zombie_parts')) {
-                bodySprite = this.scene.add.sprite(0, 10, 'zombie_parts', `Zombie_${zombieType}_Body_0000`);
-                bodySprite.setScale(finalScale);
-                bodySprite.setTint(this.color);
+            if (this.scene.textures.exists(enemySprite)) {
+                // Load the high-quality sprite
+                mainSprite = this.scene.add.sprite(0, 0, enemySprite);
+                // Scale sprite sheets are large, so scale them down appropriately
+                const spriteScale = finalScale * 0.15; // Sprite sheets are ~2000px, scale to game size
+                mainSprite.setScale(spriteScale);
+                mainSprite.setTint(this.color); // Tint based on enemy type
+
+                console.log(`🎨 Created ${enemySprite} with scale ${spriteScale.toFixed(3)}`);
             } else {
-                // Fallback: colored circle for body
+                // Fallback: colored circle
                 const graphics = this.scene.add.graphics();
                 graphics.fillStyle(this.color);
-                graphics.fillCircle(0, 10, 20);
-                bodySprite = graphics;
+                graphics.fillCircle(0, 0, 30);
+                graphics.fillStyle(0xFFFFFF);
+                graphics.fillCircle(-10, -10, 5);
+                graphics.fillCircle(10, -10, 5);
+                mainSprite = graphics;
+
+                console.warn(`⚠️  Sprite ${enemySprite} not found, using fallback`);
             }
         } catch (error) {
-            // Fallback: colored circle for body
+            // Fallback: colored circle
             const graphics = this.scene.add.graphics();
             graphics.fillStyle(this.color);
-            graphics.fillCircle(0, 10, 20);
-            bodySprite = graphics;
+            graphics.fillCircle(0, 0, 30);
+            graphics.fillStyle(0xFFFFFF);
+            graphics.fillCircle(-10, -10, 5);
+            graphics.fillCircle(10, -10, 5);
+            mainSprite = graphics;
+
+            console.error(`❌ Error loading sprite: ${error.message}`);
         }
 
-        // Fallback for head (simple circle since zombie_heads atlas is missing)
-        const headGraphics = this.scene.add.graphics();
-        headGraphics.fillStyle(this.color);
-        headGraphics.fillCircle(0, -15, 15);
-        headGraphics.fillStyle(0xFFFFFF);
-        headGraphics.fillCircle(-5, -18, 3); // Left eye
-        headGraphics.fillCircle(5, -18, 3);  // Right eye
-        headSprite = headGraphics;
-
-        // Limb sprites with fallback
-        let leftHandSprite, rightHandSprite, leftFootSprite, rightFootSprite;
-
-        try {
-            if (this.scene.textures.exists('zombie_parts')) {
-                leftHandSprite = this.scene.add.sprite(-15, 5, 'zombie_parts', `Zombie_${zombieType}_HandLeft_0000`);
-                leftHandSprite.setScale(finalScale * 0.9);
-                leftHandSprite.setTint(this.color);
-
-                rightHandSprite = this.scene.add.sprite(15, 5, 'zombie_parts', `Zombie_${zombieType}_HandRight_0000`);
-                rightHandSprite.setScale(finalScale * 0.9);
-                rightHandSprite.setTint(this.color);
-
-                leftFootSprite = this.scene.add.sprite(-8, 25, 'zombie_parts', `Zombie_${zombieType}_FootLeft_0000`);
-                leftFootSprite.setScale(finalScale);
-                leftFootSprite.setTint(this.color);
-
-                rightFootSprite = this.scene.add.sprite(8, 25, 'zombie_parts', `Zombie_${zombieType}_FootRight_0000`);
-                rightFootSprite.setScale(finalScale);
-                rightFootSprite.setTint(this.color);
-            } else {
-                // Fallback: small circles for limbs
-                leftHandSprite = this.scene.add.circle(-15, 5, 8, this.color);
-                rightHandSprite = this.scene.add.circle(15, 5, 8, this.color);
-                leftFootSprite = this.scene.add.circle(-8, 25, 8, this.color);
-                rightFootSprite = this.scene.add.circle(8, 25, 8, this.color);
-            }
-        } catch (error) {
-            // Fallback: small circles for limbs
-            leftHandSprite = this.scene.add.circle(-15, 5, 8, this.color);
-            rightHandSprite = this.scene.add.circle(15, 5, 8, this.color);
-            leftFootSprite = this.scene.add.circle(-8, 25, 8, this.color);
-            rightFootSprite = this.scene.add.circle(8, 25, 8, this.color);
-        }
-
-        // Add to container in depth order (feet first, head last)
-        container.add([
-            leftFootSprite,
-            rightFootSprite,
-            leftHandSprite,
-            bodySprite,
-            rightHandSprite,
-            headSprite
-        ]);
+        // Add sprite to container
+        container.add([mainSprite]);
         container.setDepth(8); // Below player (10) but above road
 
-        // Store references for animations
-        container.headSprite = headSprite;
-        container.bodySprite = bodySprite;
-        container.leftHandSprite = leftHandSprite;
-        container.rightHandSprite = rightHandSprite;
-        container.leftFootSprite = leftFootSprite;
-        container.rightFootSprite = rightFootSprite;
-        container.zombieType = zombieType;
+        // Store references for animations and effects
+        container.mainSprite = mainSprite;
+        container.enemySprite = enemySprite;
         container.groundShadow = groundShadow;
 
-        // Store reference to body sprite for hit flash (replaces old visualBody)
-        container.visualBody = bodySprite;
+        // Store reference to main sprite for hit flash
+        container.visualBody = mainSprite;
 
-        // RUNNING ANIMATION - Foot swinging (left/right alternating)
+        // BOBBING ANIMATION - Simple up/down motion while moving
         this.scene.tweens.add({
-            targets: leftFootSprite,
-            x: leftFootSprite.x - 6,
-            duration: 300,
+            targets: mainSprite,
+            y: mainSprite.y - 5,
+            duration: 400,
             yoyo: true,
             repeat: -1,
             ease: 'Sine.easeInOut'
         });
 
+        // Slight rotation tilt for variety
         this.scene.tweens.add({
-            targets: rightFootSprite,
-            x: rightFootSprite.x + 6,
-            duration: 300,
-            yoyo: true,
-            repeat: -1,
-            ease: 'Sine.easeInOut',
-            delay: 150 // Offset for alternating motion
-        });
-
-        // HAND SWINGING - Opposite to feet
-        this.scene.tweens.add({
-            targets: leftHandSprite,
-            rotation: Phaser.Math.DegToRad(-15),
-            duration: 300,
-            yoyo: true,
-            repeat: -1,
-            ease: 'Sine.easeInOut',
-            delay: 150 // Opposite to right foot
-        });
-
-        this.scene.tweens.add({
-            targets: rightHandSprite,
-            rotation: Phaser.Math.DegToRad(15),
-            duration: 300,
+            targets: mainSprite,
+            rotation: Phaser.Math.DegToRad(5),
+            duration: 500,
             yoyo: true,
             repeat: -1,
             ease: 'Sine.easeInOut'
         });
 
-        // HEAD BOBBING - Subtle up/down
-        this.scene.tweens.add({
-            targets: headSprite,
-            y: headSprite.y - 2,
-            duration: 300,
-            yoyo: true,
-            repeat: -1,
-            ease: 'Sine.easeInOut'
-        });
-
-        console.log(`🧟 Enemy sprite created: Type ${zombieType}, Scale ${finalScale.toFixed(2)}, Tint ${this.color.toString(16)}`);
+        console.log(`🎨 Enemy sprite created: ${enemySprite}, Scale ${finalScale.toFixed(2)}, HP: ${this.hp}`);
 
         return container;
     }
@@ -263,27 +206,16 @@ export default class Enemy {
         this.hp -= damage;
         this.lastHitTime = this.scene.time.now;
 
-        // Visual feedback - white flash on all sprite parts
-        if (this.container) {
-            const spriteRefs = [
-                this.container.headSprite,
-                this.container.bodySprite,
-                this.container.leftHandSprite,
-                this.container.rightHandSprite,
-                this.container.leftFootSprite,
-                this.container.rightFootSprite
-            ];
+        // Visual feedback - white flash on sprite
+        if (this.container && this.container.mainSprite) {
+            const sprite = this.container.mainSprite;
 
             // Flash white
-            spriteRefs.forEach(sprite => {
-                if (sprite) sprite.setTint(0xFFFFFF);
-            });
+            sprite.setTint(0xFFFFFF);
 
             // Return to original color
             this.scene.time.delayedCall(this.hitFlashDuration, () => {
-                spriteRefs.forEach(sprite => {
-                    if (sprite) sprite.setTint(this.color);
-                });
+                if (sprite) sprite.setTint(this.color);
             });
         }
 

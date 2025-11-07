@@ -2638,7 +2638,9 @@ export default class GameScene extends Phaser.Scene {
             if (!character.active) return;
 
             // HEAD SPRITE ANIMATION - Cycle through animation frames occasionally
-            if (character.headSprite && time >= character.nextBlinkTime && !character.isBlinking) {
+            // NOTE: This only works for multi-part sprites (old zombie system)
+            // New goblin sprites use single images, so skip this animation
+            if (character.headSprite && character.headSprite.frame && time >= character.nextBlinkTime && !character.isBlinking) {
                 character.isBlinking = true;
 
                 // Change head frame briefly (like blinking/expression change)
@@ -2646,13 +2648,19 @@ export default class GameScene extends Phaser.Scene {
                 const zombieType = character.zombieType;
                 const frameNum = currentFrame.endsWith('0000') ? '0001' : '0000';
 
-                character.headSprite.setFrame(`Zombie_${zombieType}_Head_${frameNum}`);
+                try {
+                    character.headSprite.setFrame(`Zombie_${zombieType}_Head_${frameNum}`);
 
-                this.time.delayedCall(150, () => {
-                    character.headSprite.setFrame(`Zombie_${zombieType}_Head_0000`);
+                    this.time.delayedCall(150, () => {
+                        character.headSprite.setFrame(`Zombie_${zombieType}_Head_0000`);
+                        character.isBlinking = false;
+                        character.nextBlinkTime = time + Phaser.Math.Between(2000, 4000);
+                    });
+                } catch (error) {
+                    // Frame doesn't exist - skip animation
                     character.isBlinking = false;
                     character.nextBlinkTime = time + Phaser.Math.Between(2000, 4000);
-                });
+                }
             }
 
             // No eye direction for sprite-based characters (eyes are part of sprite)

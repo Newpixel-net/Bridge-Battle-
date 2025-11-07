@@ -1,0 +1,151 @@
+================================================================================
+QUICK REFERENCE: SPRITE SHEET FILE PATHS
+================================================================================
+
+All paths are absolute and relative to: /home/user/Bridge-Battle-/raw-assets/readyassets/
+
+================================================================================
+VIKING-ESCAPE (BEST QUALITY - RECOMMENDED PRIMARY SOURCE)
+================================================================================
+
+ENEMY SPRITES:
+/home/user/Bridge-Battle-/raw-assets/readyassets/viking-escape/images/goblinwarrior-sheet0.png (866 KB)
+/home/user/Bridge-Battle-/raw-assets/readyassets/viking-escape/images/goblinarcher-sheet0.png (319 KB)
+/home/user/Bridge-Battle-/raw-assets/readyassets/viking-escape/images/goblinarcher-sheet1.png (371 KB)
+/home/user/Bridge-Battle-/raw-assets/readyassets/viking-escape/images/goblinbomber-sheet0.png (457 KB)
+/home/user/Bridge-Battle-/raw-assets/readyassets/viking-escape/images/goblincyclops-sheet0.png (632 KB)
+/home/user/Bridge-Battle-/raw-assets/readyassets/viking-escape/images/goblincyclops-sheet1.png (554 KB)
+/home/user/Bridge-Battle-/raw-assets/readyassets/viking-escape/images/goblinhogrider-sheet0.png (1026 KB)
+/home/user/Bridge-Battle-/raw-assets/readyassets/viking-escape/images/goblinshaman-sheet0.png (588 KB)
+/home/user/Bridge-Battle-/raw-assets/readyassets/viking-escape/images/flyenemy_01-sheet0.png (72 KB)
+/home/user/Bridge-Battle-/raw-assets/readyassets/viking-escape/images/flyenemy_02-sheet0.png (76 KB)
+/home/user/Bridge-Battle-/raw-assets/readyassets/viking-escape/images/flyenemy_03-sheet0.png (62 KB)
+/home/user/Bridge-Battle-/raw-assets/readyassets/viking-escape/images/flyenemy_04-sheet0.png (77 KB)
+/home/user/Bridge-Battle-/raw-assets/readyassets/viking-escape/images/flyenemy_05-sheet0.png (67 KB)
+/home/user/Bridge-Battle-/raw-assets/readyassets/viking-escape/images/flyenemy_06-sheet0.png (77 KB)
+/home/user/Bridge-Battle-/raw-assets/readyassets/viking-escape/images/flyenemy_07-sheet0.png (63 KB)
+/home/user/Bridge-Battle-/raw-assets/readyassets/viking-escape/images/flyenemy_08-sheet0.png (63 KB)
+/home/user/Bridge-Battle-/raw-assets/readyassets/viking-escape/images/flyenemy_09-sheet0.png (70 KB)
+/home/user/Bridge-Battle-/raw-assets/readyassets/viking-escape/images/flyenemy_10-sheet0.png (68 KB)
+
+PLAYER SPRITES:
+/home/user/Bridge-Battle-/raw-assets/readyassets/viking-escape/images/player-sheet0.png (311 KB)
+/home/user/Bridge-Battle-/raw-assets/readyassets/viking-escape/images/playerstar-sheet0.png (27 KB)
+
+EXPLOSION/EFFECT SPRITES:
+/home/user/Bridge-Battle-/raw-assets/readyassets/viking-escape/images/explosion_bomb-sheet0.png (150 KB)
+/home/user/Bridge-Battle-/raw-assets/readyassets/viking-escape/images/explosion_bomb-sheet1.png (65 KB)
+/home/user/Bridge-Battle-/raw-assets/readyassets/viking-escape/images/explosion_air-sheet0.png (164 KB)
+/home/user/Bridge-Battle-/raw-assets/readyassets/viking-escape/images/explosion_air-sheet1.png (107 KB)
+/home/user/Bridge-Battle-/raw-assets/readyassets/viking-escape/images/explosion_cyclops-sheet0.png (352 KB)
+/home/user/Bridge-Battle-/raw-assets/readyassets/viking-escape/images/explosion_electro-sheet0.png (295 KB)
+/home/user/Bridge-Battle-/raw-assets/readyassets/viking-escape/images/explosion_ground-sheet0.png (154 KB)
+/home/user/Bridge-Battle-/raw-assets/readyassets/viking-escape/images/fire-sheet0.png (497 KB)
+/home/user/Bridge-Battle-/raw-assets/readyassets/viking-escape/images/fire-sheet1.png (505 KB)
+/home/user/Bridge-Battle-/raw-assets/readyassets/viking-escape/images/fire-sheet2.png (482 KB)
+/home/user/Bridge-Battle-/raw-assets/readyassets/viking-escape/images/flame-sheet0.png (110 KB)
+/home/user/Bridge-Battle-/raw-assets/readyassets/viking-escape/images/burn-sheet0.png (231 KB)
+
+COLLECTIBLE SPRITES:
+/home/user/Bridge-Battle-/raw-assets/readyassets/viking-escape/images/coin-sheet0.png (25 KB)
+/home/user/Bridge-Battle-/raw-assets/readyassets/viking-escape/images/bonusbox-sheet0.png (53 KB)
+
+WEAPON/MAGIC SPRITES:
+/home/user/Bridge-Battle-/raw-assets/readyassets/viking-escape/images/magic-sheet0.png (296 KB)
+/home/user/Bridge-Battle-/raw-assets/readyassets/viking-escape/images/guiweapons-sheet0.png (18 KB)
+
+ENVIRONMENT SPRITES:
+/home/user/Bridge-Battle-/raw-assets/readyassets/viking-escape/images/evilplant-sheet0.png (471 KB)
+/home/user/Bridge-Battle-/raw-assets/readyassets/viking-escape/images/enemiesguide-sheet0.png (1316 KB)
+/home/user/Bridge-Battle-/raw-assets/readyassets/viking-escape/images/enemiesguide-sheet1.png (547 KB)
+
+================================================================================
+ZOMBIE-BUSTER (SECONDARY SOURCE - ZOMBIES & EFFECTS)
+================================================================================
+
+ENEMY SPRITES (ZOMBIES):
+/home/user/Bridge-Battle-/raw-assets/readyassets/zombie-buster/images/shared-0-sheet0.png (190 KB)
+/home/user/Bridge-Battle-/raw-assets/readyassets/zombie-buster/images/shared-0-sheet1.png (662 KB)
+/home/user/Bridge-Battle-/raw-assets/readyassets/zombie-buster/images/shared-0-sheet2.png (246 KB)
+
+PLAYER SPRITES:
+/home/user/Bridge-Battle-/raw-assets/readyassets/zombie-buster/images/shared-0-sheet3.png (64 KB)
+/home/user/Bridge-Battle-/raw-assets/readyassets/zombie-buster/images/shared-0-sheet4.png (43 KB)
+/home/user/Bridge-Battle-/raw-assets/readyassets/zombie-buster/images/shared-0-sheet5.png (65 KB)
+
+EXPLOSION/EFFECT SPRITES:
+/home/user/Bridge-Battle-/raw-assets/readyassets/zombie-buster/images/explosion_bomb-sheet0.png (103 KB)
+/home/user/Bridge-Battle-/raw-assets/readyassets/zombie-buster/images/explosion_bomb-sheet1.png (268 KB)
+/home/user/Bridge-Battle-/raw-assets/readyassets/zombie-buster/images/explosion_bomb-sheet2.png (91 KB)
+/home/user/Bridge-Battle-/raw-assets/readyassets/zombie-buster/images/shot_effect-sheet0.png (61 KB)
+
+BLOOD/HIT SPRITES:
+/home/user/Bridge-Battle-/raw-assets/readyassets/zombie-buster/images/blood-sheet0.png (27 KB)
+/home/user/Bridge-Battle-/raw-assets/readyassets/zombie-buster/images/blood-sheet1.png (44 KB)
+/home/user/Bridge-Battle-/raw-assets/readyassets/zombie-buster/images/blood-sheet2.png (6 KB)
+
+ENVIRONMENT SPRITES:
+/home/user/Bridge-Battle-/raw-assets/readyassets/zombie-buster/images/background_4_evilplant-sheet0.png (143 KB)
+
+UI SPRITES:
+/home/user/Bridge-Battle-/raw-assets/readyassets/zombie-buster/images/shared-0-sheet6.png (19 KB)
+/home/user/Bridge-Battle-/raw-assets/readyassets/zombie-buster/images/shared-1-sheet*.png (multiple for UI/buttons)
+
+================================================================================
+GOLD-MINER-JACK (TERTIARY SOURCE - MINING COLLECTIBLES & EFFECTS)
+================================================================================
+
+PLAYER SPRITES:
+/home/user/Bridge-Battle-/raw-assets/readyassets/gold-miner-jack/images/miner-sheet0.png (1558 KB)
+
+EXPLOSION/EFFECT SPRITES:
+/home/user/Bridge-Battle-/raw-assets/readyassets/gold-miner-jack/images/explosion_bomb-sheet0.png (75 KB)
+/home/user/Bridge-Battle-/raw-assets/readyassets/gold-miner-jack/images/explosion_barrel-sheet0.png (54 KB)
+/home/user/Bridge-Battle-/raw-assets/readyassets/gold-miner-jack/images/explosion_barrel-sheet1.png (39 KB)
+/home/user/Bridge-Battle-/raw-assets/readyassets/gold-miner-jack/images/dust-sheet0.png (34 KB)
+
+COLLECTIBLE SPRITES:
+/home/user/Bridge-Battle-/raw-assets/readyassets/gold-miner-jack/images/gold_trace-sheet0.png (38 KB)
+/home/user/Bridge-Battle-/raw-assets/readyassets/gold-miner-jack/images/gold_trace-sheet1.png (3 KB)
+/home/user/Bridge-Battle-/raw-assets/readyassets/gold-miner-jack/images/silver_trace-sheet0.png (14 KB)
+/home/user/Bridge-Battle-/raw-assets/readyassets/gold-miner-jack/images/stone_trace-sheet0.png (18 KB)
+
+================================================================================
+TOTAL SPRITE ASSET OVERVIEW
+================================================================================
+
+ZOMBIE-BUSTER:
+  - Total image files: 41
+  - Total size: ~3.8 MB
+  - Best for: Zombies, bomb explosions, blood effects
+
+VIKING-ESCAPE:
+  - Total image files: 78
+  - Total size: ~12.8 MB
+  - Best for: Diverse enemies, effects, flying units, collectibles
+
+GOLD-MINER-JACK:
+  - Total image files: 31
+  - Total size: ~8.9 MB
+  - Best for: Detailed player character, mining effects, mineral collectibles
+
+RECOMMENDED TOTAL FOR BRIDGE BATTLE GAME: ~4-5 MB (subset of most useful sprites)
+
+================================================================================
+HOW TO USE THESE PATHS
+================================================================================
+
+1. Extract specific sprite sheets for your game engine
+2. Use sprite sheet format (PNG with animation frame data in data.json)
+3. Each sprite is pre-animated with multiple frames
+4. Scale as needed for your game's screen resolution
+5. Layer multiple sprites (e.g., Goblin + Explosion) for visual impact
+
+IMPORT STRATEGY:
+- Start with Viking-Escape main sprites (goblin warrior, archer, bomber)
+- Add 2-3 flying enemies for variety
+- Use Fire + Flame + Explosion effects as layered animations
+- Add Zombie variants from Zombie-Buster for additional enemy types
+- Use Coin + BonusBox for collectibles
+- Add Blood effects for hit feedback
+
