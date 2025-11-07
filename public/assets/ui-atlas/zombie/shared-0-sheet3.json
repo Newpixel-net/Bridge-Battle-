@@ -1,0 +1,24 @@
+{
+  "frames": {
+    "Button_Sound_0000": {
+      "frame": {"x": 1, "y": 389, "w": 115, "h": 115},
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {"x": 0, "y": 0, "w": 115, "h": 115},
+      "sourceSize": {"w": 115, "h": 115}
+    },
+    "Button_Sound_0001": {
+      "frame": {"x": 309, "y": 310, "w": 115, "h": 115},
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {"x": 0, "y": 0, "w": 115, "h": 115},
+      "sourceSize": {"w": 115, "h": 115}
+    }
+  },
+  "meta": {
+    "image": "shared-0-sheet3.png",
+    "format": "RGBA8888",
+    "size": {"w": 512, "h": 512},
+    "scale": 1
+  }
+}
