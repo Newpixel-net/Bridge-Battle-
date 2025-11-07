@@ -34,11 +34,13 @@ export class AtlasHelper {
 
         for (const [atlasName, atlasInfo] of Object.entries(atlases)) {
             if (atlasInfo.frames && atlasInfo.frames[elementName]) {
+                const elementData = atlasInfo.frames[elementName];
                 const frameData = {
                     atlasName,
                     imageName: atlasInfo.image,
-                    frame: atlasInfo.frames[elementName].frame,
-                    pivot: atlasInfo.frames[elementName].pivot || { x: 0.5, y: 0.5 }
+                    frame: elementData.frame,
+                    pivot: elementData.pivot || { x: 0.5, y: 0.5 },
+                    defaultScale: elementData.scale || 1.0  // Use scale from JSON
                 };
 
                 this.cache.set(elementName, frameData);
@@ -98,10 +100,8 @@ export class AtlasHelper {
         // Set origin based on pivot
         sprite.setOrigin(frameData.pivot.x, frameData.pivot.y);
 
-        // Apply scale
-        const elementType = this.getElementType(elementName);
-        const defaultScale = this.getDefaultScale(elementType);
-        const finalScale = scale || defaultScale;
+        // Apply scale (use scale from JSON, override if provided)
+        const finalScale = scale || frameData.defaultScale;
         sprite.setScale(finalScale);
 
         console.log(`✅ Sprite created at (${x}, ${y}) with scale ${finalScale}`);

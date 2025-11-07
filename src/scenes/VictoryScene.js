@@ -78,8 +78,7 @@ export default class VictoryScene extends Phaser.Scene {
     }
 
     /**
-     * Create complete victory panel using pre-made asset
-     * Option B: Uses the beautiful pre-composed panel PNG
+     * Create professional AAA victory panel
      */
     createCompleteVictoryPanel() {
         const centerX = GAME.WIDTH / 2;
@@ -91,95 +90,263 @@ export default class VictoryScene extends Phaser.Scene {
             return;
         }
 
-        // Professional Zombie Buster panel (540x410 native)
+        // PROFESSIONAL: Large victory panel
         const panel = this.atlasHelper.createSprite(centerX, centerY, 'panel_large');
-        const targetScale = 1.2; // Scale up slightly for better visibility
+        const targetScale = 1.2;
 
         panel.setScale(0);
         panel.setDepth(10);
 
-        // Scale in animation
+        // Dramatic entrance
         this.tweens.add({
             targets: panel,
             scaleX: targetScale,
             scaleY: targetScale,
-            duration: 600,
-            ease: 'Back.easeOut',
-            delay: 500
+            duration: 800,
+            ease: 'Elastic.easeOut',
+            delay: 300
         });
 
-        // Add interactive continue button overlay (invisible clickable area)
-        const continueButton = this.add.rectangle(
-            centerX,
-            centerY + 140,
-            200,
-            50,
-            0x000000,
-            0
-        );
-        continueButton.setInteractive({ useHandCursor: true });
-        continueButton.setDepth(11);
+        // PROFESSIONAL: Decorative corner stars
+        const cornerStars = [
+            { x: centerX - 280, y: centerY - 220 },
+            { x: centerX + 280, y: centerY - 220 },
+            { x: centerX - 280, y: centerY + 220 },
+            { x: centerX + 280, y: centerY + 220 }
+        ];
 
-        // Hover effect on button area
-        const hoverScale = targetScale * 1.05;
-        continueButton.on('pointerover', () => {
+        cornerStars.forEach((pos, i) => {
+            const star = this.atlasHelper.createSprite(pos.x, pos.y, 'star_yellow_filled');
+            star.setDepth(11);
+            star.setScale(0);
+
             this.tweens.add({
-                targets: panel,
-                scaleX: hoverScale,
-                scaleY: hoverScale,
-                duration: 150,
-                ease: 'Quad.easeOut'
+                targets: star,
+                scaleX: 1.0,
+                scaleY: 1.0,
+                duration: 600,
+                ease: 'Back.easeOut',
+                delay: 600 + (i * 100)
+            });
+
+            // Twinkle animation
+            this.tweens.add({
+                targets: star,
+                alpha: 0.5,
+                scaleX: 1.2,
+                scaleY: 1.2,
+                duration: 1500 + (i * 200),
+                yoyo: true,
+                repeat: -1,
+                ease: 'Sine.easeInOut',
+                delay: 1200
             });
         });
 
-        continueButton.on('pointerout', () => {
-            this.tweens.add({
-                targets: panel,
-                scaleX: targetScale,
-                scaleY: targetScale,
-                duration: 150
-            });
+        // PROFESSIONAL: "VICTORY!" text
+        const victoryText = this.add.text(centerX, centerY - 150, 'VICTORY!', {
+            fontSize: '72px',
+            fontFamily: 'Arial Black',
+            color: '#FFFFFF',
+            stroke: '#4A2C2A',
+            strokeThickness: 10,
+            shadow: {
+                offsetX: 4,
+                offsetY: 4,
+                color: '#000000',
+                blur: 10,
+                fill: true
+            }
         });
+        victoryText.setOrigin(0.5);
+        victoryText.setDepth(12);
+        victoryText.setAlpha(0);
 
-        // Click to continue
-        continueButton.on('pointerdown', () => {
-            this.handleContinue();
+        this.tweens.add({
+            targets: victoryText,
+            alpha: 1,
+            y: centerY - 130,
+            duration: 800,
+            ease: 'Bounce.easeOut',
+            delay: 1000
         });
-
-        // Also allow spacebar to continue
-        this.input.keyboard.once('keydown-SPACE', () => {
-            this.handleContinue();
-        });
-
-        // Add menu button (ESC or click outside)
-        this.input.keyboard.once('keydown-ESC', () => {
-            this.handleMenu();
-        });
-    }
-
-    /**
-     * Create background
-     */
-    createBackground() {
-        // Gold gradient background
-        const gradient = this.add.rectangle(
-            GAME.WIDTH / 2, GAME.HEIGHT / 2,
-            GAME.WIDTH, GAME.HEIGHT,
-            0xFFD700, 1.0
-        );
-
-        // Add white overlay for glow effect
-        const overlay = this.add.rectangle(
-            GAME.WIDTH / 2, GAME.HEIGHT / 2,
-            GAME.WIDTH, GAME.HEIGHT,
-            0xFFFFFF, 0.3
-        );
 
         // Pulsing animation
         this.tweens.add({
-            targets: overlay,
-            alpha: 0.5,
+            targets: victoryText,
+            scaleX: 1.15,
+            scaleY: 1.15,
+            duration: 1000,
+            yoyo: true,
+            repeat: -1,
+            ease: 'Sine.easeInOut',
+            delay: 1800
+        });
+
+        // PROFESSIONAL: Score display
+        const scoreText = this.add.text(
+            centerX,
+            centerY - 40,
+            `Score: ${this.finalScore}`,
+            {
+                fontSize: '48px',
+                fontFamily: 'Arial Black',
+                color: '#FFD700',
+                stroke: '#000000',
+                strokeThickness: 6
+            }
+        );
+        scoreText.setOrigin(0.5);
+        scoreText.setDepth(12);
+        scoreText.setAlpha(0);
+
+        this.tweens.add({
+            targets: scoreText,
+            alpha: 1,
+            duration: 600,
+            delay: 1400
+        });
+
+        // PROFESSIONAL: Star rating display
+        this.createProfessionalStarRating(centerX, centerY + 40);
+
+        // PROFESSIONAL: Continue button
+        const continueBtn = this.atlasHelper.createButton(
+            centerX,
+            centerY + 160,
+            'button_play_green',
+            () => this.handleContinue()
+        );
+
+        const btnText = this.add.text(centerX, centerY + 160, 'CONTINUE', {
+            fontSize: '32px',
+            fontFamily: 'Arial Black',
+            color: '#FFFFFF',
+            stroke: '#000000',
+            strokeThickness: 6
+        });
+        btnText.setOrigin(0.5);
+        btnText.setDepth(101);
+
+        // Entrance animations for button
+        continueBtn.setAlpha(0);
+        btnText.setAlpha(0);
+
+        this.tweens.add({
+            targets: [continueBtn, btnText],
+            alpha: 1,
+            duration: 600,
+            delay: 1800
+        });
+
+        // Keyboard shortcuts
+        this.input.keyboard.once('keydown-SPACE', () => this.handleContinue());
+        this.input.keyboard.once('keydown-ESC', () => this.handleMenu());
+    }
+
+    /**
+     * Create professional star rating display
+     */
+    createProfessionalStarRating(centerX, centerY) {
+        const starSpacing = 80;
+        const startX = centerX - starSpacing;
+
+        for (let i = 0; i < 3; i++) {
+            const x = startX + (i * starSpacing);
+            const filled = i < this.starRating;
+
+            const star = this.atlasHelper.createSprite(
+                x, centerY,
+                filled ? 'star_rating_yellow' : 'star_rating_brown'
+            );
+            star.setDepth(12);
+            star.setScale(0);
+
+            // Pop in with stagger
+            this.tweens.add({
+                targets: star,
+                scaleX: 1.2,
+                scaleY: 1.2,
+                duration: 500,
+                ease: 'Back.easeOut',
+                delay: 1600 + (i * 150)
+            });
+
+            // Bounce for filled stars
+            if (filled) {
+                this.tweens.add({
+                    targets: star,
+                    scaleY: 1.3,
+                    duration: 400,
+                    yoyo: true,
+                    repeat: -1,
+                    ease: 'Sine.easeInOut',
+                    delay: 2100 + (i * 150)
+                });
+
+                // Sparkle burst
+                this.time.delayedCall(1600 + (i * 150), () => {
+                    this.createSparkle(x, centerY);
+                });
+            }
+        }
+    }
+
+    /**
+     * Create professional AAA background
+     */
+    createBackground() {
+        // Rich gradient layers
+        const bg1 = this.add.rectangle(
+            GAME.WIDTH / 2, GAME.HEIGHT / 2,
+            GAME.WIDTH, GAME.HEIGHT,
+            0x2d1b4e, 1.0
+        );
+
+        const bg2 = this.add.rectangle(
+            GAME.WIDTH / 2, GAME.HEIGHT / 2,
+            GAME.WIDTH, GAME.HEIGHT,
+            0xFFD700, 0.6
+        );
+
+        // Pulsing gold glow
+        this.tweens.add({
+            targets: bg2,
+            alpha: 0.8,
             duration: 2000,
+            yoyo: true,
+            repeat: -1,
+            ease: 'Sine.easeInOut'
+        });
+
+        if (!this.atlasHelper) return;
+
+        // PROFESSIONAL: Massive rotating sunburst behind panel
+        const centerX = GAME.WIDTH / 2;
+        const centerY = GAME.HEIGHT / 2;
+
+        const sunburst = this.atlasHelper.createSprite(centerX, centerY, 'sunburst_rays');
+        sunburst.setScale(1.5);
+        sunburst.setAlpha(0.2);
+        sunburst.setDepth(5);
+        sunburst.setBlendMode(Phaser.BlendModes.ADD);
+
+        // Eternal rotation
+        this.tweens.add({
+            targets: sunburst,
+            angle: 360,
+            duration: 20000,
+            repeat: -1,
+            ease: 'Linear'
+        });
+
+        // Pulsing scale
+        this.tweens.add({
+            targets: sunburst,
+            scaleX: 1.8,
+            scaleY: 1.8,
+            alpha: 0.3,
+            duration: 3000,
             yoyo: true,
             repeat: -1,
             ease: 'Sine.easeInOut'
