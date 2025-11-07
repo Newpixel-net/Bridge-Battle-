@@ -83,79 +83,129 @@ export default class Enemy {
     }
 
     /**
-     * Create enemy visuals
+     * Create enemy visuals - SPRITE-BASED VERSION
      */
     createVisuals() {
+        // SIZE VARIATION based on enemy type
+        const baseScale = this.enemyType === 'TANK' ? 0.7 : this.enemyType === 'SPEED' ? 0.5 : 0.6;
+        const sizeVariation = Phaser.Math.FloatBetween(0.9, 1.1);
+        const finalScale = baseScale * sizeVariation;
+
+        // ZOMBIE VARIETY - Randomly select from 3 zombie types
+        const zombieTypes = [1, 2, 3];
+        const zombieType = Phaser.Utils.Array.GetRandom(zombieTypes);
+
+        // Ground shadow
+        const shadowSize = 30 * sizeVariation;
+        const groundShadow = this.scene.add.ellipse(
+            this.x, this.y + shadowSize,
+            shadowSize * 1.5, shadowSize * 0.4,
+            0x000000, 0.3
+        );
+        groundShadow.setDepth(5);
+
         const container = this.scene.add.container(this.x, this.y);
 
-        // Shadow (bottom layer)
-        const shadow = this.scene.add.circle(
-            2, 2,
-            this.size,
-            0x000000,
-            0.4
-        );
+        // SPRITE ASSEMBLY: Head + Body + Limbs from atlas
+        const bodySprite = this.scene.add.sprite(0, 10, 'zombie_parts', `Zombie_${zombieType}_Body_0000`);
+        bodySprite.setScale(finalScale);
+        bodySprite.setTint(this.color); // Tint based on enemy type (red/brown/orange)
 
-        // Main body
-        const body = this.scene.add.circle(
-            0, 0,
-            this.size,
-            this.color,
-            1.0
-        );
+        const headSprite = this.scene.add.sprite(0, -15, 'zombie_heads', `Zombie_${zombieType}_Head_0000`);
+        headSprite.setScale(finalScale);
+        headSprite.setTint(this.color);
 
-        // Inner shadow (depth)
-        const innerShadow = this.scene.add.circle(
-            3, 3,
-            this.size * 0.7,
-            this.stats.shadowColor,
-            0.4
-        );
+        const leftHandSprite = this.scene.add.sprite(-15, 5, 'zombie_parts', `Zombie_${zombieType}_HandLeft_0000`);
+        leftHandSprite.setScale(finalScale * 0.9);
+        leftHandSprite.setTint(this.color);
 
-        // Highlight (shiny spot)
-        const highlight = this.scene.add.circle(
-            -this.size * 0.3,
-            -this.size * 0.3,
-            this.size * 0.3,
-            0xFFFFFF,
-            0.3
-        );
+        const rightHandSprite = this.scene.add.sprite(15, 5, 'zombie_parts', `Zombie_${zombieType}_HandRight_0000`);
+        rightHandSprite.setScale(finalScale * 0.9);
+        rightHandSprite.setTint(this.color);
 
-        // Enemy "eye" or marking (X shape)
-        const mark1 = this.scene.add.rectangle(
-            0, 0,
-            this.size * 0.8, 3,
-            0xFFFFFF,
-            0.8
-        );
-        mark1.setRotation(Phaser.Math.DegToRad(45));
+        const leftFootSprite = this.scene.add.sprite(-8, 25, 'zombie_parts', `Zombie_${zombieType}_FootLeft_0000`);
+        leftFootSprite.setScale(finalScale);
+        leftFootSprite.setTint(this.color);
 
-        const mark2 = this.scene.add.rectangle(
-            0, 0,
-            this.size * 0.8, 3,
-            0xFFFFFF,
-            0.8
-        );
-        mark2.setRotation(Phaser.Math.DegToRad(-45));
+        const rightFootSprite = this.scene.add.sprite(8, 25, 'zombie_parts', `Zombie_${zombieType}_FootRight_0000`);
+        rightFootSprite.setScale(finalScale);
+        rightFootSprite.setTint(this.color);
 
-        // Add to container
-        container.add([shadow, body, innerShadow, highlight, mark1, mark2]);
+        // Add to container in depth order (feet first, head last)
+        container.add([
+            leftFootSprite,
+            rightFootSprite,
+            leftHandSprite,
+            bodySprite,
+            rightHandSprite,
+            headSprite
+        ]);
         container.setDepth(8); // Below player (10) but above road
 
-        // Store references
-        container.visualBody = body;  // Renamed to avoid conflict with physics body
-        container.shadow = shadow;
-        container.highlight = highlight;
+        // Store references for animations
+        container.headSprite = headSprite;
+        container.bodySprite = bodySprite;
+        container.leftHandSprite = leftHandSprite;
+        container.rightHandSprite = rightHandSprite;
+        container.leftFootSprite = leftFootSprite;
+        container.rightFootSprite = rightFootSprite;
+        container.zombieType = zombieType;
+        container.groundShadow = groundShadow;
 
-        // Idle animation (subtle bobbing)
+        // Store reference to body sprite for hit flash (replaces old visualBody)
+        container.visualBody = bodySprite;
+
+        // RUNNING ANIMATION - Foot swinging (left/right alternating)
         this.scene.tweens.add({
-            targets: container,
-            y: this.y - 3,
-            duration: 1000,
+            targets: leftFootSprite,
+            x: leftFootSprite.x - 6,
+            duration: 300,
             yoyo: true,
             repeat: -1,
             ease: 'Sine.easeInOut'
         });
+
+        this.scene.tweens.add({
+            targets: rightFootSprite,
+            x: rightFootSprite.x + 6,
+            duration: 300,
+            yoyo: true,
+            repeat: -1,
+            ease: 'Sine.easeInOut',
+            delay: 150 // Offset for alternating motion
+        });
+
+        // HAND SWINGING - Opposite to feet
+        this.scene.tweens.add({
+            targets: leftHandSprite,
+            rotation: Phaser.Math.DegToRad(-15),
+            duration: 300,
+            yoyo: true,
+            repeat: -1,
+            ease: 'Sine.easeInOut',
+            delay: 150 // Opposite to right foot
+        });
+
+        this.scene.tweens.add({
+            targets: rightHandSprite,
+            rotation: Phaser.Math.DegToRad(15),
+            duration: 300,
+            yoyo: true,
+            repeat: -1,
+            ease: 'Sine.easeInOut'
+        });
+
+        // HEAD BOBBING - Subtle up/down
+        this.scene.tweens.add({
+            targets: headSprite,
+            y: headSprite.y - 2,
+            duration: 300,
+            yoyo: true,
+            repeat: -1,
+            ease: 'Sine.easeInOut'
+        });
+
+        console.log(`🧟 Enemy sprite created: Type ${zombieType}, Scale ${finalScale.toFixed(2)}, Tint ${this.color.toString(16)}`);
 
         return container;
     }
@@ -169,13 +219,29 @@ export default class Enemy {
         this.hp -= damage;
         this.lastHitTime = this.scene.time.now;
 
-        // Visual feedback - white flash
-        this.container.visualBody.setFillStyle(0xFFFFFF);
-        this.scene.time.delayedCall(this.hitFlashDuration, () => {
-            if (this.container && this.container.visualBody) {
-                this.container.visualBody.setFillStyle(this.color);
-            }
-        });
+        // Visual feedback - white flash on all sprite parts
+        if (this.container) {
+            const spriteRefs = [
+                this.container.headSprite,
+                this.container.bodySprite,
+                this.container.leftHandSprite,
+                this.container.rightHandSprite,
+                this.container.leftFootSprite,
+                this.container.rightFootSprite
+            ];
+
+            // Flash white
+            spriteRefs.forEach(sprite => {
+                if (sprite) sprite.setTint(0xFFFFFF);
+            });
+
+            // Return to original color
+            this.scene.time.delayedCall(this.hitFlashDuration, () => {
+                spriteRefs.forEach(sprite => {
+                    if (sprite) sprite.setTint(this.color);
+                });
+            });
+        }
 
         // Shake on hit
         this.scene.tweens.add({
@@ -378,6 +444,11 @@ export default class Enemy {
     destroy() {
         this.isDestroyed = true;
         this.active = false;
+
+        // Clean up ground shadow
+        if (this.container && this.container.groundShadow) {
+            this.container.groundShadow.destroy();
+        }
 
         if (this.container) {
             this.container.destroy();

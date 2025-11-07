@@ -129,93 +129,183 @@ export default class Boss {
     }
 
     /**
-     * Create boss visuals
+     * Create boss visuals - SPRITE-BASED VERSION (LARGER WITH CROWN)
      */
     createVisuals() {
+        // BOSS SIZE - Much larger than regular enemies (1.2-1.5x)
+        const baseScale = 1.3;
+        const finalScale = baseScale;
+
+        // ZOMBIE TYPE - Use type 3 (looks most intimidating)
+        const zombieType = 3;
+
+        // Ground shadow (larger for boss)
+        const shadowSize = 50;
+        const groundShadow = this.scene.add.ellipse(
+            this.x, this.y + shadowSize,
+            shadowSize * 2, shadowSize * 0.6,
+            0x000000, 0.5
+        );
+        groundShadow.setDepth(5);
+
         const container = this.scene.add.container(this.x, this.y);
 
-        // Outer glow (largest layer)
+        // GLOWING AURA - Boss indicator
         const outerGlow = this.scene.add.circle(
             0, 0,
             this.size * 1.8,
             this.stats.glowColor,
-            0.2
+            0.3
         );
         outerGlow.setBlendMode(Phaser.BlendModes.ADD);
 
-        // Middle glow
         const middleGlow = this.scene.add.circle(
             0, 0,
             this.size * 1.4,
             this.stats.glowColor,
-            0.4
+            0.5
         );
         middleGlow.setBlendMode(Phaser.BlendModes.ADD);
 
-        // Shadow (bottom layer)
-        const shadow = this.scene.add.circle(
-            3, 3,
-            this.size,
-            0x000000,
-            0.5
-        );
+        // SPRITE ASSEMBLY: Head + Body + Limbs from atlas
+        const bodySprite = this.scene.add.sprite(0, 10, 'zombie_parts', `Zombie_${zombieType}_Body_0000`);
+        bodySprite.setScale(finalScale);
+        bodySprite.setTint(this.color); // Tint based on boss type
 
-        // Main body
-        const body = this.scene.add.circle(
-            0, 0,
-            this.size,
-            this.color,
-            1.0
-        );
+        const headSprite = this.scene.add.sprite(0, -15, 'zombie_heads', `Zombie_${zombieType}_Head_0000`);
+        headSprite.setScale(finalScale);
+        headSprite.setTint(this.color);
 
-        // Inner glow/highlight
-        const innerGlow = this.scene.add.circle(
-            -this.size * 0.3, -this.size * 0.3,
-            this.size * 0.4,
-            0xFFFFFF,
-            0.6
-        );
+        const leftHandSprite = this.scene.add.sprite(-20, 5, 'zombie_parts', `Zombie_${zombieType}_HandLeft_0000`);
+        leftHandSprite.setScale(finalScale * 0.9);
+        leftHandSprite.setTint(this.color);
 
-        // Boss "crown" or top decoration
+        const rightHandSprite = this.scene.add.sprite(20, 5, 'zombie_parts', `Zombie_${zombieType}_HandRight_0000`);
+        rightHandSprite.setScale(finalScale * 0.9);
+        rightHandSprite.setTint(this.color);
+
+        const leftFootSprite = this.scene.add.sprite(-10, 30, 'zombie_parts', `Zombie_${zombieType}_FootLeft_0000`);
+        leftFootSprite.setScale(finalScale);
+        leftFootSprite.setTint(this.color);
+
+        const rightFootSprite = this.scene.add.sprite(10, 30, 'zombie_parts', `Zombie_${zombieType}_FootRight_0000`);
+        rightFootSprite.setScale(finalScale);
+        rightFootSprite.setTint(this.color);
+
+        // BOSS CROWN - Golden crown above head
         const crown = this.scene.add.triangle(
-            0, -this.size * 0.8,
+            0, -45,
             0, 0,
-            this.size * 0.4, this.size * 0.6,
-            -this.size * 0.4, this.size * 0.6,
+            15, 20,
+            -15, 20,
             0xFFD700, // Gold
             1.0
         );
+        crown.setStrokeStyle(3, 0xFFA500);
 
-        // Add all to container
-        container.add([outerGlow, middleGlow, shadow, body, innerGlow, crown]);
+        // Add to container in depth order
+        container.add([
+            outerGlow,
+            middleGlow,
+            leftFootSprite,
+            rightFootSprite,
+            leftHandSprite,
+            bodySprite,
+            rightHandSprite,
+            headSprite,
+            crown
+        ]);
+        container.setDepth(9); // Above regular enemies
 
         // Store references for animations
-        container.body = body;
+        container.headSprite = headSprite;
+        container.bodySprite = bodySprite;
+        container.leftHandSprite = leftHandSprite;
+        container.rightHandSprite = rightHandSprite;
+        container.leftFootSprite = leftFootSprite;
+        container.rightFootSprite = rightFootSprite;
+        container.zombieType = zombieType;
+        container.groundShadow = groundShadow;
         container.outerGlow = outerGlow;
         container.middleGlow = middleGlow;
         container.crown = crown;
 
-        // Pulsing animation
+        // Store body reference for hit effects (replaces old container.body)
+        container.body = bodySprite;
+
+        // PULSING GLOW ANIMATION - Boss aura
         this.scene.tweens.add({
             targets: [outerGlow, middleGlow],
-            scaleX: 1.2,
-            scaleY: 1.2,
-            alpha: 0.6,
+            scaleX: 1.3,
+            scaleY: 1.3,
+            alpha: 0.7,
             duration: 1000,
             yoyo: true,
             repeat: -1,
             ease: 'Sine.easeInOut'
         });
 
-        // Crown floating animation
+        // CROWN FLOATING - Boss indicator
         this.scene.tweens.add({
             targets: crown,
-            y: crown.y - 5,
+            y: crown.y - 8,
             duration: 800,
             yoyo: true,
             repeat: -1,
             ease: 'Sine.easeInOut'
         });
+
+        // BOSS WALKING ANIMATION - Slower, more menacing
+        this.scene.tweens.add({
+            targets: leftFootSprite,
+            x: leftFootSprite.x - 8,
+            duration: 400,
+            yoyo: true,
+            repeat: -1,
+            ease: 'Sine.easeInOut'
+        });
+
+        this.scene.tweens.add({
+            targets: rightFootSprite,
+            x: rightFootSprite.x + 8,
+            duration: 400,
+            yoyo: true,
+            repeat: -1,
+            ease: 'Sine.easeInOut',
+            delay: 200
+        });
+
+        // BOSS HAND SWINGING
+        this.scene.tweens.add({
+            targets: leftHandSprite,
+            rotation: Phaser.Math.DegToRad(-20),
+            duration: 400,
+            yoyo: true,
+            repeat: -1,
+            ease: 'Sine.easeInOut',
+            delay: 200
+        });
+
+        this.scene.tweens.add({
+            targets: rightHandSprite,
+            rotation: Phaser.Math.DegToRad(20),
+            duration: 400,
+            yoyo: true,
+            repeat: -1,
+            ease: 'Sine.easeInOut'
+        });
+
+        // HEAD BOBBING
+        this.scene.tweens.add({
+            targets: headSprite,
+            y: headSprite.y - 3,
+            duration: 400,
+            yoyo: true,
+            repeat: -1,
+            ease: 'Sine.easeInOut'
+        });
+
+        console.log(`👑 Boss sprite created: Type ${zombieType}, Scale ${finalScale}, Color ${this.color.toString(16)}`);
 
         return container;
     }
@@ -767,13 +857,29 @@ export default class Boss {
 
         this.hp -= damage;
 
-        // Hit flash effect
-        this.container.body.setFillStyle(0xFFFFFF);
-        this.scene.time.delayedCall(this.hitFlashDuration, () => {
-            if (this.container.body) {
-                this.container.body.setFillStyle(this.color);
-            }
-        });
+        // Hit flash effect - Flash all sprite parts white
+        if (this.container) {
+            const spriteRefs = [
+                this.container.headSprite,
+                this.container.bodySprite,
+                this.container.leftHandSprite,
+                this.container.rightHandSprite,
+                this.container.leftFootSprite,
+                this.container.rightFootSprite
+            ];
+
+            // Flash white
+            spriteRefs.forEach(sprite => {
+                if (sprite) sprite.setTint(0xFFFFFF);
+            });
+
+            // Return to original color
+            this.scene.time.delayedCall(this.hitFlashDuration, () => {
+                spriteRefs.forEach(sprite => {
+                    if (sprite) sprite.setTint(this.color);
+                });
+            });
+        }
 
         // Damage number popup
         this.showDamageNumber(damage);
@@ -995,6 +1101,11 @@ export default class Boss {
      * Cleanup
      */
     destroy() {
+        // Clean up ground shadow
+        if (this.container && this.container.groundShadow) {
+            this.container.groundShadow.destroy();
+        }
+
         if (this.container) {
             this.container.destroy();
         }
