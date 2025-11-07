@@ -43,6 +43,11 @@ export default class PreloadScene extends Phaser.Scene {
 
     create() {
         console.log('✓ Assets loaded');
+        console.log('🔍 Checking loaded textures...');
+        console.log('  - main texture exists:', this.textures.exists('main'));
+        console.log('  - buttons texture exists:', this.textures.exists('buttons'));
+        console.log('  - panels texture exists:', this.textures.exists('panels'));
+        console.log('  - ui_atlas_complete JSON exists:', this.cache.json.exists('ui_atlas_complete'));
 
         // Initialize AtlasHelper with comprehensive atlas data
         const atlasHelper = AtlasHelper.initialize(this);
@@ -60,6 +65,7 @@ export default class PreloadScene extends Phaser.Scene {
 
         // Small delay before starting menu
         this.time.delayedCall(500, () => {
+            console.log('🎮 Starting MenuScene...');
             this.scene.start(SCENES.MENU);
         });
     }
