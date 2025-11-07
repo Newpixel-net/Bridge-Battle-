@@ -1921,6 +1921,9 @@ export default class GameScene extends Phaser.Scene {
      * UI/HUD POLISH 5: Update combo display
      */
     updateComboDisplay() {
+        // Guard: combo UI was removed for simplified gameplay
+        if (!this.comboText) return;
+
         if (this.comboCount > 0) {
             this.comboText.setVisible(true);
             this.comboText.setText(`Combo: ${this.comboCount}🔥`);
@@ -1946,6 +1949,9 @@ export default class GameScene extends Phaser.Scene {
         if (this.comboCount >= 10) this.currentMultiplier = 3;
         else if (this.comboCount >= 5) this.currentMultiplier = 2;
         else this.currentMultiplier = 1;
+
+        // Guard: combo UI was removed for simplified gameplay
+        if (!this.multiplierText) return;
 
         this.multiplierText.setText(`x${this.currentMultiplier}`);
 
