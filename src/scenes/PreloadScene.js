@@ -22,57 +22,23 @@ export default class PreloadScene extends Phaser.Scene {
         this.load.on('progress', this.onProgress, this);
         this.load.on('complete', this.onComplete, this);
 
-        // Load NEW high-quality UI assets from processed-assets/ui-elements
-        // These are ultra-high-res extractions from the EPS file
-        const uiPath = 'processed-assets/ui-elements/';
+        // ========================================================================
+        // 🎨 MODERN UI ATLAS SYSTEM - AAA Mobile Game Quality
+        // ========================================================================
+        // Loading ONLY professional sprite atlases from Zombie Buster
+        // NO old PNG assets - complete modern redesign
 
-        // Menu buttons (NEW high-res from EPS)
-        this.load.image('ui_button_new_game', uiPath + 'button_new_game.png');
-        this.load.image('ui_button_resume', uiPath + 'button_resume.png');
-        this.load.image('ui_button_settings', uiPath + 'button_settings.png');
-        this.load.image('ui_button_shop', uiPath + 'button_shop.png');
-        this.load.image('ui_button_exit', uiPath + 'button_exit.png');
-
-        // Decorations (NEW high-res)
-        this.load.image('ui_grass_left', uiPath + 'decoration_grass_left.png');
-        this.load.image('ui_grass_right', uiPath + 'decoration_grass_right.png');
-
-        // Stars (NEW high-res from EPS)
-        for (let i = 1; i <= 3; i++) {
-            this.load.image(`ui_star_filled_${i}`, uiPath + `star_filled_0${i}.png`);
-        }
-        for (let i = 1; i <= 6; i++) {
-            this.load.image(`ui_star_empty_${i}`, uiPath + `star_empty_0${i}.png`);
-        }
-
-        // Complete panels (NEW high-res)
-        this.load.image('ui_panel_win', uiPath + 'panel_victory.png');
-        this.load.image('ui_panel_lose', uiPath + 'panel_defeat.png');
-
-        // Resource icons (NEW high-res)
-        this.load.image('ui_icon_coin', uiPath + 'icon_coin.png');
-        this.load.image('ui_icon_gem', uiPath + 'icon_gem.png');
-        this.load.image('ui_icon_heart', uiPath + 'icon_heart.png');
-
-        // Level badges (NEW high-res)
-        this.load.image('ui_badge_24', uiPath + 'badge_level_24.png');
-        this.load.image('ui_badge_25', uiPath + 'badge_level_25.png');
-        this.load.image('ui_badge_26', uiPath + 'badge_level_26.png');
-
-        console.log('📦 Loading NEW ultra-high-res UI assets from:', uiPath);
-
-        // ✨ PROFESSIONAL: Load real UI sprite atlases from Zombie Buster
         const atlasPath = 'assets/ui-atlas/';
 
-        // Load actual UI sprite sheets with buttons, panels, stars
-        this.load.image('zombie_main', atlasPath + 'zombie-ui-main.png');
-        this.load.image('zombie_buttons', atlasPath + 'zombie-ui-buttons.png');
-        this.load.image('zombie_panels', atlasPath + 'zombie-ui-panels.png');
+        // Load professional sprite sheets
+        this.load.image('main', atlasPath + 'zombie-ui-main.png');
+        this.load.image('buttons', atlasPath + 'zombie-ui-buttons.png');
+        this.load.image('panels', atlasPath + 'zombie-ui-panels.png');
 
-        // Load atlas JSON with REAL coordinates mapped from sprite sheets
-        this.load.json('ui_atlas_complete', atlasPath + 'ui-atlas-real.json');
+        // Load comprehensive modern atlas JSON
+        this.load.json('ui_atlas_complete', atlasPath + 'modern-ui-atlas.json');
 
-        console.log('🎮 Loading professional UI from Zombie Buster game');
+        console.log('🎨 Loading MODERN UI ATLAS - Professional AAA Quality');
     }
 
     create() {
