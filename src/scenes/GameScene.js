@@ -1540,6 +1540,55 @@ export default class GameScene extends Phaser.Scene {
         this.squadText.setResolution(2); // 2× resolution for crisp rendering
 
         console.log(`✓ Squad bubble created ABOVE character at (${x}, ${y})`);
+
+        // ADDITIONAL: Create platform indicator at FRONT of formation (Level1.png reference)
+        this.createSquadPlatformIndicator();
+    }
+
+    /**
+     * Create platform indicator at front of squad formation
+     * Matches Level1.png reference - blue square with white number at front of player crowd
+     */
+    createSquadPlatformIndicator() {
+        const x = this.squadCenterX;
+        const y = this.squadCenterY;
+
+        // Blue platform background (rectangle at squad front)
+        this.squadPlatformBg = this.add.rectangle(x, y - 50, 60, 40, COLORS.SQUAD_BLUE, 0.9);
+        this.squadPlatformBg.setDepth(9); // Just below characters (depth 10)
+        this.squadPlatformBg.setStrokeStyle(3, COLORS.BUBBLE_BORDER, 1);
+
+        // Squad count on platform (smaller than bubble text)
+        this.squadPlatformText = this.add.text(x, y - 50, '1', {
+            fontSize: '28px',
+            fontFamily: 'Arial Black',
+            color: '#FFFFFF',
+            stroke: '#000000',
+            strokeThickness: 3
+        });
+        this.squadPlatformText.setOrigin(0.5);
+        this.squadPlatformText.setDepth(9);
+        this.squadPlatformText.setResolution(2);
+
+        console.log(`✓ Squad platform indicator created at front of formation`);
+    }
+
+    /**
+     * Update squad platform position to stay at front of formation
+     */
+    updateSquadPlatformPosition() {
+        if (!this.squadPlatformBg || !this.squadPlatformText) return;
+
+        // Position platform at front of formation (ahead of squad center)
+        const frontY = this.squadCenterY - 80; // 80px ahead of squad center
+
+        this.squadPlatformBg.x = this.squadCenterX;
+        this.squadPlatformBg.y = frontY;
+        this.squadPlatformText.x = this.squadCenterX;
+        this.squadPlatformText.y = frontY;
+
+        // Update text
+        this.squadPlatformText.setText(this.squadMembers.length.toString());
     }
 
     /**
@@ -3227,6 +3276,104 @@ export default class GameScene extends Phaser.Scene {
             this.squadBubble.x = this.squadCenterX;
             this.squadText.x = this.squadCenterX;
         }
+
+        // Update squad platform indicator position
+        this.updateSquadPlatformPosition();
+
+        // Update enemy group indicators
+        this.updateEnemyGroupIndicators();
+    }
+
+    /**
+     * Update enemy group indicators (red platforms with white numbers)
+     * Groups nearby enemies and shows count above them
+     */
+    updateEnemyGroupIndicators() {
+        // Initialize indicator pool if needed
+        if (!this.enemyGroupIndicators) {
+            this.enemyGroupIndicators = [];
+            // Create pool of 10 indicators
+            for (let i = 0; i < 10; i++) {
+                const bg = this.add.rectangle(0, 0, 60, 40, 0xFF4444, 0.9);
+                bg.setDepth(9);
+                bg.setStrokeStyle(3, 0xFFFFFF, 1);
+                bg.setVisible(false);
+
+                const text = this.add.text(0, 0, '0', {
+                    fontSize: '28px',
+                    fontFamily: 'Arial Black',
+                    color: '#FFFFFF',
+                    stroke: '#000000',
+                    strokeThickness: 3
+                });
+                text.setOrigin(0.5);
+                text.setDepth(9);
+                text.setResolution(2);
+                text.setVisible(false);
+
+                this.enemyGroupIndicators.push({ bg, text, active: false });
+            }
+        }
+
+        // Hide all indicators first
+        this.enemyGroupIndicators.forEach(indicator => {
+            indicator.bg.setVisible(false);
+            indicator.text.setVisible(false);
+            indicator.active = false;
+        });
+
+        // Get all active enemies
+        const activeEnemies = this.waveManager ? this.waveManager.activeEnemies.filter(e => e.active && e.hp > 0) : [];
+
+        if (activeEnemies.length === 0) return;
+
+        // Group enemies by proximity (within 150px of each other)
+        const enemyGroups = [];
+        const processedEnemies = new Set();
+
+        activeEnemies.forEach(enemy => {
+            if (processedEnemies.has(enemy)) return;
+
+            // Start new group with this enemy
+            const group = [enemy];
+            processedEnemies.add(enemy);
+
+            // Find nearby enemies
+            activeEnemies.forEach(other => {
+                if (processedEnemies.has(other)) return;
+
+                const dist = Phaser.Math.Distance.Between(
+                    enemy.x, enemy.y,
+                    other.x, other.y
+                );
+
+                if (dist < 150) { // Group threshold
+                    group.push(other);
+                    processedEnemies.add(other);
+                }
+            });
+
+            enemyGroups.push(group);
+        });
+
+        // Show indicator for each group
+        enemyGroups.forEach((group, index) => {
+            if (index >= this.enemyGroupIndicators.length) return;
+
+            // Calculate group center
+            const avgX = group.reduce((sum, e) => sum + e.x, 0) / group.length;
+            const avgY = group.reduce((sum, e) => sum + e.y, 0) / group.length;
+
+            // Position indicator above group
+            const indicator = this.enemyGroupIndicators[index];
+            indicator.bg.setPosition(avgX, avgY - 60);
+            indicator.text.setPosition(avgX, avgY - 60);
+            indicator.text.setText(group.length.toString());
+
+            indicator.bg.setVisible(true);
+            indicator.text.setVisible(true);
+            indicator.active = true;
+        });
     }
 
     /**
