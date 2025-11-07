@@ -59,20 +59,28 @@ export class AtlasHelper {
      * @returns {Phaser.GameObjects.Image} The created sprite
      */
     createSprite(x, y, elementName, scale = null) {
+        console.log(`🔍 createSprite called: elementName="${elementName}"`);
+
         const frameData = this.getFrameData(elementName);
 
         if (!frameData) {
+            console.error(`❌ createSprite: No frame data for "${elementName}"`);
             // Fallback: create a placeholder
             return this.scene.add.rectangle(x, y, 100, 100, 0xFF00FF, 0.5);
         }
+
+        console.log(`✅ Frame data found:`, frameData);
 
         // Load the full texture
         const texture = this.scene.textures.get(frameData.atlasName);
 
         if (!texture || texture.key === '__MISSING') {
-            console.warn(`⚠️  AtlasHelper: Texture "${frameData.atlasName}" not loaded`);
+            console.error(`❌ Texture "${frameData.atlasName}" not loaded`);
+            console.log('Available textures:', this.scene.textures.list);
             return this.scene.add.rectangle(x, y, 100, 100, 0xFF0000, 0.5);
         }
+
+        console.log(`✅ Texture "${frameData.atlasName}" found`);
 
         // Create sprite with crop
         const sprite = this.scene.add.image(x, y, frameData.atlasName);
@@ -85,13 +93,18 @@ export class AtlasHelper {
             frameData.frame.h
         );
 
+        console.log(`✅ Sprite cropped to:`, frameData.frame);
+
         // Set origin based on pivot
         sprite.setOrigin(frameData.pivot.x, frameData.pivot.y);
 
         // Apply scale
         const elementType = this.getElementType(elementName);
         const defaultScale = this.getDefaultScale(elementType);
-        sprite.setScale(scale || defaultScale);
+        const finalScale = scale || defaultScale;
+        sprite.setScale(finalScale);
+
+        console.log(`✅ Sprite created at (${x}, ${y}) with scale ${finalScale}`);
 
         return sprite;
     }
@@ -106,9 +119,16 @@ export class AtlasHelper {
      * @returns {Phaser.GameObjects.Image} The created button
      */
     createButton(x, y, elementName, onClick, scale = null) {
+        console.log(`🔍 createButton called: elementName="${elementName}" at (${x}, ${y})`);
+
         const button = this.createSprite(x, y, elementName, scale);
 
-        if (!button) return null;
+        if (!button) {
+            console.error(`❌ createButton: Failed to create sprite for "${elementName}"`);
+            return null;
+        }
+
+        console.log(`✅ Button sprite created, making interactive`);
 
         // Make interactive
         button.setInteractive({ useHandCursor: true });
@@ -230,12 +250,18 @@ export class AtlasHelper {
      * @returns {AtlasHelper} Initialized helper instance
      */
     static initialize(scene) {
+        console.log('🔍 AtlasHelper.initialize() called');
+
         const atlasData = scene.cache.json.get('ui_atlas_complete');
 
         if (!atlasData) {
             console.error('❌ AtlasHelper: ui_atlas_complete not loaded!');
+            console.log('Available JSON keys:', scene.cache.json.getKeys());
             return null;
         }
+
+        console.log('✅ AtlasHelper: ui_atlas_complete loaded successfully');
+        console.log('Atlas data:', atlasData);
 
         return new AtlasHelper(scene, atlasData);
     }
