@@ -1,0 +1,98 @@
+{
+  "meta": {
+    "app": "Bridge Battle - Professional UI Atlas",
+    "version": "3.0",
+    "description": "Real coordinates from Zombie Buster professional game assets"
+  },
+
+  "atlases": {
+    "zombie_main": {
+      "image": "zombie-ui-main.png",
+      "format": "RGBA8888",
+      "size": {"w": 1543, "h": 1951},
+      "frames": {
+        "panel_small": {
+          "frame": {"x": 7, "y": 7, "w": 440, "h": 370},
+          "pivot": {"x": 0.5, "y": 0.5}
+        },
+        "star_yellow_filled": {
+          "frame": {"x": 85, "y": 385, "w": 85, "h": 80},
+          "pivot": {"x": 0.5, "y": 0.5}
+        },
+        "star_yellow_outline": {
+          "frame": {"x": 175, "y": 390, "w": 75, "h": 70},
+          "pivot": {"x": 0.5, "y": 0.5}
+        },
+        "star_brown": {
+          "frame": {"x": 285, "y": 855, "w": 85, "h": 80},
+          "pivot": {"x": 0.5, "y": 0.5}
+        }
+      }
+    },
+
+    "zombie_buttons": {
+      "image": "zombie-ui-buttons.png",
+      "format": "RGBA8888",
+      "size": {"w": 1014, "h": 1059},
+      "frames": {
+        "button_play_brown": {
+          "frame": {"x": 255, "y": 895, "w": 220, "h": 75},
+          "pivot": {"x": 0.5, "y": 0.5}
+        },
+        "button_play_green": {
+          "frame": {"x": 645, "y": 895, "w": 220, "h": 75},
+          "pivot": {"x": 0.5, "y": 0.5}
+        }
+      }
+    },
+
+    "zombie_panels": {
+      "image": "zombie-ui-panels.png",
+      "format": "RGBA8888",
+      "size": {"w": 1763, "h": 1280},
+      "frames": {
+        "panel_large": {
+          "frame": {"x": 795, "y": 10, "w": 540, "h": 410},
+          "pivot": {"x": 0.5, "y": 0.5}
+        },
+        "text_paused": {
+          "frame": {"x": 785, "y": 585, "w": 480, "h": 115},
+          "pivot": {"x": 0.5, "y": 0.5}
+        }
+      }
+    }
+  },
+
+  "categories": {
+    "buttons": {
+      "description": "Button UI elements",
+      "elements": [
+        {"name": "button_play_brown", "atlas": "zombie_buttons", "usage": "menu"},
+        {"name": "button_play_green", "atlas": "zombie_buttons", "usage": "menu"}
+      ]
+    },
+    "panels": {
+      "description": "Panel UI elements",
+      "elements": [
+        {"name": "panel_small", "atlas": "zombie_main", "usage": "dialog"},
+        {"name": "panel_large", "atlas": "zombie_panels", "usage": "victory_defeat"}
+      ]
+    },
+    "stars": {
+      "description": "Star rating elements",
+      "elements": [
+        {"name": "star_yellow_filled", "atlas": "zombie_main"},
+        {"name": "star_yellow_outline", "atlas": "zombie_main"},
+        {"name": "star_brown", "atlas": "zombie_main"}
+      ]
+    }
+  },
+
+  "scaling": {
+    "description": "Recommended scaling factors",
+    "button": 0.8,
+    "panel_small": 1.0,
+    "panel_large": 0.9,
+    "star": 0.7
+  }
+}
