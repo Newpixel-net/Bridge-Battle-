@@ -1128,14 +1128,14 @@ export default class GameScene extends Phaser.Scene {
     createMathematicalGates() {
         const centerX = GAME.WIDTH / 2;
 
-        // Gate positions (5 gates BEFORE each enemy group)
+        // Gate positions (5 gates with 500 unit separation from enemy groups)
         // Player starts at Y=450, so gates start at Y=600 (ahead of player)
         const gatePositions = [
-            { y: 600, operation: '×', value: 2, color: 0x4CAF50 },      // Gate 1 → then enemies at 700
-            { y: 1400, operation: '+', value: 20, color: 0x2196F3 },    // Gate 2 → then enemies at 1500
-            { y: 2200, operation: '×', value: 3, color: 0x4CAF50 },     // Gate 3 → then enemies at 2300
-            { y: 3000, operation: '+', value: 30, color: 0x2196F3 },    // Gate 4 → then enemies at 3100
-            { y: 3800, operation: '×', value: 5, color: 0xFFD700 },     // Gate 5 → then enemies at 3900
+            { y: 600, operation: '×', value: 2, color: 0x4CAF50 },       // Gate 1 → enemies at 1100 (500 units clear)
+            { y: 1600, operation: '+', value: 20, color: 0x2196F3 },     // Gate 2 → enemies at 2100 (500 units clear)
+            { y: 2600, operation: '×', value: 3, color: 0x4CAF50 },      // Gate 3 → enemies at 3100 (500 units clear)
+            { y: 3600, operation: '+', value: 30, color: 0x2196F3 },     // Gate 4 → enemies at 4100 (500 units clear)
+            { y: 4600, operation: '×', value: 5, color: 0xFFD700 },      // Gate 5 → enemies at 5100 (500 units clear)
         ];
 
         this.mathGates = [];
@@ -1226,14 +1226,11 @@ export default class GameScene extends Phaser.Scene {
                 // Add or remove characters
                 if (difference > 0) {
                     for (let i = 0; i < difference; i++) {
-                        this.addCharacter();
+                        this.addSquadMember();
                     }
                 } else if (difference < 0) {
-                    for (let i = 0; i < Math.abs(difference); i++) {
-                        if (this.squadMembers.length > 1) {
-                            this.removeCharacter();
-                        }
-                    }
+                    const removeCount = Math.min(Math.abs(difference), this.squadMembers.length - 1);
+                    this.removeSquadMembers(removeCount);
                 }
 
                 // Show popup effect
@@ -4488,13 +4485,13 @@ export default class GameScene extends Phaser.Scene {
     spawnAllEnemyGroups() {
         console.log('🎯 Spawning all enemy groups at fixed positions...');
 
-        // 5 enemy groups at fixed Y positions
+        // 5 enemy groups at fixed Y positions (500 units AFTER each gate for clear separation)
         const enemyGroups = [
-            { y: 700, count: 15, type: 'SOLDIER' },   // Wave 1: 15 enemies (REDUCED from 20)
-            { y: 1500, count: 18, type: 'SOLDIER' },  // Wave 2: 18 enemies (REDUCED from 22)
-            { y: 2300, count: 20, type: 'SOLDIER' },  // Wave 3: 20 enemies (REDUCED from 24)
-            { y: 3100, count: 22, type: 'TANK' },     // Wave 4: 22 enemies (REDUCED from 26)
-            { y: 3900, count: 25, type: 'TANK' }      // Wave 5: 25 enemies (REDUCED from 28)
+            { y: 1100, count: 6, type: 'SOLDIER' },   // Wave 1: 6 enemies (500 units after gate 1)
+            { y: 2100, count: 7, type: 'SOLDIER' },   // Wave 2: 7 enemies (500 units after gate 2)
+            { y: 3100, count: 8, type: 'SOLDIER' },   // Wave 3: 8 enemies (500 units after gate 3)
+            { y: 4100, count: 9, type: 'TANK' },      // Wave 4: 9 enemies (500 units after gate 4)
+            { y: 5100, count: 10, type: 'TANK' }      // Wave 5: 10 enemies (500 units after gate 5)
         ];
 
         const centerX = GAME.WIDTH / 2;
@@ -4504,7 +4501,7 @@ export default class GameScene extends Phaser.Scene {
             console.log(`  Spawning group ${index + 1}: ${group.count} enemies at Y=${group.y}`);
 
             // Spawn in a horizontal line formation
-            const spacing = Math.min(roadWidth / (group.count + 1), 50);
+            const spacing = Math.min(roadWidth / (group.count + 1), 80);  // Wider spacing
             const startX = centerX - (spacing * (group.count - 1) / 2);
 
             for (let i = 0; i < group.count; i++) {
@@ -4516,8 +4513,8 @@ export default class GameScene extends Phaser.Scene {
             }
         });
 
-        // Total: 15 + 18 + 20 + 22 + 25 = 100 enemies
-        console.log(`✓ Spawned total: 100 enemies in 5 groups`);
+        // Total: 6 + 7 + 8 + 9 + 10 = 40 enemies (playable density)
+        console.log(`✓ Spawned total: 40 enemies in 5 groups`);
     }
 
     /**
