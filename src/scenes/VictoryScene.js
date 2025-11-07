@@ -85,23 +85,15 @@ export default class VictoryScene extends Phaser.Scene {
         const centerX = GAME.WIDTH / 2;
         const centerY = GAME.HEIGHT / 2;
 
-        // Add the complete victory panel image
-        let panel;
-        if (this.atlasHelper) {
-            // Use atlas sprite for professional quality
-            panel = this.atlasHelper.createSprite(centerX, centerY, 'panel_victory_large');
-        } else {
-            // Fallback to PNG asset
-            panel = this.add.image(centerX, centerY, 'ui_panel_win');
-            panel.setScale(UI_SCALE.PANEL);
-        }
-
+        // TEMPORARY: Use PNG asset until sprite atlas coordinates are properly mapped
+        // TODO: Map actual sprite coordinates and re-enable atlas system
+        const panel = this.add.image(centerX, centerY, 'ui_panel_win');
         panel.setScale(0);
         panel.setDepth(10);
 
         // Scale in animation
         // FIXED: Scale using UI_SCALE.PANEL constant (1640x1800 → 623x684)
-        const targetScale = this.atlasHelper ? panel.scaleX : UI_SCALE.PANEL;
+        const targetScale = UI_SCALE.PANEL;
         this.tweens.add({
             targets: panel,
             scaleX: targetScale,
